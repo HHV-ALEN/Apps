@@ -1,0 +1,49 @@
+body {
+  background-image: url('../../Back/SystemFiles/background.jpg'); /* Add your wallpaper path here */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5); /* Dark overlay with 50% opacity */
+  z-index: 1;
+}
+.login-card {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  position: relative;
+  z-index: 2; /* Ensure the card is above the overlay */
+}
+.login-card.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.error-label {
+  display: inline-block;
+  background-color: #ff4444; /* Red background */
+  color: white; /* White text */
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  animation: fadeIn 0.5s ease; /* Fade-in animation */
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

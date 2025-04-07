@@ -1,0 +1,246 @@
+.timeline-container {
+    width: 100%;
+    overflow-x: auto;  /* Permite desplazamiento horizontal */
+    white-space: nowrap; /* Evita el salto de línea */
+    scrollbar-width: none; /* Oculta la barra de desplazamiento en Firefox */
+    -ms-overflow-style: none; /* Oculta la barra de desplazamiento en IE/Edge */
+}
+
+.timeline-container::-webkit-scrollbar {
+    display: none; /* Oculta la barra de desplazamiento en Chrome/Safari */
+}
+
+.timeline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-width: 900px; /* Asegura que haya más espacio para el scroll */
+    padding: 20px 0;
+    position: relative;
+}
+
+/* Asegurar que los iconos sean más pequeños en móviles */
+@media (max-width: 768px) {
+    .icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+
+    .label {
+        font-size: 12px;
+    }
+}
+
+
+/* Línea de progreso */
+.timeline::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #ddd;
+    z-index: -1;
+    transform: translateY(-50%);
+}
+
+/* Barra de progreso animada */
+.progress-bar {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 4px;
+    background: #28a745 !important;
+    z-index: -1;
+    transition: width 0.8s ease-in-out;
+    transform: translateY(-50%);
+}
+
+/* Pasos de la línea de tiempo */
+.step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+/* Iconos */
+.icon {
+    width: 50px;
+    height: 50px;
+    background: #ddd;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    transition: all 0.5s ease-in-out;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+}
+
+/* Estados completados */
+.step.completed .icon {
+    background: #28a745;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Estado actual con efecto glow */
+.step.current .icon {
+    background: #ffc107;
+    color: black;
+    transform: scale(1.3);
+    box-shadow: 0 0 10px #ffc107;
+}
+
+/* Etiqueta debajo del icono */
+.label {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+
+/* Ensure modal is centered */
+.modal-dialog {
+    display: flex;
+    align-items: center;
+    /* Vertical centering */
+    justify-content: center;
+    /* Horizontal centering */
+    min-height: 100vh;
+    /* Full viewport height */
+    margin: 0 auto;
+    /* Center horizontally */
+}
+
+/* Custom modal width */
+#modalRuta .modal-dialog {
+    max-width: 800px;
+    /* Adjust as needed */
+}
+
+/* Custom modal background */
+#modalRuta .modal-content {
+    background-color: #f8f9fa;
+    /* Light gray background */
+    border-radius: 10px;
+    /* Rounded corners */
+}
+
+/* Custom modal header */
+#modalRuta .modal-header {
+    border-bottom: 2px solid #0099ff;
+    /* Blue border */
+}
+
+/* Custom modal footer */
+#modalRuta .modal-footer {
+    border-top: 2px solid #0099ff;
+    /* Blue border */
+}
+
+.modal-content {
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    transform: translateY(-20px);
+    transition: transform 0.3s ease-in-out;
+}
+
+.modal.fade .modal-dialog {
+    transform: translateY(-50px);
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+}
+
+.modal.show .modal-dialog {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 5px rgba(13, 110, 253, 0.5);
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    border: none;
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #0056b3, #004099);
+    transform: scale(1.05);
+}
+
+.image-container {
+    position: relative;
+    display: inline-block;
+}
+
+
+/* The Modal (background) */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    padding-top: 50px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.9);
+  }
+  
+  /* Modal Content (image) */
+  .modal-content {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 80vh;
+  }
+  
+  /* Caption text */
+  #caption {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+    text-align: center;
+    color: #ccc;
+    padding: 10px 0;
+  }
+  
+  /* Close button */
+  .close {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+  }
+  
+  .close:hover,
+  .close:focus {
+    color: #bbb;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  
+  /* Animation */
+  .modal-content, #caption {  
+    animation-name: zoom;
+    animation-duration: 0.6s;
+  }
+  
+  @keyframes zoom {
+    from {transform: scale(0.1)} 
+    to {transform: scale(1)}
+  }
