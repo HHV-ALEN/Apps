@@ -9,7 +9,7 @@ $id_salida = $_POST['Folio'];
 $Cliente = $_POST['Cliente'];
 $EstadoEntrega = $_POST['EstadoEntrega'];
 $Comentario = $_POST['Comentario'];
-$Fecha = date('Y-m-d');
+$Fecha = date('Y-m-d H:i:s');
 echo "Folio: $id_salida <br>";
 echo "Cliente: $Cliente <br>";
 echo "Estado Entrega: $EstadoEntrega <br>";

@@ -221,32 +221,6 @@ echo "<br> El estado de la Salida es: " . $Estado;
 //echo "<br> El estado de la Salida es: " . $Estado;
 $Fecha_Actual = date("Y-m-d H:i:s");
 
-if ($Estado == 'Empaque') {
-    // Actualizar el estado en la tabla salida_refactor
-    $query_update = "UPDATE salidas SET Estado = 'Facturacion', Id_Status = 23 WHERE Id = $Id_Salida";
-    $result = mysqli_query($conn, $query_update);
-
-    if ($result) {
-        //echo "<br> El estado de la Salida ha sido actualizado a 'Facturación'";
-
-        // Registrar en la tabla actualizaciones_bitacora_nueva
-        $query_insert_bitacora = "INSERT INTO bitacora 
-        (Id_Salida, Accion, Fecha, Responsable) VALUES 
-        ($Id_Salida, 'Entrega A Facturación', '$Fecha_Actual', '$Nombre_Usuario')";
-
-        $result_bitacora = mysqli_query($conn, $query_insert_bitacora);
-
-        if ($result_bitacora) {
-            //echo "<br> Se ha registrado la actualización en la bitácora";
-        } else {
-            //echo "<br> Error al registrar la actualización en la bitácora: " . mysqli_error($con);
-        }
-    } else {
-        //echo "<br> Error al actualizar el estado: " . mysqli_error($con);
-    }
-}
-
-
 //echo "<hr>";
 
 require_once('../../fpdf/fpdf.php');

@@ -36,8 +36,6 @@ if (move_uploaded_file($_FILES['archivo']['tmp_name'], $target_file)) {
     echo "<br>Hubo un error al subir el archivo.";
 }
 
-
-
 $Fecha_Hoy = date("Y-m-d H:i:s");
 $Responsable = $_SESSION['Name'];
 
@@ -59,16 +57,7 @@ if ($query) {
     echo "<br>No se actualizó correctamente la tabla entrega_factura_refactor";
 }
 
-// Actualizar estado de la salida a Logistica
-echo "Id Salida: " . $id_salida;
-$sql = "UPDATE salidas SET Estado = 'Logistica', Id_Status = 24
- WHERE Id = '$id_salida'";
-$query = mysqli_query($conn, $sql);
-if ($query) {
-    echo "<br>Se actualizó correctamente la tabla salida_refactor";
-} else {
-    echo "<br>No se actualizó correctamente la tabla salida_refactor";
-}
+
 header("Location: ../../Front/detalles.php?id=".$id_salida);
 
 
