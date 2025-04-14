@@ -37,7 +37,7 @@ MySQL 5.7+
 Apache/Nginx
 
 🛠️ Instalación
-git clone https://github.com/tu-repo/alen-apps.git
+git clone https://github.com/HHV-ALEN/Apps
 
 mysql -u usuario -p < Database/alenapps.sql
 
@@ -67,10 +67,10 @@ Crea una rama: git checkout -b feature/nueva-funcion
 Envía tu PR con una descripción clara
 
 📜 Licencia
-MIT License © 2024 [Tu Nomre]
+MIT License © 2025 [Heriberto Hurtado]
 
 🔗 ¿Preguntas?
-Contacto: tu@email.com
+Contacto: hhurtado@alenintelligent.com
 
 📝 Notas Adicionales
 ✨ En desarrollo activo
