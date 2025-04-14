@@ -11,8 +11,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <!-- Imagen de icono --> 
-     <link rel="icon" type="image/png" href="Front/Img/Icono-A.png" />
+    <!-- Imagen de icono -->
+    <link rel="icon" type="image/png" href="Front/Img/Icono-A.png" />
     <style>
         /* Ajustar tamaño del logo */
         .navbar-brand img {
@@ -125,12 +125,22 @@
                     ?>
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="/SupplyChain/index.php">
-                            <i class="bi bi-list-task"></i> Listado General
+                                <i class="bi bi-list-task"></i> Listado General
                             </a>
                         </li>
-                    <?php
-                    }
-                    ?>
+                    <?php }
+                    if ($_SESSION['Area'] == 'Recursos Humanos') { ?>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-list-ul"></i> Listados Generales
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="/Front/Users/Users.php"><i class="bi bi-people"></i> Listado de Usuarios</a></li>
+                                <li><a class="dropdown-item" href="/Vacaciones/index.php"><i class="bi bi-calendar-heart"></i> Listado de Vacaciones</a></li>
+                            </ul>
+                        </li>
+                    <?php } ?>
+
 
                 </ul>
 

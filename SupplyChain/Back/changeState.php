@@ -19,36 +19,62 @@ if ($Estado == "Empaque") {
         echo "Se actualizo el estado de la salida a Empaque";
         /// Actualización de la Bitacora (Tabla: actualizaciones_bitacora_nueva)
         $Sql_Bitacora = "INSERT INTO bitacora (Id_Salida, Accion, Fecha, Responsable)
-        VALUES ($id_salida, 'Recepción de Entrega', '$Fecha', '$_SESSION[Name]')";
+        VALUES ($id_salida, 'Recepción para Empaque', '$Fecha', '$_SESSION[Name]')";
         $Query_Bitacora = mysqli_query($conn, $Sql_Bitacora);
+
         if ($Query_Bitacora) {
-            echo "Se actualizo la bitacora";
+            $_SESSION['alerta_estado'] = "✅ La salida No. $id_salida ha sido actualizada a <strong style='color:green;'>🟢 Empaque</strong>.<br>📦 Estado actualizado correctamente y registrado en la bitácora.";
         } else {
-            echo "No se actualizo la bitacora";
+            $_SESSION['alerta_estado'] = "⚠️ La salida fue actualizada, pero hubo un error al guardar la bitácora.";
         }
     } else {
-        echo "No se actualizo el estado de la salida a Empaque";
+        $_SESSION['alerta_estado'] = "❌ Hubo un error al actualizar el estado de la salida.";
     }
-} elseif ($Estado == "Facturacion") {
+
+} elseif ($Estado == "Facturación") {
     echo "<br>Se actualizo el estado de la salida a Facturacion";
-    $Sql_Update_Salida = "UPDATE salidas SET Estado = 'Facturacion', Id_Status = 23
+    $Sql_Update_Salida = "UPDATE salidas SET Estado = 'Facturación', Id_Status = 23
      WHERE Id = $id_salida";
     $Query_Update_Salida = mysqli_query($conn, $Sql_Update_Salida);
     if ($Query_Update_Salida) {
         echo "Se actualizo el estado de la salida a Facturacion";
         /// Actualización de la Bitacora (Tabla: actualizaciones_bitacora_nueva)
         $Sql_Bitacora = "INSERT INTO bitacora (Id_Salida, Accion, Fecha, Responsable)
-        VALUES ($id_salida, 'Recepción de Mercancia para Facturación', '$Fecha', '$_SESSION[firstname]')";
+        VALUES ($id_salida, 'Recepción de Mercancia para Facturación', '$Fecha', '$_SESSION[Name]')";
         $Query_Bitacora = mysqli_query($conn, $Sql_Bitacora);
+
         if ($Query_Bitacora) {
-            echo "Se actualizo la bitacora";
+            $_SESSION['alerta_estado'] = "✅ La salida No. $id_salida ha sido actualizada a <strong style='color:green;'>🟢 Facturación</strong>.<br>📦 Estado actualizado correctamente y registrado en la bitácora.";
         } else {
-            echo "No se actualizo la bitacora";
+            $_SESSION['alerta_estado'] = "⚠️ La salida fue actualizada, pero hubo un error al guardar la bitácora.";
         }
     } else {
-        echo "No se actualizo el estado de la salida a Facturacion";
+        $_SESSION['alerta_estado'] = "❌ Hubo un error al actualizar el estado de la salida.";
+    }
+} elseif ($Estado == "Logistica") {
+    $Sql_Update_Salida = "UPDATE salidas SET Estado = 'Logistica', Id_Status = 24 WHERE Id = $id_salida";
+    $Query_Update_Salida = mysqli_query($conn, $Sql_Update_Salida);
+
+    if ($Query_Update_Salida) {
+        $Sql_Bitacora = "INSERT INTO bitacora (Id_Salida, Accion, Fecha, Responsable)
+                         VALUES ($id_salida, 'Recepción de Mercancia para Logística', '$Fecha', '$_SESSION[Name]')";
+        $Query_Bitacora = mysqli_query($conn, $Sql_Bitacora);
+
+        if ($Query_Bitacora) {
+            $_SESSION['alerta_estado'] = "✅ La salida No. $id_salida ha sido actualizada a <strong style='color:green;'>🟢 Logística</strong>.<br>📦 Estado actualizado correctamente y registrado en la bitácora.";
+        } else {
+            $_SESSION['alerta_estado'] = "⚠️ La salida fue actualizada, pero hubo un error al guardar la bitácora.";
+        }
+    } else {
+        $_SESSION['alerta_estado'] = "❌ Hubo un error al actualizar el estado de la salida.";
     }
 
+    // Redirigir al listado
+    header("Location: ../index.php");
+    exit();
 }
+
+
+
 header("Location: ../Front/detalles.php?id=".$id_salida);
 ?>

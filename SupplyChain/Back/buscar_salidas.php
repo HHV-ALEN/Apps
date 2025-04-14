@@ -6,7 +6,7 @@ session_start();
 $filtro_salida = isset($_POST['numero_salida']) ? $_POST['numero_salida'] : '';
 $filtro_cliente = isset($_POST['cliente']) ? $_POST['cliente'] : '';
 $filtro_orden = isset($_POST['orden_venta']) ? $_POST['orden_venta'] : '';
-$filtro_sucursal = isset($_POST['sucursal']) ? $_POST['sucursal'] : '';
+$filtro_estado = isset($_POST['estado']) ? $_POST['estado'] : '';
 
 $query = "SELECT salidas.*, entregas.Id_Orden_Venta 
           FROM salidas
@@ -23,8 +23,8 @@ if (!empty($filtro_cliente)) {
 if (!empty($filtro_orden)) {
     $query .= " AND entregas.Id_Orden_Venta LIKE '%$filtro_orden%'";
 }
-if (!empty($filtro_sucursal)) {
-    $query .= " AND salidas.Sucursal LIKE '%$filtro_sucursal%'";
+if (!empty($filtro_estado)) {
+    $query .= " AND salidas.Estado LIKE '%$filtro_estado%'";
 }
 
 $query .= " ORDER BY Id DESC LIMIT 50"; // Solo muestra los 50 primeros resultados

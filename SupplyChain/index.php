@@ -2,6 +2,14 @@
 include "../Back/config/config.php";
 session_start();
 
+if (isset($_SESSION['alerta_estado'])) {
+  echo "<div id='alertaBanner' class='alerta fade-in'>
+            {$_SESSION['alerta_estado']}
+          </div>";
+  unset($_SESSION['alerta_estado']); // Limpiar mensaje para que no se repita
+}
+
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
@@ -59,8 +67,24 @@ $result_salida = mysqli_query($conn, $query_salida);
       max-width: 100%;
       /* No se pasa del input */
     }
-  </style>
 
+    .alerta {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f0f9ff;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+      padding: 15px 20px;
+      border-radius: 10px;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      z-index: 9999;
+      opacity: 0.95;
+      transition: opacity 0.5s ease-in-out;
+    }
+  </style>
 </head>
 
 <body>
@@ -76,10 +100,12 @@ $result_salida = mysqli_query($conn, $query_salida);
         <div class="card-body">
           <div class="table-responsive">
             <?php
+            $_SESSION['Name'];
+
             $query_salida = "SELECT p.Id, p.Id_Salida, p.Cliente, p.Tipo_Doc, p.Paqueteria, s.Estado 
                          FROM preguia p
                          INNER JOIN salidas s ON p.Id_Salida = s.Id
-                         WHERE s.Estado = 'A Ruta'
+                         WHERE s.Estado = 'A Ruta' AND p.Chofer = '{$_SESSION['Name']}'
                          ORDER BY p.Id DESC";
 
             $result_salida = mysqli_query($conn, $query_salida);
@@ -107,6 +133,11 @@ $result_salida = mysqli_query($conn, $query_salida);
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#etiquetaModal" data-id="<?php echo $row['Id_Salida']; ?>" data-cliente="<?php echo $row['Cliente']; ?>">
                           <i class="bi bi-truck"></i> Completar Entrega
                         </button>
+                        <!-- Boton para ir a los detales -->
+                        <a class='btn btn-warning' href='Front/detalles.php?id=<?= $row['Id_Salida'] ?>'>
+                          <i class="bi bi-file-earmark-medical"></i> Detalles
+                        </a>
+
                       </td>
                     </tr>
                   <?php } ?>
@@ -202,9 +233,18 @@ $result_salida = mysqli_query($conn, $query_salida);
         <div class="row text-center">
           <div class="col-md-12">
             <h2>Listado General</h2>
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#agregarModal">
-              <i class="bi bi-plus-lg"></i> Agregar Nueva Etiqueta de Salida
-            </button>
+            <?php
+            if ($_SESSION['Puesto'] == 'Entrega') {
+            ?>
+              <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#agregarModal">
+                <i class="bi bi-plus-lg"></i> Agregar Nueva Etiqueta de Salida
+              </button>
+
+            <?php
+
+            }
+
+            ?>
           </div>
 
           <div class="col-md-12">
@@ -233,15 +273,15 @@ $result_salida = mysqli_query($conn, $query_salida);
                 <input type="text" class="form-control" id="buscar_orden" placeholder="Buscar...">
               </div>
               <div class="col-md-6">
-                <label for="buscar_sucursal" class="form-label">Buscar por Sucursal:</label>
-                <select class="form-select" id="buscar_sucursal">
-                  <option value="">Todos</option>
-                  <?php
-                  $query_sucursal = mysqli_query($conn, "SELECT DISTINCT Sucursal FROM salidas ORDER BY Sucursal");
-                  while ($row = mysqli_fetch_assoc($query_sucursal)) {
-                    echo "<option value='{$row['Sucursal']}'>{$row['Sucursal']}</option>";
-                  }
-                  ?>
+                <label for="buscar_estado" class="form-label">Buscar por Estado:</label>
+                <select class="form-select" id="buscar_estado">
+                  <option value="Entrega">Entrega</option>
+                  <option value="Empaque">Empaque</option>
+                  <option value="Facturación">Facturación</option>
+                  <option value="Logistica">Logística</option>
+                  <option value="A Ruta">A Ruta</option>
+                  <option value="Envios">Envíos</option>
+                  <option value="Completado">Completado</option>
                 </select>
               </div>
             </div>
@@ -284,9 +324,23 @@ $result_salida = mysqli_query($conn, $query_salida);
                     /// Para Recbir la entrega con el puesto Empaque
                     if ($_SESSION['Puesto'] == 'Empaque' && $fila['Estado'] == 'Entrega') {
                       echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Empaque' class='btn btn-warning'>
-                        <i class='bi bi-box-seam me-2'></i> Recibir Entrega
+                        <i class='bi bi-box-seam me-2'></i> Recibir Entrega (Empaque)
                       </a>";
                     }
+
+                    /// Para recibir de estado Empaque a Facturación:
+                    if ($_SESSION['Puesto'] == 'Facturación' && $fila['Estado'] == 'Empaque') {
+                      echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Facturación' class='btn btn-warning'>
+                      <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Facturación)
+                    </a>";
+                    }
+                    /// Para recibir de estado Facturación a Logistica:
+                    if ($_SESSION['Puesto'] == 'Logistica' && $fila['Estado'] == 'Facturación') {
+                      echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Logistica' class='btn btn-warning'>
+                      <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Logistica)
+                    </a>";
+                    }
+
 
                     if ($_SESSION['Puesto'] == 'Logistica' && $fila['Estado'] == 'Logistica') {
                       /// Botón para abrir modal de la Pre-guia 
@@ -358,14 +412,11 @@ $result_salida = mysqli_query($conn, $query_salida);
               <div class="col-md-6">
                 <label for="Id" class="form-label">Numero Id:</label>
                 <input type="number" class="form-control" id="modalPedidoId" name="pedido_id">
-
               </div>
-
               <div class="col-md-6">
                 <label for="clienteNombre" class="form-label">Cliente</label>
                 <input type="text" class="form-control" id="clienteNombre" name="clienteNombre" readonly disabled="false">
                 <input type="hidden" id="clienteNombreHidden" name="clienteNombre">
-
               </div>
             </div>
             <br>
@@ -510,14 +561,26 @@ $result_salida = mysqli_query($conn, $query_salida);
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      // Filtros para la tabla:
+      /// Animación de salida para el mensaje:
+      window.addEventListener('DOMContentLoaded', () => {
+        const alerta = document.getElementById("alertaBanner");
+        if (alerta) {
+          setTimeout(() => {
+            alerta.style.opacity = '0';
+            setTimeout(() => {
+              alerta.remove();
+            }, 500);
+          }, 4000); // Desaparece después de 4 segundos
+        }
+      });
 
+      // Filtros para la tabla:
       $(document).ready(function() {
         function buscarSalidas() {
           let numero_salida = $("#buscar_salida").val();
           let cliente = $("#buscar_cliente").val();
           let orden_venta = $("#buscar_orden").val();
-          let sucursal = $("#buscar_sucursal").val();
+          let estado = $("#buscar_estado").val();
           console.log("Cliente seleccionad", cliente);
 
           $.ajax({
@@ -527,7 +590,7 @@ $result_salida = mysqli_query($conn, $query_salida);
               numero_salida: numero_salida,
               cliente: cliente,
               orden_venta: orden_venta,
-              sucursal: sucursal
+              estado: estado
             },
             dataType: "json",
 
@@ -560,7 +623,7 @@ $result_salida = mysqli_query($conn, $query_salida);
                 tbody.append('<tr><td colspan="7" class="text-center text-danger">No se encontraron resultados</td></tr>');
               }
             }
-            
+
           });
         }
 
@@ -570,16 +633,16 @@ $result_salida = mysqli_query($conn, $query_salida);
         });
 
         // Para que se actualice al escribir en los inputs sin dar clic en el botón
-        $("#buscar_salida, #buscar_cliente, #buscar_orden, #buscar_sucursal").on("keyup change", function() {
+        $("#buscar_salida, #buscar_cliente, #buscar_orden, #buscar_estado").on("keyup change", function() {
           buscarSalidas();
         });
       });
 
       $(document).on("click", ".detalles-btn", function(event) {
-    event.preventDefault(); // Detiene cualquier otra acción que esté interfiriendo
-    let url = $(this).attr("href"); 
-    window.location.assign(url); // Redirige inmediatamente
-});
+        event.preventDefault(); // Detiene cualquier otra acción que esté interfiriendo
+        let url = $(this).attr("href");
+        window.location.assign(url); // Redirige inmediatamente
+      });
 
 
 
@@ -652,6 +715,10 @@ $result_salida = mysqli_query($conn, $query_salida);
                                     <option value="Daniel Soto Mayor">Daniel Soto Mayor</option>
                                     <option value="Jonathan Islas Hernandez">Jonathan Islas Hernandez</option>
                                     <option value="Rene Canche Couoh">Rene Canche Couoh</option>
+                                    <option value="">---------------------------</option>
+                                    <option value="Cliente Pasa">Cliente Pasa</option>
+                                    <option value="Entregado por Vendedor">Entregado por Vendedor</option>
+                                    <option value="Proveedor Recolecta">Proveedor Recolecta</option>
                                 </select>
                                 </select>
                                 <label for="Chofer">Chofer:</label>
@@ -721,6 +788,11 @@ $result_salida = mysqli_query($conn, $query_salida);
                                     <option value="Daniel Soto Mayor">Daniel Soto Mayor</option>
                                     <option value="Jonathan Islas Hernandez">Jonathan Islas Hernandez</option>
                                     <option value="Rene Canche Couoh">Rene Canche Couoh</option>
+                                    <option value="Rene Canche Couoh">Rene Canche Couoh</option>
+                                    <option value="">---------------------------</option>
+                                    <option value="Cliente Pasa">Cliente Pasa</option>
+                                    <option value="Entregado por Vendedor">Entregado por Vendedor</option>
+                                    <option value="Proveedor Recolecta">Proveedor Recolecta</option>
                                 </select>
                                 </select>
                                 <label for="Chofer">Chofer:</label>

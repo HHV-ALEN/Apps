@@ -1,4 +1,8 @@
 <?php
+// Inicio de sesión
+ini_set('session.gc_maxlifetime', 3600); // 1 hour
+session_set_cookie_params(3600); // Set cookie lifetime to match
+session_start();
 include("../../Back/config/config.php"); // --> Conexión con Base de datos
 /// Habilitar la muestra de errores:
 
@@ -8,12 +12,17 @@ error_reporting(E_ALL);
 
 // Conexión a la base de datos
 
+if (isset($_SESSION['alerta_estado'])) {
+    echo "<div id='alertaBanner' class='alerta fade-in'>
+              {$_SESSION['alerta_estado']}
+            </div>";
+    unset($_SESSION['alerta_estado']); // Limpiar mensaje para que no se repita
+}
+
+
 $conn = connectMySQLi();
 
-// Inicio de sesión
-ini_set('session.gc_maxlifetime', 3600); // 1 hour
-session_set_cookie_params(3600); // Set cookie lifetime to match
-session_start();
+
 //print_r($_SESSION);
 $CarpetaContenedora = '../Back/Files/'; // Carpeta contenedora de los archivoss
 $rutaWeb = "../Back/Files/img/";
@@ -256,9 +265,20 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
     ];
     // Asegurar que el id_status existe y tiene un mapeo
     $estadoActual = isset($estadoMap[$id_status]) ? $estadoMap[$id_status] : 1;
+    echo "Estado Actual: " . $estadoActual;
     ?>
 
     <hr>
+    <!-- Botón para Entrega si aplica -->
+    <?php
+    if ($_SESSION['Puesto'] == "Chofer" && $Estado == 'A Ruta') { ?>
+        <div class="text-center">
+            <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#modalEntrega">
+                <i class="fas fa-check-circle"></i> Entregar Pedido
+            </button>
+        </div>
+    <?php } ?>
+    <br>
     <!-- Información De la preguia -->
     <div class="container">
         <div class="col-md-12">
@@ -271,11 +291,35 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                 </div>
 
                 <!-- Botón a la derecha, que se muestra solo en el estado Envíos -->
-                <?php if ($Estado == 'Envios') { ?>
+                <?php if ($Estado == 'Envios' && $_SESSION['Puesto'] == 'Logistica') { ?>
                     <div>
-                        <button class="btn btn-light btn-sm me-3" data-bs-toggle="modal" data-bs-target="#modalEnvios">
-                            <i class="fas fa-route"></i> Registrar Ruta de Envío
-                        </button>
+                        <?php
+                        // Botón para registrar Ruta de envio [1]
+                        /// Verificar la tabla doc_preguia
+
+                        $DocPreguia_query = "SELECT * FROM doc_preguia WHERE Id_Salida = '$id_salida'";
+                        $DocPreguia_result = mysqli_query($conn, $DocPreguia_query);
+                        if (mysqli_num_rows($DocPreguia_result) > 0) {
+                            $DocPreguia = mysqli_fetch_array($DocPreguia_result);
+                            $Folio_Doc = $DocPreguia['Folio_Doc'] ?? 'N/A';
+                            $Id_Preguia = $DocPreguia['Id_Preguia'] ?? 'N/A';
+                        ?>
+                            <button class="btn btn-light btn-sm me-3" data-bs-toggle="modal" data-bs-target="#modalEnvios2">
+                                <i class="bi bi-send"></i> Registrar Ruta de Envío[2]
+                            </button>
+
+                        <?php
+                        } else {
+                        ?>
+                            <button class="btn btn-light btn-sm me-3" data-bs-toggle="modal" data-bs-target="#modalEnvios">
+                                <i class="fas fa-route"></i> Registrar Ruta de Envío
+                            </button>
+
+                        <?php
+                        }
+                        ?>
+
+
                     </div>
                 <?php
                 }
@@ -308,9 +352,26 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                     </div>
                     <div class="col-md-6">
                         <h6 class="text-primary"><i class="fas fa-truck"></i> Transporte</h6>
-                        <p class="mb-1"><strong>Chofer:</strong> <?php echo $ChoferNombre; ?></p>
-                        <p class="mb-1"><strong>Tipo de Flete:</strong> <?php echo $Tipo_Flete; ?></p>
-                        <p class="mb-1"><strong>Paquetería:</strong> <?php echo $Paqueteria; ?></p>
+
+                        <?php
+                        $OtrasOpciones = [
+                            "Cliente Pasa",
+                            "Entregado por Vendedor",
+                            "Proveedor Recolecta"
+                        ];
+                        if (in_array($ChoferNombre, $OtrasOpciones)) {
+                        ?>
+                            <p class="mb-1"><strong>Envio:</strong> <?php echo $ChoferNombre; ?></p>
+                        <?php
+                        } else {
+                        ?>
+                            <p class="mb-1"><strong>Chofer:</strong> <?php echo $ChoferNombre; ?></p>
+                            <p class="mb-1"><strong>Tipo de Flete:</strong> <?php echo $Tipo_Flete; ?></p>
+                            <p class="mb-1"><strong>Paquetería:</strong> <?php echo $Paqueteria; ?></p>
+                        <?php
+                        }
+
+                        ?>
                     </div>
                 </div>
                 <hr>
@@ -319,22 +380,56 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                     <div class="col-md-6">
                         <h6 class="text-primary"><i class="fas fa-file-alt"></i> Documento</h6>
                         <p class="mb-1"><strong>Tipo:</strong> <?php echo $Tipo_Doc; ?></p>
-                        <p class="mb-1"><strong>Fecha de PreGuía:</strong> <?php echo $Fecha_Preguia; ?></p>
                         <?php
                         /// Traer Información de la tabla "envios"
                         // Id_Salida, Costo, Folio_Guia, Tipo, Responsable
                         $Envios_query = "SELECT * FROM envios WHERE Id_Salida = '$id_salida'";
                         $Envios_result = mysqli_query($conn, $Envios_query);
                         $Envios = mysqli_fetch_array($Envios_result);
-                        $Costo = $Envios['Costo'] ?? 'N/A';
-                        $Folio_Guia = $Envios['Folio_Guia'] ?? 'N/A';
-                        $Tipo_Envio = $Envios['Tipo'] ?? 'N/A';
+                        if (mysqli_num_rows($Envios_result) > 0) {
 
-                        echo "<p class='mb-1'><strong>Costo de Envío:</strong> $ $Costo</p>";
-                        echo "<p class='mb-1'><strong>Folio de Guía:</strong> $Folio_Guia</p>";
-                        echo "<p class='mb-1'><strong>Tipo de Envío:</strong> $Tipo_Envio</p>";
+                            $Costo = $Envios['Costo'] ?? 'N/A';
+                            $Folio_Guia = $Envios['Folio_Guia'] ?? 'N/A';
+                            $Tipo_Envio = $Envios['Tipo'] ?? 'N/A';
+                            $Fecha_Envio = $Envios['Fecha'] ?? 'N/A';
+
+                            if ($Fecha_Envio != 'N/A') {
+                                $Fecha_Envio = date('d-m-Y', strtotime($Fecha_Envio));
+                                echo "<p class='mb-1'><strong>Fecha de Envío:</strong> $Fecha_Envio</p>";
+                            } else {
+                                echo "<p class='mb-1'><strong>Costo de Envío:</strong> $ $Costo</p>";
+                                echo "<p class='mb-1'><strong>Folio de Guía:</strong> $Folio_Guia</p>";
+                                echo "<p class='mb-1'><strong>Tipo de Envío:</strong> $Tipo_Envio</p>";
+                            }
+                        } else {
+                            // Consultar la tabla doc_preguia
+                            $DocPreguia_query = "SELECT * FROM doc_preguia WHERE Id_Salida = '$id_salida'";
+                            $DocPreguia_result = mysqli_query($conn, $DocPreguia_query);
+                            if (mysqli_num_rows($DocPreguia_result) > 0) {
+                                $DocPreguia = mysqli_fetch_array($DocPreguia_result);
+                                $Folio_Doc_Guia = $DocPreguia['Folio_Doc'] ?? 'N/A';
+                                $Id_Preguia = $DocPreguia['Id_Preguia'] ?? 'N/A';
+                                $Fecha_Envio = $DocPreguia['Fecha'] ?? 'N/A';
+                                $Costo = $DocPreguia['Costo_Directo'] ?? 'N/A';
+                                $Fecha_Final = $DocPreguia['Fecha_Final'] ?? 'N/A';
+                                $Guia_Reembarque = $DocPreguia['Guia_Directo'] ?? 'N/A';
+                                $Costo_Reembarque = $DocPreguia['Costo_Reembarque'] ?? 'N/A';
+
+                                echo "<p class='mb-1'><strong>Folio de Guía:</strong> $Folio_Doc_Guia</p>";
+                                echo "<p class='mb-1'><strong>Id Preguia:</strong> $Id_Preguia</p>";
+                                echo "<p class='mb-1'><strong>Fecha de Envío:</strong> $Fecha_Envio</p>";
+                                echo "<p class='mb-1'><strong>Costo de Envío:</strong> $ $Costo</p>";
+                                echo "<p class='mb-1'><strong>Folio de Guía Reembarque:</strong> $Guia_Reembarque</p>";
+                                echo "<p class='mb-1'><strong>Costo de Envío Reembarque:</strong> $ $Costo_Reembarque</p>";
+                                echo "<p class='mb-1'><strong>Fecha de Envío Reembarque:</strong> $Fecha_Final</p>";
+                            } else {
+                                echo "No hay información en doc_preguia";
+                            }
+                        }
+
                         ?>
                     </div>
+
 
                     <div class="col-md-6">
                         <h6 class="text-primary"><i class="fas fa-store"></i> Sucursal</h6>
@@ -367,17 +462,8 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                     </div>
                 </div>
                 <hr>
-                <!-- Botón para Entrega si aplica -->
-                <?php
 
 
-                if ($_SESSION['Puesto'] == "Chofer" && $Estado == 'A Ruta') { ?>
-                    <div class="text-center">
-                        <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#modalEntrega">
-                            <i class="fas fa-check-circle"></i> Entregar Pedido
-                        </button>
-                    </div>
-                <?php } ?>
 
             </div>
 
@@ -523,10 +609,19 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                                             data-bs-target="#modalFacturacion_BASE<?php echo $Id_Salida_B; ?>">
                                                             <i class="fas fa-file-pdf"></i> Asignar Factura
                                                         </button>
-                                                <?php
+                                                    <?php
                                                     }
                                                 } else {
-                                                    echo "No disponible";
+                                                    if ($Id_Factura_B != 'N/A' || $Archivo != 'N/A') {
+                                                    ?>
+                                                        <a href="../Back/Files/Facturas/<?php echo $Archivo; ?>"
+                                                            class="btn btn-success btn-sm" download>
+                                                            <i class="bi bi-cloud-arrow-down"></i> Descargar Factura
+                                                        </a>
+                                                <?php
+                                                    } else {
+                                                        echo "No disponible";
+                                                    }
                                                 }
                                                 ?>
                                             </td>
@@ -674,7 +769,6 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
     <!-- Información del Empaque -->
     <div class="col-md-12">
         <div class="card mb-3">
-
             <div class="text-center card-header bg-secondary text-white align-items-center">
                 <h5>Información del Empaque</h5>
                 <?php
@@ -693,9 +787,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                 }
                 ?>
             </div>
-
             <div class="card-body">
-
                 <div class="row text-center">
                     <?php
                     $Empaque_query = "SELECT * FROM contenido WHERE Id_Salida = '$id_salida'";
@@ -928,16 +1020,81 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                 }
             }
             ?>
-
-
-
-
         </div>
-
-
-
     </div>
+
     <!--- Zona de Modales -->
+        <!-- Modal para Agregar Información del Empaque -->
+        <div class="modal fade " id="modalAgregarEmpaque" tabindex="-1" aria-labelledby="modalAgregarEmpaqueLabel"
+        aria-hidden="true">
+        <form action="../Back/Empaque/addEmpaque.php?id_salida=<?php echo $id_salida; ?>" method="POST" id="form_agregar_empaque">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalAgregarEmpaqueLabel">Agregar Información del
+                            Empaque
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+
+                    <div class="modal-body text-center">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="FolioSalida" class="form-label">Folio:</label>
+                                <input type="text" class="form-control" id="Id_Salida" name="Id_Salida"
+                                    value="<?php echo $id_salida; ?>" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="Cliente" class="form-label">Cliente:</label>
+                                <input type="text" class="form-control" id="Cliente" name="Cliente"
+                                    value="<?php echo $nombre_cliente; ?>" readonly>
+                            </div>
+                        </div>
+
+                        <!-- Contenedores Section -->
+                        <div id="contenedores">
+                            <div class="contenedor-item mb-3">
+                                <div class="row">
+                                    <div class="col-md-5 mb-3">
+                                        <label for="id_contenedor" class="form-label">Contenedor</label>
+                                        <select class="form-select contenedor-select" name="id_contenedor[]" required>
+                                            <option value="">Selecciona un Contenedor</option>
+                                            <option value="Caja">Caja</option>
+                                            <option value="Paquete">Paquete</option>
+                                            <option value="Rollo">Rollo</option>
+                                            <option value="Carrete">Carrete</option>
+                                            <option value="Tarima">Tarima</option>
+                                            <option value="Otro">Otro</option>
+                                        </select>
+                                    </div>
+                                    <!-- Campo oculto para "Otro" -->
+                                    <div class="col-md-5 mb-3 contenedor-otro" style="display: none;">
+                                        <label for="otro_contenedor" class="form-label">Especificar otro
+                                            contenedor</label>
+                                        <input type="text" class="form-control" name="otro_contenedor[]">
+                                    </div>
+                                    <div class="col-md-5 mb-3">
+                                        <label for="Cantidad_contenedores" class="form-label">Cantidad</label>
+                                        <input type="number" class="form-control" name="Cantidad_contenedores[]"
+                                            required>
+                                    </div>
+                                    <div class="col-md-2 mb-3 d-flex align-items-end">
+                                        <!-- No delete button for the first row -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Add Contenedor Button -->
+                        <button type="button" class="btn btn-success" id="btnAgregarContenedor">Agregar
+                            Contenedor</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+        </form>
+    </div>
     <!-- Modal at bottom of page -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl">
@@ -948,12 +1105,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
             </div>
         </div>
     </div>
-    <script>
-        function expandImage(img) {
-            document.getElementById('expandedImage').src = img.src;
-            document.getElementById('expandedImage').alt = img.alt;
-        }
-    </script>
+
     <!-- Modal para Subir Imagen -->
     <div class="modal fade" id="modalSubirImagen" tabindex="-1" aria-labelledby="modalSubirImagenLabel"
         aria-hidden="true">
@@ -1212,35 +1364,66 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                     <!-- Formulario capaz de enviar archivos -->
                     <form id="formRuta" action="../Back/Preguia/completarEnvio.php?id_salida=<?php echo $id_salida; ?>" method="POST"
                         enctype="multipart/form-data">
-                        <h5 class="text-center">Envio Directo</h5>
+
                         <!-- Enviar El Tipo de Documento EN UN input oculto -->
-                        <input type="hidden" name="Tipo_Doc" value="<?php echo $Tipo_Doc; ?>">
-                        <div class="row text-center">
-                            <div class="col-md-6 mb-3">
-                                <label for="fecha" class="form-label">Costo</label>
-                                <input type="number" class="form-control" id="Costo" name="Costo" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="folio_guia" class="form-label">Folio Guía</label>
-                                <input type="text" class="form-control" id="folio_guia" name="folio_guia" required>
-                            </div>
-                        </div>
                         <?php
-                        if ($Tipo_Doc == "Reembarque") {
+                        if ($Tipo_Doc == "Ruta") {
                         ?>
-                            <hr>
-                            <h5 class="text-center">Reembarque</h5>
+                            <h5 class="text-center">Revisión de Envío por Ruta</h5>
                             <div class="row text-center">
                                 <div class="col-md-6 mb-3">
+                                    <label for="Tipo_Doc" class="form-label">Tipo de Documento</label>
+                                    <input type="text" class="form-control" id="Tipo_Doc" name="Tipo_Doc"
+                                        value="<?php echo $Tipo_Doc; ?>" readonly>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="Costo" class="form-label">Fecha de Completado</label>
+                                    <input type="date" class="form-control" id="Fecha_Guia" name="Fecha_Guia" required>
+                                </div>
+                            </div>
+                        <?php
+                        } elseif ($Tipo_Doc == "Envio Directo") {
+                        ?>
+                            <h5 class="text-center">Envio Directo</h5>
+                            <input type="text" name="Tipo_Doc" value="<?php echo $Tipo_Doc; ?>">
+                            <div class="row text-center">
+                                <div class="col-md-6 mb-3">
+                                    <label for="fecha" class="form-label">Costo</label>
+                                    <input type="number" class="form-control" id="Costo" name="Costo" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="folio_guia" class="form-label">Folio Guía</label>
+                                    <input type="text" class="form-control" id="folio_guia" name="folio_guia" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label for="Fecha_Guia" class="form-label">Fecha de la Guía</label>
+                                    <input type="date" class="form-control" id="Fecha_Guia" name="Fecha_Guia" required>
+                                </div>
+
+                            </div>
+                        <?php
+                        }
+                        if ($Tipo_Doc == "Reembarque") {
+                        ?>
+                            <small>Primer Registro para el Envio</small>
+                            <h5 class="text-center">Reembarque</h5>
+                            <div class="row text-center">
+                                <input type="hidden" name="Tipo_Doc" value="<?php echo $Tipo_Doc; ?>">
+                                <div class="col-md-6 mb-3">
                                     <label for="Costo_Reembarque" class="form-label">Costo</label>
-                                    <input type="number" class="form-control" id="Costo_Reembarque" name="Costo_Reembarque"
+                                    <input type="number" class="form-control" id="Costo" name="Costo"
                                         required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="folio_guia" class="form-label">Folio Guía</label>
-                                    <input type="text" class="form-control" id="folio_guia_Reembarque"
-                                        name="folio_guia_Reembarque" required>
+                                    <input type="text" class="form-control" id="folio_guia"
+                                        name="folio_guia" required>
                                 </div>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="Fecha_Guia" class="form-label">Fecha Guía</label>
+                                <input type="date" class="form-control" id="Fecha_Guia"
+                                    name="Fecha_Guia" required>
                             </div>
                         <?php
                         }
@@ -1257,121 +1440,51 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
         </div>
     </div>
 
-    <!-- Modal Entregar Pedido -->
-    <div class="modal fade" id="modalEntrega" tabindex="-1" aria-labelledby="modalEntregaLabel" aria-hidden="true">
+    <!-- Modal para agregar "Envios2" -->
+    <div class="modal fade" id="modalEnvios2" tabindex="-1" aria-labelledby="modalEnvios2Label" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalEntregaLabel">Entregar Pedido</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="modalEnvios2Label">Registro de Información Del Reembarque (Segundo Registro)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="Back/entregar_envio.php?id_salida=<?php echo $id_salida; ?>" method="POST">
-                        <!-- Estado del Pedido -->
-                        <div class="mb-3">
-                            <label for="estadoPedido" class="form-label">Estado del Pedido</label>
-                            <select class="form-select" id="estadoPedido" name="estadoPedido">
-                                <option value="Entregado">Entregado</option>
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Cancelado">Cancelado</option>
-                                <option value="Otro">Otro</option>
-                            </select>
-                        </div>
+                    <!-- Formulario capaz de enviar archivos -->
+                    <form id="formRuta" action="../Back/Preguia/segundoRegistro.php?id_salida=<?php echo $id_salida; ?>" method="POST"
+                        enctype="multipart/form-data">
 
-                        <!-- Campo extra para "Otro" (oculto por defecto) -->
-                        <div class="mb-3" id="otroEstadoDiv" style="display: none;">
-                            <label for="otroEstado" class="form-label">Especifique el Estado</label>
-                            <input type="text" class="form-control" id="otroEstado" name="otroEstado">
-                        </div>
+                        <!-- No. de Guia -->
+                        <div class="row text-center">
+                            <div class="col-md-6 mb-3">
+                                <label for="Tipo_Doc" class="form-label">Tipo de Documento</label>
+                                <input type="text" class="form-control" id="Tipo_Doc" name="Tipo_Doc"
+                                    value="<?php echo $Tipo_Doc; ?>" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="Costo" class="form-label">Costo</label>
+                                <input type="number" class="form-control" id="Costo" name="Costo" required>
+                            </div>
 
-                        <!-- Comentarios -->
-                        <div class="mb-3">
-                            <label for="comentarios" class="form-label">Comentarios</label>
-                            <textarea class="form-control" id="comentarios" name="comentarios" rows="3"></textarea>
-                        </div>
+                            <!-- Fecha -->
+                            <div class="col-md-6 mb-3">
+                                <label for="Fecha_Doc" class="form-label">Fecha de Completado</label>
+                                <input type="date" class="form-control" id="Fecha_Doc" name="Fecha_Doc">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="Id_Guia" class="form-label">Guia Reembolso</label>
+                                <input type="text" class="form-control" id="Id_Guia" name="Id_Guia" required>
+                            </div>
 
-                        <!-- Botones -->
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            <button type="submit" class="btn btn-primary">Enviar</button>
-                        </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Guardar Ruta</button>
+                            </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal para Agregar Información del Empaque -->
-    <div class="modal fade " id="modalAgregarEmpaque" tabindex="-1" aria-labelledby="modalAgregarEmpaqueLabel"
-        aria-hidden="true">
-        <form action="../Back/Empaque/addEmpaque.php?id_salida=<?php echo $id_salida; ?>" method="POST" id="form_agregar_empaque">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalAgregarEmpaqueLabel">Agregar Información del
-                            Empaque
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-
-                    <div class="modal-body text-center">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="FolioSalida" class="form-label">Folio:</label>
-                                <input type="text" class="form-control" id="Id_Salida" name="Id_Salida"
-                                    value="<?php echo $id_salida; ?>" readonly>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="Cliente" class="form-label">Cliente:</label>
-                                <input type="text" class="form-control" id="Cliente" name="Cliente"
-                                    value="<?php echo $nombre_cliente; ?>" readonly>
-                            </div>
-                        </div>
-
-                        <!-- Contenedores Section -->
-                        <div id="contenedores">
-                            <div class="contenedor-item mb-3">
-                                <div class="row">
-                                    <div class="col-md-5 mb-3">
-                                        <label for="id_contenedor" class="form-label">Contenedor</label>
-                                        <select class="form-select contenedor-select" name="id_contenedor[]" required>
-                                            <option value="">Selecciona un Contenedor</option>
-                                            <option value="Caja">Caja</option>
-                                            <option value="Paquete">Paquete</option>
-                                            <option value="Rollo">Rollo</option>
-                                            <option value="Carrete">Carrete</option>
-                                            <option value="Tarima">Tarima</option>
-                                            <option value="Otro">Otro</option>
-                                        </select>
-                                    </div>
-                                    <!-- Campo oculto para "Otro" -->
-                                    <div class="col-md-5 mb-3 contenedor-otro" style="display: none;">
-                                        <label for="otro_contenedor" class="form-label">Especificar otro
-                                            contenedor</label>
-                                        <input type="text" class="form-control" name="otro_contenedor[]">
-                                    </div>
-                                    <div class="col-md-5 mb-3">
-                                        <label for="Cantidad_contenedores" class="form-label">Cantidad</label>
-                                        <input type="number" class="form-control" name="Cantidad_contenedores[]"
-                                            required>
-                                    </div>
-                                    <div class="col-md-2 mb-3 d-flex align-items-end">
-                                        <!-- No delete button for the first row -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Add Contenedor Button -->
-                        <button type="button" class="btn btn-success" id="btnAgregarContenedor">Agregar
-                            Contenedor</button>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-        </form>
-    </div>
 
     <!-- Modal para la Ruta -->
     <div class="modal fade" id="modalRuta" tabindex="-1" aria-labelledby="modalRutaLabel" aria-hidden="true">
@@ -1426,280 +1539,290 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
         <div id="caption"></div>
     </div>
 
-    <!-- External Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.min.js"></script>
-    <script>
-        function scrollToCurrentStep(estado) {
-            const timelineContainer = document.querySelector(".timeline-container");
-            const currentStep = document.querySelector(`#step${estado}`);
+</div>
 
-            if (!timelineContainer || !currentStep) return;
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-            // Si la pantalla es menor a 768px (modo móvil)
-            if (window.innerWidth <= 768) {
-                // Obtener el ancho del contenedor
-                const containerWidth = timelineContainer.offsetWidth;
-                // Obtener la posición del estado actual
-                const stepPosition = currentStep.offsetLeft;
-                // Obtener el ancho del estado actual
-                const stepWidth = currentStep.offsetWidth;
-                // Calcular la posición para centrar el estado actual
-                const scrollPosition = stepPosition - containerWidth / 2 + stepWidth / 2;
+<!-- Bootstrap Bundle JS (incluye Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-                // Aplicar desplazamiento suave
-                timelineContainer.scrollTo({
-                    left: scrollPosition,
-                    behavior: "smooth"
-                });
-            }
+<script>
+    /// Animación de salida para el mensaje:
+    window.addEventListener('DOMContentLoaded', () => {
+        const alerta = document.getElementById("alertaBanner");
+        if (alerta) {
+            setTimeout(() => {
+                alerta.style.opacity = '0';
+                setTimeout(() => {
+                    alerta.remove();
+                }, 500);
+            }, 4000); // Desaparece después de 4 segundos
         }
+    });
 
-        // 🚀 Modificamos la función para llamar a `scrollToCurrentStep`
-        function actualizarTimeline(estado) {
-            console.log("Estado recibido:", estado);
-            const steps = document.querySelectorAll(".step");
-            const progressBar = document.getElementById("progressBar");
 
-            if (!progressBar) {
-                console.error("No se encontró el elemento #progressBar");
-                return;
-            }
+    function scrollToCurrentStep(estado) {
+        const timelineContainer = document.querySelector(".timeline-container");
+        const currentStep = document.querySelector(`#step${estado}`);
 
-            steps.forEach((step, index) => {
-                step.classList.remove("completed", "current");
-                if (index + 1 < estado) {
-                    step.classList.add("completed");
-                } else if (index + 1 === estado) {
-                    step.classList.add("current");
-                }
+        if (!timelineContainer || !currentStep) return;
+
+        // Si la pantalla es menor a 768px (modo móvil)
+        if (window.innerWidth <= 768) {
+            // Obtener el ancho del contenedor
+            const containerWidth = timelineContainer.offsetWidth;
+            // Obtener la posición del estado actual
+            const stepPosition = currentStep.offsetLeft;
+            // Obtener el ancho del estado actual
+            const stepWidth = currentStep.offsetWidth;
+            // Calcular la posición para centrar el estado actual
+            const scrollPosition = stepPosition - containerWidth / 2 + stepWidth / 2;
+
+            // Aplicar desplazamiento suave
+            timelineContainer.scrollTo({
+                left: scrollPosition,
+                behavior: "smooth"
             });
+        }
+    }
 
-            // Llamamos a la función mejorada de scroll
-            scrollToCurrentStep(estado);
+    // 🚀 Modificamos la función para llamar a `scrollToCurrentStep`
+    function actualizarTimeline(estado) {
+        console.log("Estado recibido:", estado);
+        const steps = document.querySelectorAll(".step");
+        const progressBar = document.getElementById("progressBar");
+
+        if (!progressBar) {
+            console.error("No se encontró el elemento #progressBar");
+            return;
         }
 
-
-        // Codigo para mostrar el modal para agregar un nuevo contenedor
-        function previewImage(imageUrl) {
-            document.getElementById('fullSizeImage').src = imageUrl;
-
-            // Optional: Add loading state
-            const img = new Image();
-            img.src = imageUrl;
-            img.onload = function() {
-                document.getElementById('fullSizeImage').style.opacity = 1;
-            };
-            document.getElementById('fullSizeImage').style.opacity = 0;
-        }
-        /// Codigo para extender el tiempo de la sesion activa :
-        setInterval(function() {
-            fetch('extender_sesion.php'); // Llama al script cada 5 minutos
-        }, 900000); // 300,000 ms = 5 minutos
-
-        document.addEventListener("DOMContentLoaded", function() {
-            document.querySelectorAll(".contenedor-select").forEach(select => {
-                select.addEventListener("change", function() {
-                    let contenedorOtro = this.closest(".row").querySelector(".contenedor-otro");
-                    if (this.value === "Otro") {
-                        contenedorOtro.style.display = "block";
-                        contenedorOtro.querySelector("input").setAttribute("required", "true");
-                    } else {
-                        contenedorOtro.style.display = "none";
-                        contenedorOtro.querySelector("input").removeAttribute("required");
-                    }
-                });
-            });
-        });
-
-        document.getElementById("estadoPedido").addEventListener("change", function() {
-            var otroEstadoDiv = document.getElementById("otroEstadoDiv");
-            if (this.value === "Otro") {
-                otroEstadoDiv.style.display = "block";
-            } else {
-                otroEstadoDiv.style.display = "none";
+        steps.forEach((step, index) => {
+            step.classList.remove("completed", "current");
+            if (index + 1 < estado) {
+                step.classList.add("completed");
+            } else if (index + 1 === estado) {
+                step.classList.add("current");
             }
         });
 
-        // ==== Global Variables ====
-        const estadoActual = <?php echo $estadoActual; ?>; // Current state from PHP
-        const id_salida = "<?php echo $id_salida; ?>"; // Current shipment ID from PHP
-        const usuario = "<?php echo $Nombre_Completo; ?>"; // Current user from PHP
+        // Llamamos a la función mejorada de scroll
+        scrollToCurrentStep(estado);
+    }
 
 
+    // Codigo para mostrar el modal para agregar un nuevo contenedor
+    function previewImage(imageUrl) {
+        document.getElementById('fullSizeImage').src = imageUrl;
 
-        // Initialize timeline
-        actualizarTimeline(estadoActual);
+        // Optional: Add loading state
+        const img = new Image();
+        img.src = imageUrl;
+        img.onload = function() {
+            document.getElementById('fullSizeImage').style.opacity = 1;
+        };
+        document.getElementById('fullSizeImage').style.opacity = 0;
+    }
+    /// Codigo para extender el tiempo de la sesion activa :
+    setInterval(function() {
+        fetch('extender_sesion.php'); // Llama al script cada 5 minutos
+    }, 900000); // 300,000 ms = 5 minutos
 
-        document.addEventListener("DOMContentLoaded", function() {
-            const selectSalida = document.getElementById("Salida_Destino");
-            const tablaEntregas = document.getElementById("tabla_entregas");
-
-            // 1. Verificar que los elementos existen
-            console.log("Select element:", selectSalida);
-            console.log("Table element:", tablaEntregas);
-
-            selectSalida.addEventListener("change", function() {
-                const idSalida = this.value;
-                console.log("Selected value:", idSalida); // 2. Verificar valor seleccionado
-
-                if (idSalida) {
-                    console.log("Making fetch request...");
-
-                    // 3. Crear objeto FormData para enviar los datos
-                    const formData = new FormData();
-                    formData.append('id_salida', idSalida);
-
-                    fetch("get_entregas.php", {
-                            method: "POST",
-                            body: formData // Cambiamos a FormData que es más robusto
-                        })
-                        .then(response => {
-                            console.log("Response status:", response.status);
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log("Received data:", data); // 4. Verificar datos recibidos
-                            actualizarTabla(data);
-                        })
-                        .catch(error => {
-                            console.error("Error en la petición:", error);
-                            // Mostrar error al usuario
-                            tablaEntregas.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error al cargar datos</td></tr>`;
-                        });
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".contenedor-select").forEach(select => {
+            select.addEventListener("change", function() {
+                let contenedorOtro = this.closest(".row").querySelector(".contenedor-otro");
+                if (this.value === "Otro") {
+                    contenedorOtro.style.display = "block";
+                    contenedorOtro.querySelector("input").setAttribute("required", "true");
                 } else {
-                    // Limpiar tabla si no hay selección
-                    tablaEntregas.innerHTML = `<tr><td colspan="4" class="text-center">Seleccione una salida</td></tr>`;
+                    contenedorOtro.style.display = "none";
+                    contenedorOtro.querySelector("input").removeAttribute("required");
                 }
             });
+        });
+    });
 
-            function actualizarTabla(data) {
-                console.log("Updating table with:", data);
-                let contenido = '';
 
-                if (data && data.length > 0) {
-                    contenido = data.map(row => `
+    // ==== Global Variables ====
+    const estadoActual = <?php echo $estadoActual; ?>; // Current state from PHP
+    const id_salida = "<?php echo $id_salida; ?>"; // Current shipment ID from PHP
+    const usuario = "<?php echo $Nombre_Completo; ?>"; // Current user from PHP
+
+
+
+    // Initialize timeline
+    actualizarTimeline(estadoActual);
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const selectSalida = document.getElementById("Salida_Destino");
+        const tablaEntregas = document.getElementById("tabla_entregas");
+
+        // 1. Verificar que los elementos existen
+        console.log("Select element:", selectSalida);
+        console.log("Table element:", tablaEntregas);
+
+        selectSalida.addEventListener("change", function() {
+            const idSalida = this.value;
+            console.log("Selected value:", idSalida); // 2. Verificar valor seleccionado
+
+            if (idSalida) {
+                console.log("Making fetch request...");
+
+                // 3. Crear objeto FormData para enviar los datos
+                const formData = new FormData();
+                formData.append('id_salida', idSalida);
+
+                fetch("get_entregas.php", {
+                        method: "POST",
+                        body: formData // Cambiamos a FormData que es más robusto
+                    })
+                    .then(response => {
+                        console.log("Response status:", response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log("Received data:", data); // 4. Verificar datos recibidos
+                        actualizarTabla(data);
+                    })
+                    .catch(error => {
+                        console.error("Error en la petición:", error);
+                        // Mostrar error al usuario
+                        tablaEntregas.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error al cargar datos</td></tr>`;
+                    });
+            } else {
+                // Limpiar tabla si no hay selección
+                tablaEntregas.innerHTML = `<tr><td colspan="4" class="text-center">Seleccione una salida</td></tr>`;
+            }
+        });
+
+        function actualizarTabla(data) {
+            console.log("Updating table with:", data);
+            let contenido = '';
+
+            if (data && data.length > 0) {
+                contenido = data.map(row => `
                 <tr>
                     <td>${row.Id_Orden_Venta || 'N/A'}</td>
                     <td>${row.Id_Entrega || 'N/A'}</td>
                     <td>${row.Partida || 'N/A'}</td>
                     <td>${row.Id_Factura || 'N/A'}</td>
                 </tr>`).join("");
-                } else {
-                    contenido = `<tr><td colspan="4" class="text-center">No hay datos disponibles</td></tr>`;
-                }
+            } else {
+                contenido = `<tr><td colspan="4" class="text-center">No hay datos disponibles</td></tr>`;
+            }
 
-                tablaEntregas.innerHTML = contenido;
+            tablaEntregas.innerHTML = contenido;
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const btnAgregar = document.getElementById("btnAgregarContenedor");
+        const contenedoresDiv = document.getElementById("contenedores");
+        const primerContenedor = document.querySelector(".contenedor-item");
+
+        // Evento para agregar contenedores dinámicos
+        btnAgregar.addEventListener("click", function() {
+            const nuevoContenedor = primerContenedor.cloneNode(true);
+
+            // Limpiar inputs y selects en el nuevo contenedor
+            nuevoContenedor.querySelector("select").value = "";
+            nuevoContenedor.querySelectorAll("input").forEach(input => input.value = "");
+
+            // Mostrar el campo "Otro" si está seleccionado
+            nuevoContenedor.querySelector(".contenedor-otro").style.display = "none";
+
+            // Agregar botón de eliminar
+            const btnEliminar = document.createElement("button");
+            btnEliminar.type = "button";
+            btnEliminar.classList.add("btn", "btn-danger", "btnEliminarContenedor");
+            btnEliminar.textContent = "Eliminar";
+            btnEliminar.addEventListener("click", function() {
+                nuevoContenedor.remove();
+            });
+
+            nuevoContenedor.querySelector(".col-md-2.mb-3").appendChild(btnEliminar);
+            contenedoresDiv.appendChild(nuevoContenedor);
+        });
+
+        // Evento delegado para manejar el select de todos los contenedores, incluso los nuevos
+        document.addEventListener("change", function(e) {
+            if (e.target.classList.contains("contenedor-select")) {
+                const contenedorOtro = e.target.closest(".row").querySelector(".contenedor-otro");
+
+                if (e.target.value === "Otro") {
+                    contenedorOtro.style.display = "block";
+                    contenedorOtro.querySelector("input").setAttribute("required", "true");
+                } else {
+                    contenedorOtro.style.display = "none";
+                    contenedorOtro.querySelector("input").removeAttribute("required");
+                }
             }
         });
+    });
 
-        document.addEventListener("DOMContentLoaded", function() {
-            const btnAgregar = document.getElementById("btnAgregarContenedor");
-            const contenedoresDiv = document.getElementById("contenedores");
-            const primerContenedor = document.querySelector(".contenedor-item");
-
-            // Evento para agregar contenedores dinámicos
-            btnAgregar.addEventListener("click", function() {
-                const nuevoContenedor = primerContenedor.cloneNode(true);
-
-                // Limpiar inputs y selects en el nuevo contenedor
-                nuevoContenedor.querySelector("select").value = "";
-                nuevoContenedor.querySelectorAll("input").forEach(input => input.value = "");
-
-                // Mostrar el campo "Otro" si está seleccionado
-                nuevoContenedor.querySelector(".contenedor-otro").style.display = "none";
-
-                // Agregar botón de eliminar
-                const btnEliminar = document.createElement("button");
-                btnEliminar.type = "button";
-                btnEliminar.classList.add("btn", "btn-danger", "btnEliminarContenedor");
-                btnEliminar.textContent = "Eliminar";
-                btnEliminar.addEventListener("click", function() {
-                    nuevoContenedor.remove();
-                });
-
-                nuevoContenedor.querySelector(".col-md-2.mb-3").appendChild(btnEliminar);
-                contenedoresDiv.appendChild(nuevoContenedor);
+    // ==== Comments Management ====
+    function cargarComentarios() {
+        fetch("../Back/Comentarios/obtener_comentarios.php?id_salida=" + id_salida)
+            .then(response => response.text())
+            .then(data => {
+                const contenedor = document.getElementById("comentariosContainer");
+                contenedor.innerHTML = data;
+                contenedor.scrollTop = 0; // Scroll to the top
             });
+    }
 
-            // Evento delegado para manejar el select de todos los contenedores, incluso los nuevos
-            document.addEventListener("change", function(e) {
-                if (e.target.classList.contains("contenedor-select")) {
-                    const contenedorOtro = e.target.closest(".row").querySelector(".contenedor-otro");
+    function agregarComentario() {
 
-                    if (e.target.value === "Otro") {
-                        contenedorOtro.style.display = "block";
-                        contenedorOtro.querySelector("input").setAttribute("required", "true");
-                    } else {
-                        contenedorOtro.style.display = "none";
-                        contenedorOtro.querySelector("input").removeAttribute("required");
-                    }
-                }
-            });
-        });
+        const comentario = document.getElementById("nuevoComentario").value.trim();
+        console.log(id_salida);
 
-        // ==== Comments Management ====
-        function cargarComentarios() {
-            fetch("../Back/Comentarios/obtener_comentarios.php?id_salida=" + id_salida)
-                .then(response => response.text())
-                .then(data => {
-                    const contenedor = document.getElementById("comentariosContainer");
-                    contenedor.innerHTML = data;
-                    contenedor.scrollTop = 0; // Scroll to the top
-                });
+
+        if (!comentario) {
+            alert("El comentario no puede estar vacío");
+            return;
         }
+        console.log("Comentario: " + comentario);
+        console.log("Id Salida: " + id_salida);
+        console.log("Usuario" + usuario);
 
-        function agregarComentario() {
+        fetch("../Back/Comentarios/agregar_comentario.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `id_salida=${id_salida}&usuario=${usuario}&comentario=${encodeURIComponent(comentario)}`
+            })
+            .then(response => response.text())
+            .then(() => {
+                document.getElementById("nuevoComentario").value = "";
+                cargarComentarios(); // Reload comments
+            });
+    }
 
-            const comentario = document.getElementById("nuevoComentario").value.trim();
-            console.log(id_salida);
+    // Load comments on page load and refresh every 5 seconds
+    cargarComentarios();
+    setInterval(cargarComentarios, 5000);
 
+    // ==== Dynamic Field Display ====
+    document.addEventListener("DOMContentLoaded", function() {
+        const estadoDropdown = document.getElementById("Estado");
+        const extraInfoField = document.getElementById("extraInfoField");
 
-            if (!comentario) {
-                alert("El comentario no puede estar vacío");
-                return;
+        estadoDropdown.addEventListener("change", function() {
+            if (this.value === "Otro") {
+                extraInfoField.removeAttribute("hidden");
+            } else {
+                extraInfoField.setAttribute("hidden", true);
+                document.getElementById("ExtraInfo").value = ""; // Clear the input field
             }
-            console.log("Comentario: " + comentario);
-            console.log("Id Salida: " + id_salida);
-            console.log("Usuario" + usuario);
-
-            fetch("../Back/Comentarios/agregar_comentario.php", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    body: `id_salida=${id_salida}&usuario=${usuario}&comentario=${encodeURIComponent(comentario)}`
-                })
-                .then(response => response.text())
-                .then(() => {
-                    document.getElementById("nuevoComentario").value = "";
-                    cargarComentarios(); // Reload comments
-                });
-        }
-
-        // Load comments on page load and refresh every 5 seconds
-        cargarComentarios();
-        setInterval(cargarComentarios, 5000);
-
-        // ==== Dynamic Field Display ====
-        document.addEventListener("DOMContentLoaded", function() {
-            const estadoDropdown = document.getElementById("Estado");
-            const extraInfoField = document.getElementById("extraInfoField");
-
-            estadoDropdown.addEventListener("change", function() {
-                if (this.value === "Otro") {
-                    extraInfoField.removeAttribute("hidden");
-                } else {
-                    extraInfoField.setAttribute("hidden", true);
-                    document.getElementById("ExtraInfo").value = ""; // Clear the input field
-                }
-            });
         });
-    </script>
-    </body>
+    });
+</script>
+</body>
 
 </html>
