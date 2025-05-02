@@ -3,46 +3,80 @@ require_once("../../../Back/config/config.php");
 $conn = connectMySQLi();
 session_start();
 
+$firstname = $_SESSION['Name'];
 $id_salida = $_GET['id_salida'];
-$Tipo_Doc = $_POST['Tipo_Doc'];
-$Costo = $_POST['Costo'] ?? 0;
-$Fecha_Doc = $_POST['Fecha_Doc'];
-$Id_Guia = $_POST['Id_Guia'];
+$Tipo_doc = $_POST['Tipo_doc'];
+$folio_doc = $_POST['folio_doc'];
+$costo = $_POST['costo'];
+$Fecha_Actual = date("Y-m-d H:i:s");
+$FechaFinal = $_POST['FechaFinal'];
+$GuiaReembarque = $_POST['GuiaReembarque'] ?? "No Asignado";
 
-echo "<br>Id Salida: $id_salida</br>";
-echo "<br>Tipo Documento: $Tipo_Doc</br>";
-echo "<br>Costo: $Costo</br>";
-echo "<br>Fecha Documento: $Fecha_Doc</br>";
-echo "<br>Id Guia: $Id_Guia</br>";
-// Actualizar doc_preguia
-$sql_update_preguia = "UPDATE doc_preguia SET Costo_Reembarque = '$Costo', Fecha_Final = '$Fecha_Doc', 
-Guia_Reembarque = '$Id_Guia'WHERE Id_Salida = $id_salida AND Tipo_Doc = 'Reembarque'";
-$result_update_preguia = mysqli_query($conn, $sql_update_preguia);
 
-if ($result_update_preguia) {
-    echo "<br>Actualización de doc_preguia exitosa</br>";
-    // Actualizar a Completado
-    $sql_update_salida = "UPDATE salidas SET Estado = 'Completado', Id_Status = '27' WHERE Id = $id_salida";
-    $result_update_salida = mysqli_query($conn, $sql_update_salida);
-    if ($result_update_salida) {
-        echo "<br>Actualización de salida exitosa</br>";
-        // Registrar en bitacora
-        $sql_insert_bitacora = "INSERT INTO bitacora (Id_Salida, Accion, Fecha, Responsable) VALUES 
-        ('$id_salida', 'Se agregaron los Costos del envio del Reembarque', '$Fecha_Doc', '$Responsable')";
-        $result_insert_bitacora = mysqli_query($conn, $sql_insert_bitacora);
-        if ($result_insert_bitacora) {
-            echo "<br>Bitacora registrada correctamente</br>";
-            header("Location: ../../index.php");
+echo "<br><strong>Información del form: </strong>";
+echo "<br> Id Salida: " . $id_salida;
+echo "<br> Tipo Doc: " . $Tipo_doc;
+echo "<br> Folio Doc: " . $folio_doc;
+echo "<br> Costo: " . $costo;
+echo "<br> Fecha Final: " . $FechaFinal;
+echo "<br> Guia Reembarque: " . $GuiaReembarque;
+echo "<br> Fecha Actual: " . $Fecha_Actual;
 
-        } else {
-            echo "<br>Error: " . $sql_insert_bitacora . "<br>" . mysqli_error($conn);
-        }
-    } else {
-        echo "<br>Error: " . $sql_update_salida . "<br>" . mysqli_error($conn);
-    }
-} else {
-    echo "<br>Error: " . $sql_update_preguia . "<br>" . mysqli_error($conn);
+echo "<br><strong>Información de la preguía:</strong>";
+
+/* Actualizar campos en la tabla doc_preguia
+*Directo:
+    - Folio_Doc
+    - Costo_Directo
+    - Guia_Directo
+    - Fecha_Final
+*Reembarque:
+    - Folio_Doc
+    - Costo_Reembarque
+    - Guia_Reembarque
+    - Fecha_Final
+*/
+
+if ($Tipo_doc == "Directo") {
+    $updateDocPreGuia = "UPDATE doc_preguia SET Folio_Doc='$folio_doc', Costo_Directo='$costo', Guia_Directo='$folio_doc', Fecha_Final='$FechaFinal' WHERE Id_Salida='$id_salida'";
+} elseif ($Tipo_doc == "Reembarque") {
+    $updateDocPreGuia = "UPDATE doc_preguia SET Folio_Doc='$folio_doc', Costo_Reembarque='$costo', Guia_Reembarque='$GuiaReembarque', Fecha_Final='$FechaFinal' WHERE Id_Salida='$id_salida'";
+} elseif($Tipo_doc == "Ruta"){
+    $updateDocPreGuia = "UPDATE doc_preguia SET Fecha='$Fecha_Actual' WHERE Id_Salida='$id_salida'";
 }
+
+else {
+    echo "<br><strong>Error: Tipo de documento no válido</strong>";
+    exit;
+}
+
+if ($conn->query($updateDocPreGuia) === TRUE) {
+    echo "<br><strong>Registro de preguía exitoso</strong>";
+} else {
+    echo "<br><strong>Error al registrar la preguía: </strong>" . $conn->error;
+}
+
+/// Actualizar Salida
+$updateSalida = "UPDATE salidas SET Estado ='Completado', Id_Status = 27 WHERE Id ='$id_salida'";
+if ($conn->query($updateSalida) === TRUE) {
+    echo "<br><strong>Registro de salida exitoso</strong>";
+} else {
+    echo "<br><strong>Error al registrar la salida: </strong>" . $conn->error;
+}
+
+// Registrar en bitacora
+$insertBitacora = "INSERT INTO bitacora
+ (Id_Salida, Responsable, Fecha, Accion) VALUES 
+ ('$id_salida', '$firstname', '$Fecha_Actual', 'Registro de complemento de preguía')";
+if ($conn->query($insertBitacora) === TRUE) {
+    echo "<br><strong>Registro de bitacora exitoso</strong>";
+} else {
+    echo "<br><strong>Error al registrar la bitacora: </strong>" . $conn->error;
+}
+
+header("Location: ../../Front/detalles.php?id=$id_salida");
+
+
 
 
 ?>

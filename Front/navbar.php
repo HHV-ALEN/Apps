@@ -1,6 +1,9 @@
 <?php
-
 //print_r($_SESSION);
+$Nombre = $_SESSION['Name'];
+// Cortar Solo la primera palabra del nombre
+$Nombre = explode(" ", $Nombre)[0];
+
 
 ?>
 <!DOCTYPE html>
@@ -14,6 +17,32 @@
     <!-- Imagen de icono -->
     <link rel="icon" type="image/png" href="Front/Img/Icono-A.png" />
     <style>
+        /* Custom styling */
+        .user-greeting {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* Hover effect */
+        .user-greeting:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        /* For mobile view */
+        @media (max-width: 991.98px) {
+            .user-greeting {
+                margin-left: auto;
+                margin-right: 1rem;
+            }
+        }
+
         /* Ajustar tamaño del logo */
         .navbar-brand img {
             height: 50px;
@@ -105,14 +134,21 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <img src="/Front/Img/logo.png" alt="Alen Apps">
+            <a class="navbar-brand" href="/Front/dashboard.php">
+                <img src="/Front/Img/logo.png" alt="Alen Apps" style="height: 40px;">
             </a>
+            <!-- User Greeting - Hidden on mobile -->
+            <span class="navbar-text ms-3 d-none d-lg-flex">
+                <span class="user-greeting">
+                    <i class="bi bi-person-circle me-2"></i>
+                    <span class="">Bienvenido,&nbsp;</span>
+                    <span class="fw-semibold text-white"> <?php echo htmlspecialchars($Nombre); ?></span>
+                </span>
+            </span>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
                     <li class="nav-item">
@@ -121,7 +157,7 @@
                         </a>
                     </li>
                     <?php
-                    if ($_SESSION['Area'] == 'Almacen') {
+                    if ($_SESSION['Area'] == 'Cadena De Suministros') {
                     ?>
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="/SupplyChain/index.php">
@@ -129,7 +165,7 @@
                             </a>
                         </li>
                     <?php }
-                    if ($_SESSION['Area'] == 'Recursos Humanos') { ?>
+                    if ($_SESSION['Departamento'] == 'Recursos Humanos') { ?>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-list-ul"></i> Listados Generales
@@ -140,10 +176,7 @@
                             </ul>
                         </li>
                     <?php } ?>
-
-
                 </ul>
-
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link btn btn-logout" href="/Back/Session/logout.php">

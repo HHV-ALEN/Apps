@@ -6,12 +6,10 @@ session_start();
 $Nombre_Usuario = $_SESSION['Name'];
 
 $id_salida = $_POST['Folio'];
-$Cliente = $_POST['Cliente'];
 $EstadoEntrega = $_POST['EstadoEntrega'];
 $Comentario = $_POST['Comentario'];
 $Fecha = date('Y-m-d H:i:s');
 echo "Folio: $id_salida <br>";
-echo "Cliente: $Cliente <br>";
 echo "Estado Entrega: $EstadoEntrega <br>";
 echo "Comentario: $Comentario <br>";
 
@@ -56,10 +54,7 @@ if (!$query) {
 } else {
     echo "<br> - Registro insertado en la tabla 'actualizaciones_bitacora_nueva' correctamente";
 }
+echo "<br>- Id_Salida: $id_salida <br>";
 
-header("Location: ../../Front/detalles.php?id=".$id_salida );
-
-
-
-
+header("Location: ../../Front/detalles.php?id=$id_salida");
 ?>

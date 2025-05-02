@@ -3,6 +3,7 @@ include "../Back/config/config.php";
 session_start();
 //print_r($_SESSION);
 $conn = connectMySQLi();
+//echo $_SESSION['Date'];
 
 ?>
 
@@ -19,18 +20,18 @@ $conn = connectMySQLi();
 
 <body>
   <?php include "navbar.php"; ?>
-  <?php 
+  <?php
 
-if (isset($_SESSION['mensaje'])) {
-  echo "<div class='alert alert-{$_SESSION['tipo_mensaje']} alert-dismissible fade show' role='alert'>
+  if (isset($_SESSION['mensaje'])) {
+    echo "<div class='alert alert-{$_SESSION['tipo_mensaje']} alert-dismissible fade show' role='alert'>
           {$_SESSION['mensaje']}
           <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>
         </div>";
 
-  // Elimina el mensaje para que no se muestre nuevamente al refrescar
-  unset($_SESSION['mensaje']);
-  unset($_SESSION['tipo_mensaje']);
-}
+    // Elimina el mensaje para que no se muestre nuevamente al refrescar
+    unset($_SESSION['mensaje']);
+    unset($_SESSION['tipo_mensaje']);
+  }
 
   ?>
 
@@ -43,6 +44,9 @@ if (isset($_SESSION['mensaje'])) {
           <div>
             <h2 class="h4 mb-0">Bienvenido, <strong><?php echo htmlspecialchars($_SESSION['Username']); ?></strong></h2>
             <small class="text-white-50">Miembro de Alen desde: <?php echo htmlspecialchars($_SESSION['Date']); ?></small>
+            <button><a href="../Academy/index.php">Index - Academy</a></button>
+            <button><a href="../SupplyChain/Front/compras.php">Compras</a></button>
+
           </div>
           <div class="bg-white rounded-circle p-2 shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#0d6efd" class="bi bi-person-circle" viewBox="0 0 16 16">
@@ -70,8 +74,8 @@ if (isset($_SESSION['mensaje'])) {
                   <span class="text-muted"><?php echo htmlspecialchars($_SESSION['Mail']); ?></span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
-                  <span class="fw-bold">Puesto:</span>
-                  <span class="text-muted"><?php echo htmlspecialchars($_SESSION['Puesto']); ?></span>
+                  <span class="fw-bold">Area:</span>
+                  <span class="text-muted"><?php echo htmlspecialchars($_SESSION['Area']); ?></span>
                 </div>
               </div>
             </div>
@@ -84,7 +88,7 @@ if (isset($_SESSION['mensaje'])) {
               <div class="list-group list-group-flush">
                 <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
                   <span class="fw-bold">Departamento:</span>
-                  <span class="text-muted"><?php echo htmlspecialchars($_SESSION['Area']); ?></span>
+                  <span class="text-muted"><?php echo htmlspecialchars($_SESSION['Departamento']); ?></span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
                   <span class="fw-bold">Sucursal:</span>
@@ -161,6 +165,8 @@ if (isset($_SESSION['mensaje'])) {
               </div>
             </div>
           </div>
+
+
 
           <!-- JavaScript for Password Toggle and Validation -->
           <script>
@@ -250,12 +256,29 @@ if (isset($_SESSION['mensaje'])) {
         <div class="text-center py-3">
           <h5 class="text-primary mb-3"><i class="bi bi-sun me-2"></i>Vacaciones</h5>
           <div class="d-flex flex-column flex-md-row justify-content-center gap-2">
-            <button class="btn btn-primary flex-grow-1" data-bs-toggle="modal" data-bs-target="#modalSolicitarVacaciones">
-              <i class="bi bi-file-earmark-plus me-2"></i>Nueva Solicitud
-            </button>
-            <a href="../Vacaciones/Front/detalles.php?Nombre=<?= htmlspecialchars($_SESSION['Name']) ?>" class="btn btn-success flex-grow-1">
-              <i class="bi bi-list-check me-2"></i>Mis Solicitudes
-            </a>
+            <?php
+            $fechaAntiguedad = new DateTime($_SESSION['Date']);
+            $hoy = new DateTime();
+            $intervalo = $fechaAntiguedad->diff($hoy);
+
+            // Verifica si ha pasado 1 año o más
+            $activo = ($intervalo->y >= 1);
+            ?>
+            <!-- Muestra la fecha para fines de debugg
+            <p>Antigüedad desde: <?= htmlspecialchars($_SESSION['Date']) ?></p>-->
+
+            <?php if ($activo): ?>
+              <button class="btn btn-primary flex-grow-1" data-bs-toggle="modal" data-bs-target="#modalSolicitarVacaciones">
+                <i class="bi bi-file-earmark-plus me-2"></i>Nueva Solicitud
+              </button>
+              <a href="../Vacaciones/Front/detalles.php?Nombre=<?= htmlspecialchars($_SESSION['Name']) ?>" class="btn btn-success flex-grow-1">
+                <i class="bi bi-list-check me-2"></i>Mis Solicitudes
+              </a>
+            <?php else: ?>
+              <button class="btn btn-secondary flex-grow-1" disabled>
+                <i class="bi bi-lock me-2"></i>Aún no disponible
+              </button>
+            <?php endif; ?>
             <?php if ($_SESSION['Role'] != 'Empleado') { ?>
               <a href="../Vacaciones/Front/listado_revision.php" class="btn btn-warning flex-grow-1">
                 <i class="bi bi-clock-history me-2"></i>Pendientes
@@ -296,7 +319,7 @@ if (isset($_SESSION['mensaje'])) {
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+            <button type="submit" class="btn btn-primary btn-aceptar" data-loading-text="Procesando...">Enviar Solicitud</button>
           </div>
         </form>
       </div>
@@ -312,50 +335,49 @@ if (isset($_SESSION['mensaje'])) {
         // Define the user's role and area
         $role = $_SESSION['Role'];
         $Area_Del_Personal = $_SESSION['Area'];
+        $Departamento_Del_Personal = $_SESSION['Departamento'];
+        // echo "Rol: " . $role;
+        // echo "<br>";
 
         // Determine the permisos based on the role
-        if ($role == 'Gerente' || $role == 'Admin' || $role == 'Control') {
-          // Gerente, Admin, and Control can see both "Basicos" and "Superiores"
+        if ($role == 'Gerente' || $role == 'Admin' || $role == 'Coordinador' || $role == 'Control') {
+          // Gerente, Admin, and Coordinador can see both "Basicos" and "Superiores"
           $permisos = ['Basicos', 'Superiores'];
-        } else {
+        } elseif ($role == 'Empleado') {
           // For other roles (e.g., Empleado), only show "Basicos"
           $permisos = ['Basicos'];
         }
 
+        // print_r($permisos);
         // Initialize the array to store available functions
         $Arreglo_De_Funciones_Disponibles = array();
 
-        // Build the query based on the permisos
-        if (is_array($permisos)) {
-          // If $permisos is an array (for Gerente, Admin, Control), use IN clause
-          $permisosList = "'" . implode("','", $permisos) . "'";
-          $query = "SELECT * FROM funciones 
-            WHERE (Area = '$Area_Del_Personal' AND Permisos IN ($permisosList)) 
-            OR (Area = 'General' AND Permisos IN ($permisosList))";
-        } else {
-          // If $permisos is a string (for Empleado), use the original logic
-          $query = "SELECT * FROM funciones 
-            WHERE (Area = '$Area_Del_Personal' AND Permisos = '$permisos') 
-            OR (Area = 'General' AND Permisos = '$permisos')";
+        $DepartamentosAlmacen = ['Entrega', 'Empaque', 'Facturación', 'Logistica', 'Chofer'];
+
+        $Arreglo_De_Funciones_Disponibles = [];
+
+        if (in_array('Superiores', $permisos)) {
+          // echo "<br> Entrando al query de nivel Superior";
+          $query_superior = "SELECT * FROM funciones 
+                     WHERE (Area = '$Area_Del_Personal' OR Area = 'General') 
+                     AND Permisos = 'Superiores'";
+          $result = mysqli_query($conn, $query_superior);
+          while ($row = mysqli_fetch_assoc($result)) {
+            $Arreglo_De_Funciones_Disponibles[] = $row;
+          }
         }
 
-        // Execute the query
-        $result = mysqli_query($conn, $query);
-
-        // Fetch the results and store them in the array
-        while ($row = mysqli_fetch_assoc($result)) {
-          $Arreglo_De_Funciones_Disponibles[] = array(
-            "Id" => $row['Id'],
-            "Nombre" => $row['Nombre'],
-            "Permisos" => $row['Permisos'],
-            "Ruta" => $row['Ruta']
-          );
+        if (in_array('Basicos', $permisos)) {
+          // echo "<br> Entrando al query de nivel Básico";
+          $query_basico = "SELECT * FROM funciones 
+                   WHERE (Area = '$Area_Del_Personal' OR Area = 'General') 
+                   AND Permisos = 'Basicos'";
+          $result = mysqli_query($conn, $query_basico);
+          while ($row = mysqli_fetch_assoc($result)) {
+            $Arreglo_De_Funciones_Disponibles[] = $row;
+          }
         }
-
-        // Debugging: Print the array (optional)
-        //print_r($Arreglo_De_Funciones_Disponibles);
         ?>
-
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
           <?php foreach ($Arreglo_De_Funciones_Disponibles as $funcion): ?>
             <div class="col">
@@ -370,11 +392,28 @@ if (isset($_SESSION['mensaje'])) {
       </div>
     </div>
   </div>
-
   <hr>
   <br>
+  <?php include "footer.php"; ?>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    /// Animación para evitar que se den muchos clicks en el submit:
+    document.addEventListener("DOMContentLoaded", function() {
+      const botonesAceptar = document.querySelectorAll(".btn-aceptar");
+
+      botonesAceptar.forEach(boton => {
+        boton.addEventListener("click", function(e) {
+          if (boton.classList.contains("disabled")) {
+            e.preventDefault(); // Evita doble click
+            return;
+          }y
+          boton.classList.add("disabled");
+          boton.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando...`;
+        });
+      });
+    });
+  </script>
 </body>
 
 </html>

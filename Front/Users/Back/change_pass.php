@@ -1,7 +1,6 @@
 <?php 
 include '../../../Back/config/config.php';
 $conn = connectMySQLi();
-session_start();
 session_start(); // ¡No olvides esto!
 
 $Nombre = $_SESSION['Name'];

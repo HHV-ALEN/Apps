@@ -90,7 +90,7 @@ $result_salida = mysqli_query($conn, $query_salida);
 <body>
   <?php include "../Front/navbar.php"; ?>
   <?php
-  if ($_SESSION['Puesto'] == 'Chofer') {
+  if ($_SESSION['Departamento'] == 'Chofer') {
   ?>
     <div class="container mt-5 text-center">
       <div class="card shadow-lg border-0">
@@ -162,10 +162,10 @@ $result_salida = mysqli_query($conn, $query_salida);
             <h5 class="modal-title" id="etiquetaModalLabel">Etiqueta de Salida</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-
           <!-- FORMULARIO EN EL LUGAR CORRECTO -->
           <form action="Back/Entregas/entregaChofer.php" method="POST" id="form_agregar_empaque">
             <div class="modal-body">
+
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label for="FolioSalida" class="form-label">Folio:</label>
@@ -197,7 +197,6 @@ $result_salida = mysqli_query($conn, $query_salida);
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
           </form>
-
         </div>
       </div>
     </div>
@@ -234,7 +233,7 @@ $result_salida = mysqli_query($conn, $query_salida);
           <div class="col-md-12">
             <h2>Listado General</h2>
             <?php
-            if ($_SESSION['Puesto'] == 'Entrega') {
+            if ($_SESSION['Departamento'] == 'Entrega') {
             ?>
               <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#agregarModal">
                 <i class="bi bi-plus-lg"></i> Agregar Nueva Etiqueta de Salida
@@ -321,28 +320,40 @@ $result_salida = mysqli_query($conn, $query_salida);
                       <i class="bi bi-file-earmark-medical"></i> Detalles
                     </a>
                     <?php
-                    /// Para Recbir la entrega con el puesto Empaque
-                    if ($_SESSION['Puesto'] == 'Empaque' && $fila['Estado'] == 'Entrega') {
+                    /// Para Recbir la entrega con el Departamento Empaque
+                    if ($_SESSION['Departamento'] == 'Empaque' && $fila['Estado'] == 'Entrega') {
                       echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Empaque' class='btn btn-warning'>
                         <i class='bi bi-box-seam me-2'></i> Recibir Entrega (Empaque)
                       </a>";
                     }
 
                     /// Para recibir de estado Empaque a Facturación:
-                    if ($_SESSION['Puesto'] == 'Facturación' && $fila['Estado'] == 'Empaque') {
+                    if ($_SESSION['Departamento'] == 'Facturación' && $fila['Estado'] == 'Empaque') {
                       echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Facturación' class='btn btn-warning'>
                       <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Facturación)
                     </a>";
                     }
+
+                    if ($_SESSION['Departamento'] == 'Logistica' && $fila['Estado'] == 'Facturación') {
                     /// Para recibir de estado Facturación a Logistica:
-                    if ($_SESSION['Puesto'] == 'Logistica' && $fila['Estado'] == 'Facturación') {
+                    //1.- Verificar que se encuentre registrado una factura 
+                    /// Consultar la tabla entregas donde Id_Salida = $fila['Id'] y el campo Archivo o N/A o 0 no sea nulo
+                    $query_factura = "SELECT * FROM entregas WHERE Id_Salida = {$fila['Id']} AND Archivo != '0'";
+                    $result_factura = mysqli_query($conn, $query_factura);
+                    $factura_registrada = mysqli_num_rows($result_factura) > 0;
+                    if ($factura_registrada) {
                       echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Logistica' class='btn btn-warning'>
                       <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Logistica)
                     </a>";
+                    } else {
+    
+                      echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Logistica' class='btn btn-warning disabled'>
+                      <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Falta Factura)
+                    </a>";
                     }
-
-
-                    if ($_SESSION['Puesto'] == 'Logistica' && $fila['Estado'] == 'Logistica') {
+                  }
+                  
+                    if ($_SESSION['Departamento'] == 'Logistica' && $fila['Estado'] == 'Logistica') {
                       /// Botón para abrir modal de la Pre-guia 
                       /// Mandar $fila['Id'] y $fila['Nombre_Cliente']
                       echo "<button class='btn btn-info me-2' 
@@ -478,7 +489,7 @@ $result_salida = mysqli_query($conn, $query_salida);
                 <div class="form-floating mb-3">
                   <input type="text" class="form-control" id="cliente_nombre" placeholder="Escribe el nombre del cliente..." autocomplete="off">
                   <input type="hidden" id="id_cliente" name="id_cliente"> <!-- ID del cliente oculto -->
-                  <label for="cliente_nombre">Selecciona un Cliente</label>
+                  <label for="cliente_nombre">Selecciona un Cliente <---</label>
                   <div id="listaClientes" class="dropdown-menu w-100"></div> <!-- Opciones dinámicas -->
                 </div>
               </div>
@@ -840,7 +851,7 @@ $result_salida = mysqli_query($conn, $query_salida);
           let query = $(this).val();
           if (query.length > 1) { // Solo busca si hay más de 1 letra
             $.ajax({
-              url: "Back/buscar_clientes.php",
+              url: "Back/Clientes/buscar_clientes.php",
               method: "POST",
               data: {
                 query: query

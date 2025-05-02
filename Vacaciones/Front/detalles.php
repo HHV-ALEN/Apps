@@ -3,10 +3,10 @@ include("../../Back/config/config.php"); // --> Conexión con Base de datos
 session_start(); // --> Iniciar sesión
 $conn = connectMySQLi();
 $conn = connectMySQLi();
-$Nombre = $_GET['Nombre'] ?? null;
+$Nombre_Consulta = $_GET['Nombre'] ?? null;
 $ver = isset($_GET['ver']) ? $_GET['ver'] : 'actuales';
 /// Actualizar Información de la tabla vacaciones_general
-$NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
+$NombreEncoded = urlencode($Nombre_Consulta); // por si tiene espacios o acentos
 
 ?>
 <!DOCTYPE html>
@@ -15,68 +15,47 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $Nombre ?? "Detalles" ?></title>
+    <title><?php echo $Nombre_Consulta ?? "Detalles" ?></title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" type="image/png" href="../../Front/Img/Icono-A.png" />
-    <style>
-        .bg-2023 {
-            background-color: #d2f4d2 !important;
-            /* Verde menta claro */
-        }
+    <link rel="stylesheet" href="css/detalles.css">
+    <!-- CSS de SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-        .bg-2024 {
-            background-color: #b7c9a8 !important;
-            /* Verde olivo */
-        }
-
-        .bg-otros {
-            background-color: #e9ecef !important;
-            /* Gris claro opcional para otros */
-        }
-
-        .card {
-            margin-bottom: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-header {
-            font-weight: bold;
-        }
-
-        .holiday-period {
-            background-color: #f8f9fa;
-            border-left: 4px solid #0d6efd;
-            padding: 10px;
-            margin-bottom: 15px;
-        }
-
-        .badge-approved {
-            background-color: #198754;
-        }
-
-        .badge-pending {
-            background-color: #ffc107;
-            color: #000;
-        }
-
-        .badge-rejected {
-            background-color: #dc3545;
-        }
-
-        .stats-card {
-            border-top: 3px solid #0d6efd;
-        }
-    </style>
+    <!-- JS de SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
-    <?php include "../../Front/navbar.php"; ?>
+    <?php include "../../Front/navbar.php";
+
+    /// Mostrar mensajes de éxito o error
+    if (isset($_SESSION['Mensaje'])) {
+        $mensaje = $_SESSION['Mensaje'];
+        $tipo_mensaje = $_SESSION['Tipo_Mensaje'];
+        echo "<script>
+            Swal.fire({
+                icon: '$tipo_mensaje',
+                title: '$mensaje',
+                showConfirmButton: true,
+                timer: 3000
+            });
+        </script>";
+        unset($_SESSION['Mensaje']);
+        unset($_SESSION['Tipo_Mensaje']);
+    }
+
+
+    ?>
+
 
     <div class="container py-4">
         <?php
+        
         // Información General de la Persona:
-        $query = "SELECT * FROM vacaciones_general WHERE Usuario = '$Nombre'";
+        
+        $query = "SELECT * FROM vacaciones_general WHERE Usuario = '$Nombre_Consulta'";
         $result = mysqli_query($conn, $query);
 
         if ($result && mysqli_num_rows($result) > 0) {
@@ -103,6 +82,8 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
 
             // Calculate seniority
             $diferencia = $fechaAntiguedad->diff($fechaHoy);
+            
+
             $anios = $diferencia->y;
             $meses = $diferencia->m;
             $dias = $diferencia->d;
@@ -119,9 +100,19 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                 $Dias_Restantes = 18;
             } elseif ($anios == 5) {
                 $Dias_Restantes = 20;
-            } else {
+            } 
+            elseif ($anios >= 6 && $anios <= 10) {
+                $Dias_Restantes = 22;
+            } elseif ($anios > 10 && $anios <= 15) {
+                $Dias_Restantes = 24;
+            } elseif ($anios > 15 && $anios <= 20) {
+                $Dias_Restantes = 26;
+            } elseif ($anios > 20) {
+                $Dias_Restantes = 28;
+            } elseif ($anios > 5) { // Para antigüedad mayor a 5 años
                 $Dias_Restantes = 20 + floor(($anios - 5) / 5) * 2;
             }
+            $Variable_Helper = 0;
         ?>
             <h1 class="mb-4 text-center">Detalles de Vacaciones para <?php echo $row['Usuario']; ?></h1>
 
@@ -134,19 +125,26 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                         </div>
                         <div class="card-body">
                             <div class="d-flex flex-column flex-md-row justify-content-end align-items-stretch gap-2">
-                                <!-- Botón para solicitar Vacaciones -->
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalSolicitarVacaciones">
-                                    📄 Abrir Formulario
-                                </button>
+                                <?php
 
+                                if ($_SESSION['Name'] == $Nombre_Consulta) {
+                                ?>
+                                    <!-- Botón para solicitar Vacaciones -->
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalSolicitarVacaciones">
+                                        📄 Solicitar Vacaciones
+                                    </button>
+
+                                <?php
+                                }
+                                ?>
                                 <!-- Botón Ver Periodo Actual -->
-                                <a href="?Nombre=<?= $NombreEncoded ?>&ver=actuales"
+                                <a href="?Nombre=<?= $Nombre_Consulta ?>&ver=actuales"
                                     class="btn btn-primary <?= ($ver == 'actuales') ? 'active' : '' ?>">
                                     <i class="bi bi-arrow-down-square"></i> Ver Periodo Actual
                                 </a>
 
                                 <!-- Botón Ver Registros Anteriores -->
-                                <a href="?Nombre=<?= $NombreEncoded ?>&ver=anteriores"
+                                <a href="?Nombre=<?= $Nombre_Consulta ?>&ver=anteriores"
                                     class="btn btn-outline-secondary <?= ($ver == 'anteriores') ? 'active' : '' ?>">
                                     Ver Registros Anteriores <i class="bi bi-arrow-right-square"></i>
                                 </a>
@@ -162,7 +160,7 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                             $DiasDeVacaciones_Total = 0;
                             $DiasDePermiso_Total = 0;
 
-                            $query = "SELECT * FROM vacaciones_solicitudes WHERE Usuario = '$Nombre' AND Tipo_Permiso = 'Vacaciones'";
+                            $query = "SELECT * FROM vacaciones_solicitudes WHERE Usuario = '$Nombre_Consulta' AND Tipo_Permiso = 'Vacaciones' and Estado != 'Inactivo'";
                             $result = mysqli_query($conn, $query);
 
                             if (mysqli_num_rows($result) > 0) {
@@ -176,12 +174,14 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                                             <th>Fecha de Solicitud</th>
                                             <th>Tipo de Permiso</th>
                                             <th>Estado</th>
+                                            <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>';
 
 
                                 while ($row = mysqli_fetch_assoc($result)) {
+                                    $Id_vacaciones = $row['Id'];
                                     $Fecha_Inicio = $row['Fecha_Inicio'];
                                     $Fecha_Fin = $row['Fecha_Fin'];
                                     $Tipo_Permiso = $row['Tipo_Permiso'];
@@ -219,11 +219,31 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                                         <td>' . $Fecha_Solicitud . '</td>
                                         <td>' . $Tipo_Permiso . '</td>
                                         <td><span class="badge ' . $badgeClass . '">' . $Estado . '</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-warning editarVacaciones" 
+                                                data-id="' . $Id_vacaciones . '" 
+                                                data-fecha-inicio="' . $Fecha_Inicio . '" 
+                                                data-fecha-fin="' . $Fecha_Fin . '" 
+                                                data-fecha-solicitud="' . $Fecha_Solicitud . '" 
+                                                data-tipo-permiso="' . $Tipo_Permiso . '"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalEditarVacaciones">
+                                                <i class="bi bi-pencil-square"></i> Editar 
+                                            </button>
+                                            
+                                            <!-- Botón Eliminar -->
+                                            <button class="btn btn-sm btn-danger eliminarVacaciones" 
+                                                data-id="' . $Id_vacaciones . '"
+                                                data-nombre="' . $Nombre_Consulta . '">
+                                                <i class="bi bi-trash3-fill"></i> Eliminar
+                                            </button>
+                                        </td>
                                     </tr>';
-
-                                        if ($Estado == "Aprobada" ) {
+                                    
+                                        if ($Estado == "Aprobada") {
                                             if ($Tipo_Permiso == "Vacaciones") {
                                                 $DiasDeVacaciones_Total += $Dias_Habiles;
+                                                $Variable_Helper = $DiasDeVacaciones_Total;
                                             } elseif ($Tipo_Permiso == "Permiso") {
                                                 $DiasDePermiso_Total += $Dias_Habiles;
                                             }
@@ -231,10 +251,8 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                                     }
                                     /// Apartado para ver los registros de periodos anteriores
                                     elseif ($ver == 'anteriores' && $inicioSolicitud < $inicioPeriodo) {
+                                        $Variable_Helper = 0;
                                         $Dias_Habiles = contarDiasHabiles($Fecha_Inicio, $Fecha_Fin, $Dias_Feriados);
-
-                                        // Asignar clase de fondo según el año
-
 
                                         // Determine badge class based on status
                                         $badgeClass = '';
@@ -259,6 +277,24 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                                             <td>' . $Fecha_Solicitud . '</td>
                                             <td>' . $Tipo_Permiso . '</td>
                                             <td><span class="badge ' . $badgeClass . '">' . $Estado . '</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-warning editarVacaciones" 
+                                                    data-id="' . $Id_vacaciones . '" 
+                                                    data-fecha-inicio="' . $Fecha_Inicio . '" 
+                                                    data-fecha-fin="' . $Fecha_Fin . '" 
+                                                    data-fecha-solicitud="' . $Fecha_Solicitud . '" 
+                                                    data-tipo-permiso="' . $Tipo_Permiso . '"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#modalEditarVacaciones">
+                                                    <i class="bi bi-pencil-square"></i> Editar
+                                                </button>
+                                                
+                                                <!-- Botón Eliminar -->
+                                                <button class="btn btn-sm btn-danger eliminarVacaciones" 
+                                                    data-id="<?php echo $Id_vacaciones; ?>">
+                                                    <i class="bi bi-trash3-fill"></i> Eliminar
+                                                </button>
+                                            </td>
                                             </tr>';
 
 
@@ -275,18 +311,32 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                             </table>
                         </div>';
                             } else {
-                                echo '<div class="alert alert-info">No se encontraron Permisos Especiales registrados para este periodo. </div>';
+                                echo '<div class="alert alert-info">No se encontraron vacaciones para este periodo. </div>';
+                            }
+                            
+                            if ($Variable_Helper != 0 || $Variable_Helper != null) {
+                                $RESULT = $Dias_Restantes - $Variable_Helper;
+                                $UPDATE = "UPDATE vacaciones_general SET Dias_Restantes = '$RESULT', Dias_Solicitados = '$Variable_Helper' WHERE Usuario = 'Nombre_Consulta'";
+                                $result = mysqli_query($conn, $UPDATE);
+                                if ($result) {
+                                    echo "<small>Información actualizada correctamente.</small>";
+                                } else {
+                                    echo "Error al actualizar la tabla: " . mysqli_error($conn);
+                                }
+                            } else {
+                                //echo "<br> <small>Variable Helper: No Asignado</small>";
+                                $Variable_Helper = 0;
                             }
                             ?>
                         </div>
                     </div>
                 </div>
             </div>
-
             <!-- Tarjetas de Información -->
             <div class="row mt-4">
                 <div class="col-md-4">
                     <div class="card stats-card">
+
                         <div class="card-body text-center">
                             <h5 class="card-title">Días Correspondientes</h5>
                             <h2 class="text-primary"><?php echo $Dias_Restantes; ?></h2>
@@ -298,7 +348,10 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                     <div class="card stats-card">
                         <div class="card-body text-center">
                             <h5 class="card-title">Días Usados</h5>
-                            <h2 class="text-warning"><?php echo $DiasDeVacaciones_Total; ?></h2>
+                            <h2 class="text-warning"><?php
+
+
+                                                        echo $DiasDeVacaciones_Total; ?></h2>
                             <p class="text-muted">En este periodo</p>
                         </div>
                     </div>
@@ -306,8 +359,12 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                 <div class="col-md-4">
                     <div class="card stats-card">
                         <div class="card-body text-center">
+
                             <h5 class="card-title">Dias Restantes</h5>
-                            <h2 class="text-success"><?php echo $Dias_Restantes - $DiasDeVacaciones_Total; ?></h2>
+                            <h2 class="text-success"><?php
+                                                        echo $Dias_Restantes - $DiasDeVacaciones_Total;
+
+                                                        ?></h2>
                             <p class="text-muted">Disponibles</p>
                         </div>
                     </div>
@@ -333,7 +390,7 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                             $DiasDeVacaciones_Total = 0;
                             $DiasDePermiso_Total = 0;
 
-                            $query = "SELECT * FROM vacaciones_solicitudes WHERE Usuario = '$Nombre' AND Tipo_Permiso = 'Permiso Especial'";
+                            $query = "SELECT * FROM vacaciones_solicitudes WHERE Usuario = 'Nombre_Consulta' AND Tipo_Permiso = 'Permiso Especial' AND Estado != 'Inactivo'";
                             $result = mysqli_query($conn, $query);
 
                             if (mysqli_num_rows($result) > 0) {
@@ -353,6 +410,7 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
 
 
                                 while ($row = mysqli_fetch_assoc($result)) {
+                                    $Id_vacaciones = $row['Id'];
                                     $Fecha_Inicio = $row['Fecha_Inicio'];
                                     $Fecha_Fin = $row['Fecha_Fin'];
                                     $Tipo_Permiso = $row['Tipo_Permiso'];
@@ -382,7 +440,7 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                                         } else {
                                             $fondoPeriodo = 'bg-otros'; // opcional para otros años
                                         }
-                                        // Mostrar la fila de la tabla
+                                        // Mostrar la fila de la tabla <--- Actuales
                                         echo '<tr class="text-center">
                                         <td>' . $Fecha_Inicio . '</td>
                                         <td>' . $Fecha_Fin . '</td>
@@ -390,6 +448,25 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                                         <td>' . $Fecha_Solicitud . '</td>
                                         <td>' . $Tipo_Permiso . '</td>
                                         <td><span class="badge ' . $badgeClass . '">' . $Estado . '</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-warning editarVacaciones" 
+                                                data-id="' . $Id_vacaciones . '" 
+                                                data-fecha-inicio="' . $Fecha_Inicio . '" 
+                                                data-fecha-fin="' . $Fecha_Fin . '" 
+                                                data-fecha-solicitud="' . $Fecha_Solicitud . '" 
+                                                data-tipo-permiso="' . $Tipo_Permiso . '"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalEditarVacaciones">
+                                                <i class="bi bi-pencil-square"></i> Editar
+                                            </button>
+
+                                                                                    
+                                            <!-- Botón Eliminar -->
+                                            <button class="btn btn-sm btn-danger eliminarVacaciones" 
+                                                data-id="<?php echo $Id_vacaciones; ?>">
+                                                <i class="bi bi-trash3-fill"></i> Eliminar
+                                            </button>
+                                        </td>
                                     </tr>';
 
                                         if ($Estado == "Aprobada") {
@@ -423,6 +500,7 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                                             $fondoPeriodo = 'bg-otros'; // opcional para otros años
                                         }
 
+                                        /// Mostrar la fila de la tabla <--- Anteriores
                                         echo '<tr class="text-center ' . $fondoPeriodo . '">
                                             <td>' . $Fecha_Inicio . '</td>
                                             <td>' . $Fecha_Fin . '</td>
@@ -430,7 +508,27 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                                             <td>' . $Fecha_Solicitud . '</td>
                                             <td>' . $Tipo_Permiso . '</td>
                                             <td><span class="badge ' . $badgeClass . '">' . $Estado . '</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-warning editarVacaciones" 
+
+                                                    data-id="' . $Id_vacaciones . '" 
+                                                    data-fecha-inicio="' . $Fecha_Inicio . '" 
+                                                    data-fecha-fin="' . $Fecha_Fin . '" 
+                                                    data-fecha-solicitud="' . $Fecha_Solicitud . '" 
+                                                    data-tipo-permiso="' . $Tipo_Permiso . '"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#modalEditarVacaciones">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                                
+                                                <!-- Botón Eliminar -->
+                                                <button class="btn btn-sm btn-danger eliminarVacaciones" 
+                                                    data-id="<?php echo $Id_vacaciones; ?>">
+                                                    <i class="bi bi-trash3-fill"></i> Eliminar
+                                                </button>
+                                            </td>
                                             </tr>';
+
 
 
                                         if ($Estado == "Aprobada") {
@@ -446,30 +544,50 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                             </table>
                         </div>';
                             } else {
-                                echo '<div class="alert alert-info">No se encontraron vacaciones registradas para este periodo. </div>';
+                                echo '<div class="alert alert-info">No se encontraron Permisos Especiales registrados para este periodo. </div>';
                             }
                             ?>
                         </div>
                     </div>
                 </div>
             </div>
-
-
-
-
-
-
-
-
+            <!-- Modal para editar vacaciones -->
+            <div class="modal fade" id="modalEditarVacaciones" tabindex="-1" aria-labelledby="modalEditarVacacionesLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="formEditarVacaciones" action="../Back/Editar_Vacaciones.php?Nombre=<?php echo $Nombre_Consulta ?>" method="POST">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalEditarVacacionesLabel">Editar Vacaciones</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" id="editIdVacaciones" name="id">
+                                <div class="mb-3">
+                                    <label for="editFechaInicio" class="form-label">Fecha Inicio</label>
+                                    <input type="date" class="form-control" id="editFechaInicio" name="fecha_inicio">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editFechaFin" class="form-label">Fecha Fin</label>
+                                    <input type="date" class="form-control" id="editFechaFin" name="fecha_fin">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
 
         <?php
         } else {
             echo '<div class="alert alert-danger">Información No encontrada.</div>';
         }
-        $Nombre = $_GET['Nombre'] ?? null;
+        $Nombre_Consulta = $_GET['Nombre'] ?? null;
 
         // Información General de la Persona:
-        $query = "SELECT * FROM vacaciones_general WHERE Usuario = '$Nombre'";
+        $query = "SELECT * FROM vacaciones_general WHERE Usuario = '$Nombre_Consulta'";
         $result = mysqli_query($conn, $query);
 
         if ($result && mysqli_num_rows($result) > 0) {
@@ -500,7 +618,6 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                                 <p><strong>Dias Correspondientes:</strong> <?php echo $Dias_Restantes; ?></p>
                                 <p><strong>Permisos Especiales: </strong><?php echo $DiasDePermiso_Total; ?></p>
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -511,17 +628,7 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
     //echo "Dias Correspondientes: " . $Dias_Restantes . "<br>";
     //echo "Dias Usados: " . $DiasDeVacaciones_Total . "<br>";
     //echo "Dias Restantes: " . ($Dias_Restantes - $DiasDeVacaciones_Total) . "<br>";
-    $Dias_Restantes_total = $Dias_Restantes - $DiasDeVacaciones_Total;
 
-    // Cuando se tenga esta información, actualizar la tabla vacaciones_general
-    // Actualizar la tabla vacaciones_general con los días restantes
-    $UPDATE = "UPDATE vacaciones_general SET Dias_Restantes = '$Dias_Restantes_total', Dias_Solicitados = '$DiasDeVacaciones_Total' WHERE Usuario = '$Nombre'";
-    $result = mysqli_query($conn, $UPDATE);
-    if ($result) {
-        echo "Información actualizada correctamente.";
-    } else {
-        echo "Error al actualizar la tabla: " . mysqli_error($conn);
-    }
     ?>
 
     <!-- Modal Para solicitar Vacaciones -->
@@ -553,14 +660,76 @@ $NombreEncoded = urlencode($Nombre); // por si tiene espacios o acentos
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+                        <button type="submit" class="btn btn-primary btn-aceptar" data-loading-text="Procesando...">Enviar Solicitud</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Llenar el modal al dar clic en "Editar"
+            document.querySelectorAll('.editarVacaciones').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.getElementById('editIdVacaciones').value = this.dataset.id;
+                    document.getElementById('editFechaInicio').value = this.dataset.fechaInicio;
+                    document.getElementById('editFechaFin').value = this.dataset.fechaFin;
+                    document.getElementById('editTipoPermiso').value = this.dataset.tipoPermiso;
+                });
+            });
+
+            document.querySelectorAll('.eliminarVacaciones').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const id = this.dataset.id;
+        const nombre = this.dataset.nombre; // 👈 obtenemos el nombre correctamente
+
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: 'Esta acción no se puede deshacer',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch('../Back/Eliminar_Vacaciones.php?id=' + id + '&Nombre=' + encodeURIComponent(nombre))
+                    .then(res => res.text())
+                    .then(data => {
+                        console.log('Respuesta del back:', data);
+                        Swal.fire('Eliminado', 'El registro ha sido eliminado.', 'success')
+                            .then(() => location.reload());
+                    })
+                    .catch(err => Swal.fire('Error', 'No se pudo eliminar el registro.', 'error'));
+            }
+        });
+    });
+});
+
+
+
+        });
+    </script>
+
+    <script>
+        /// Animación para evitar que se den muchos clicks en el submit:
+        document.addEventListener("DOMContentLoaded", function() {
+            const botonesAceptar = document.querySelectorAll(".btn-aceptar");
+
+            botonesAceptar.forEach(boton => {
+                boton.addEventListener("click", function(e) {
+                    if (boton.classList.contains("disabled")) {
+                        e.preventDefault(); // Evita doble click
+                        return;
+                    }
+                    boton.classList.add("disabled");
+                    boton.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando...`;
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

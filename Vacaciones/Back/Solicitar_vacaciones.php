@@ -108,10 +108,11 @@ $mail->CharSet = 'UTF-8';
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; background-color: #f9f9f9;">
     <h2 style="color: #2c3e50; text-align: center;">🤩 Solicitud de Vacaciones</h2>
     <p style="font-size: 16px; color: #333;">
-      Estimado/a <strong>Gerente</strong>,
+      Estimado/a:,
     </p>
     <p style="font-size: 16px; color: #333;">
-      El colaborador <strong style="color: #007bff;">' . htmlspecialchars($Nombre) . '</strong> ha registrado una <strong>solicitud de vacaciones</strong> en el sistema, con los siguientes detalles:
+      El colaborador <strong style="color: #007bff;">' . htmlspecialchars($Nombre) . '</strong> ha registrado
+       una <strong>solicitud de ' . $tipo_permiso . '</strong> en el sistema, con los siguientes detalles:
     </p>
     <ul style="font-size: 16px; color: #555; line-height: 1.6;">
       <li><strong>📅 Fecha de Inicio:</strong> ' . htmlspecialchars($fecha_inicio) . '</li>
@@ -140,7 +141,6 @@ $mail->CharSet = 'UTF-8';
 } catch (Exception $e) {
     echo "❌ Error al enviar correo: {$mail->ErrorInfo}";
 }
-
 
 header("Location: /Vacaciones/Front/detalles.php?Nombre=" . $Nombre); // Redirigir a la página de detalles con el nombre del usuario
 
