@@ -28,7 +28,7 @@ $CarpetaContenedora = '../Back/Files/'; // Carpeta contenedora de los archivoss
 $rutaWeb = "../Back/Files/img/";
 
 $Nombre_Completo = $_SESSION['Name'];
-$Tipo_Usuario = $_SESSION['Puesto'];
+$Tipo_Usuario = $_SESSION['Departamento'];
 
 $id_salida = $_GET['id'];
 $Id_Salida_Original = $id_salida;
@@ -197,7 +197,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalles - Salida No. <?php echo $id_salida; ?></title>
-    <link rel="icon" type="image/png" href="Front/Img/Icono-A.png" />
+    <link rel="icon" type="image/png" href="../../Front/Img/Icono-A.png" />
     <!-- FontAwesome 6 (Última versión estable) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/detalles.css">
@@ -265,17 +265,60 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
     ];
     // Asegurar que el id_status existe y tiene un mapeo
     $estadoActual = isset($estadoMap[$id_status]) ? $estadoMap[$id_status] : 1;
-    echo "Estado Actual: " . $estadoActual;
+    //echo "Estado Actual: " . $estadoActual;
     ?>
 
     <hr>
     <!-- Botón para Entrega si aplica -->
     <?php
-    if ($_SESSION['Puesto'] == "Chofer" && $Estado == 'A Ruta') { ?>
+    if ($_SESSION['Departamento'] == "Chofer" && $Estado == 'A Ruta') { ?>
         <div class="text-center">
-            <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#modalEntrega">
+            <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#etiquetaModal">
                 <i class="fas fa-check-circle"></i> Entregar Pedido
             </button>
+        </div>
+
+        <!-- Modal de entrega de pedido -->
+        <div class="modal fade" id="etiquetaModal" tabindex="-1" aria-labelledby="etiquetaModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="etiquetaModalLabel">Etiqueta de Salida</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <!-- FORMULARIO EN EL LUGAR CORRECTO -->
+                    <form action="../Back/Entregas/entregaChofer.php" method="POST" id="form_agregar_empaque">
+                        <input type="hidden" name="Id_Salida" value="<?php echo $id_salida; ?>">
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="FolioSalida" class="form-label">Folio:</label>
+                                    <input type="text" class="form-control" id="FolioSalida" name="Folio" value="<?php echo $id_salida; ?>" readonly>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="Entrega" class="form-label">Estado de la Entrega:</label>
+                                    <select class="form-select" name="EstadoEntrega" id="Entrega" style="cursor: pointer;">
+                                        <option value="Entrega A Cliente">Entrega A Cliente</option>
+                                        <option value="Entrega A Transporte">Entrega A Transporte</option>
+                                        <option value="No Entregado">No Entregado</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label for="Comentario" class="form-label">Comentario:</label>
+                                    <input type="text" class="form-control" id="Comentario" name="Comentario" placeholder="Agrega un comentario...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     <?php } ?>
     <br>
@@ -291,7 +334,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                 </div>
 
                 <!-- Botón a la derecha, que se muestra solo en el estado Envíos -->
-                <?php if ($Estado == 'Envios' && $_SESSION['Puesto'] == 'Logistica') { ?>
+                <?php if ($Estado == 'Envios' && $_SESSION['Departamento'] == 'Logistica' || $Estado == 'Envíos' && $_SESSION['Departamento'] == 'Logistica') { ?>
                     <div>
                         <?php
                         // Botón para registrar Ruta de envio [1]
@@ -304,17 +347,10 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                             $Folio_Doc = $DocPreguia['Folio_Doc'] ?? 'N/A';
                             $Id_Preguia = $DocPreguia['Id_Preguia'] ?? 'N/A';
                         ?>
+                            <!-- Boton para abrir modal de registrar ruta de envio -->
                             <button class="btn btn-light btn-sm me-3" data-bs-toggle="modal" data-bs-target="#modalEnvios2">
-                                <i class="bi bi-send"></i> Registrar Ruta de Envío[2]
+                                <i class="bi bi-send"></i> Registrar Ruta de Envío
                             </button>
-
-                        <?php
-                        } else {
-                        ?>
-                            <button class="btn btn-light btn-sm me-3" data-bs-toggle="modal" data-bs-target="#modalEnvios">
-                                <i class="fas fa-route"></i> Registrar Ruta de Envío
-                            </button>
-
                         <?php
                         }
                         ?>
@@ -407,30 +443,37 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                             $DocPreguia_result = mysqli_query($conn, $DocPreguia_query);
                             if (mysqli_num_rows($DocPreguia_result) > 0) {
                                 $DocPreguia = mysqli_fetch_array($DocPreguia_result);
+
+                                $Tipo_Doc = $DocPreguia['Tipo_Doc'];
                                 $Folio_Doc_Guia = $DocPreguia['Folio_Doc'] ?? 'N/A';
                                 $Id_Preguia = $DocPreguia['Id_Preguia'] ?? 'N/A';
                                 $Fecha_Envio = $DocPreguia['Fecha'] ?? 'N/A';
                                 $Costo = $DocPreguia['Costo_Directo'] ?? 'N/A';
                                 $Fecha_Final = $DocPreguia['Fecha_Final'] ?? 'N/A';
-                                $Guia_Reembarque = $DocPreguia['Guia_Directo'] ?? 'N/A';
+                                $Guia_Reembarque = $DocPreguia['Guia_Reembarque'] ?? 'N/A';
                                 $Costo_Reembarque = $DocPreguia['Costo_Reembarque'] ?? 'N/A';
 
-                                echo "<p class='mb-1'><strong>Folio de Guía:</strong> $Folio_Doc_Guia</p>";
-                                echo "<p class='mb-1'><strong>Id Preguia:</strong> $Id_Preguia</p>";
-                                echo "<p class='mb-1'><strong>Fecha de Envío:</strong> $Fecha_Envio</p>";
-                                echo "<p class='mb-1'><strong>Costo de Envío:</strong> $ $Costo</p>";
-                                echo "<p class='mb-1'><strong>Folio de Guía Reembarque:</strong> $Guia_Reembarque</p>";
-                                echo "<p class='mb-1'><strong>Costo de Envío Reembarque:</strong> $ $Costo_Reembarque</p>";
-                                echo "<p class='mb-1'><strong>Fecha de Envío Reembarque:</strong> $Fecha_Final</p>";
-                            } else {
-                                echo "No hay información en doc_preguia";
+                                if ($Tipo_Doc == 'Reembarque') {
+                                    echo "<p class='mb-1'><strong>Folio de Guía:</strong> $Folio_Doc_Guia</p>";
+                                    echo "<p class='mb-1'><strong>Id Preguia:</strong> $Id_Preguia</p>";
+                                    echo "<p class='mb-1'><strong>Fecha de Envío:</strong> $Fecha_Envio</p>";
+                                    echo "<p class='mb-1'><strong>Folio de Guía Reembarque:</strong> $Guia_Reembarque</p>";
+                                    echo "<p class='mb-1'><strong>Costo de Envío Reembarque:</strong> $ $Costo_Reembarque</p>";
+                                    echo "<p class='mb-1'><strong>Fecha de Envío Reembarque:</strong> $Fecha_Final</p>";
+                                } elseif ($Tipo_Doc == 'Directo') {
+                                    echo "<p class='mb-1'><strong>Folio de Guía:</strong> $Folio_Doc_Guia</p>";
+                                    echo "<p class='mb-1'><strong>Id Preguia:</strong> $Id_Preguia</p>";
+                                    echo "<p class='mb-1'><strong>Fecha de Envío:</strong> $Fecha_Envio</p>";
+                                    echo "<p class='mb-1'><strong>Costo de Envío:</strong> $ $Costo</p>";
+                                    echo "<p class='mb-1'><strong>Fecha de Envío:</strong> $Fecha_Final</p>";
+                                } elseif ($Tipo_Doc == 'Ruta') {
+                                    echo "<p class='mb-1'><strong>Fecha de Envío:</strong> $Fecha_Envio</p>";
+                                }
                             }
                         }
 
                         ?>
                     </div>
-
-
                     <div class="col-md-6">
                         <h6 class="text-primary"><i class="fas fa-store"></i> Sucursal</h6>
                         <p class="mb-1"><strong>Status:</strong> <?php echo $Estado; ?></p>
@@ -438,26 +481,62 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                         <p class="mb-1"><strong>Método de Pago:</strong> <?php echo $Metodo_Pago; ?></p>
 
                         <hr>
-                        <p class="mb-1"><strong>Fortmato de Pre-Guía</strong> </p>
-                        <!-- Botón para Descargar el formato de Pre-Guía -->
-                        <?php
-                        /// Verificar que cuando se encuentre el archivo registrado, aparezca el botón de descargar
-                        // Consulta en la tabla "preguia_refactor"
-                        $Formato_query = "SELECT * FROM preguia WHERE Id_Salida = '$id_salida'";
-                        $Formato_result = mysqli_query($conn, $Formato_query);
-                        /// Si no hay registro, Mostrar "No Disponible"
-                        if (mysqli_num_rows($Formato_result) > 0) {
-                        ?>
-                            <a href="../Back/download_formato.php?Id_Salida=<?php echo $id_salida; ?>&Tipo_Doc=<?php echo $Tipo_Doc; ?>"
-                                class="btn btn-success btn-sm">
-                                <i class="fas fa-file-download"></i> Descargar Formato de Pre-Guía
-                            </a>
-                        <?php
-                        } else {
-                            echo "No disponible";
-                        }
 
-                        ?>
+                        <!-- Botón para Descargar el formato de Pre-Guía -->
+                        <div class="row">
+                            <p class="mb-1 center-text"><strong>Formatos de Descarga:</strong> </p>
+                            <div class="col-md-6">
+                                <?php
+                                /// Verificar que cuando se encuentre el archivo registrado, aparezca el botón de descargar
+                                // Consulta en la tabla "preguia_refactor"
+                                $Formato_query = "SELECT * FROM preguia WHERE Id_Salida = '$id_salida'";
+                                $Formato_result = mysqli_query($conn, $Formato_query);
+                                /// Si no hay registro, Mostrar "No Disponible"
+                                if (mysqli_num_rows($Formato_result) > 0) {
+                                ?>
+                                    <a href="../Back/download_formato.php?Id_Salida=<?php echo $id_salida; ?>&Tipo_Doc=<?php echo $Tipo_Doc; ?>"
+                                        class="btn btn-success btn-sm">
+                                        <i class="fas fa-file-download"></i> Descargar Formato de Pre-Guía
+                                    </a>
+                                <?php
+                                } else {
+                                    echo "No disponible";
+                                }
+                                ?>
+                            </div>
+                            <?php
+                            /// Mostrar Detalles del envio solo hasta que se haya registrado la preguia
+                            // si la consulta a la tabla preguia tiene resultados, mostrar el boton, si no, no mostrarlo
+                            $Preguia_Consult = "SELECT * FROM preguia WHERE Id_Salida = $id_salida";
+                            $Preguia_Consult_result = mysqli_query($conn, $Preguia_Consult);
+                            if (mysqli_num_rows($DocPreguia_result) > 0) {
+                            ?>
+                                <div class="col-md-6">
+                                    <a href="../Back/Etiqueta_Detalle.php?Id_Salida=<?php echo $id_salida; ?>"
+                                        class="btn btn-success btn-sm">
+                                        <i class="fas fa-file-download"></i> Formato Detalles de Envio
+                                    </a>
+                                </div>
+
+                            <?php
+
+                            } else {
+                            ?>
+                                <div class="col-md-6">
+                                    <a 
+                                        class="btn btn-success btn-sm disabled" >
+                                        <i class="fas fa-file-download"></i> Formato Detalles de Envio
+                                    </a>
+                                </div>
+                            <?php
+                            }
+
+
+
+
+                            ?>
+
+                        </div>
 
                     </div>
                 </div>
@@ -467,6 +546,101 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
 
             </div>
 
+        </div>
+    </div>
+
+    <!-- Modal para registrar ruta de envio -->
+    <div class="modal fade" id="modalEnvios2" tabindex="-1" aria-labelledby="modalEnviosLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEnviosLabel">Registrar Ruta de Envío</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="../Back/Preguia/segundoRegistro.php?id_salida=<?php echo $id_salida; ?>">
+                    <div class="modal-body">
+
+                        <!-- Hidden Inputs -->
+                        <input type="hidden" name="Id_Salida" value="<?php echo $id_salida; ?>">
+                        <input type="hidden" name="Tipo_Doc" value="<?php echo $Tipo_Doc; ?>">
+
+                        <?php
+                        /// Mostrar campos segun el Tipo_Doc
+                        if ($Tipo_Doc == 'Directo') {
+                        ?>
+
+                            <div class="row">
+                                <div class="mb-3 col-md-6">
+                                    <label for="Tipo_doc" class="form-label">Tipo de Documento: </label>
+                                    <input type="text" class="form-control" id="Tipo_doc" name="Tipo_doc" value="<?php echo $Tipo_Doc; ?>" readonly>
+                                </div>
+                                <div class="mb-3 col-md-6">
+                                    <label for="folio_doc" class="form-label">Folio de la Guia:</label>
+                                    <input type="text" class="form-control" id="folio_doc" name="folio_doc">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="mb-3 col-md-6">
+                                    <label for="costo" class="form-label">Costo: </label>
+                                    <input type="numeric" class="form-control" id="costo" name="costo">
+                                </div>
+                                <div class="mb-3 col-md-6">
+                                    <label for="FechaFinal" class="form-label">Fecha Final:</label>
+                                    <input type="date" class="form-control" id="FechaFinal" name="FechaFinal">
+                                </div>
+                            </div>
+                        <?php
+                        } elseif ($Tipo_Doc == 'Reembarque') {
+                        ?>
+                            <div class="row">
+                                <div class="mb-3 col-md-6">
+                                    <label for="Tipo_doc" class="form-label">Tipo de Documento: </label>
+                                    <input type="text" class="form-control" id="Tipo_doc" name="Tipo_doc" value="<?php echo $Tipo_Doc; ?>" readonly>
+                                </div>
+                                <div class="mb-3 col-md-6">
+                                    <label for="folio_doc" class="form-label">Folio de la Guia: </label>
+                                    <input type="text" class="form-control" id="folio_doc" name="folio_doc">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="mb-3 col-md-6">
+                                    <label for="costo_reembarque" class="form-label">Costo Reembarque: </label>
+                                    <input type="numeric" class="form-control" id="costo" name="costo">
+                                </div>
+                                <div class="mb-3 col-md-6">
+                                    <label for="GuiaReembarque" class="form-label">Guía Reembarque:</label>
+                                    <input type="text" class="form-control" id="GuiaReembarque" name="GuiaReembarque">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="mb-3 col-md-12">
+                                    <label for="FechaFinal" class="form-label">Fecha Final:</label>
+                                    <input type="date" class="form-control" id="FechaFinal" name="FechaFinal">
+                                </div>
+                            </div>
+
+                        <?php
+                        } elseif ($Tipo_Doc == 'Ruta') {
+                        ?>
+                            <div class="row">
+                                <div class="mb-3 col-md-12">
+                                    <label for="FechaFinal" class="form-label">Fecha Final:</label>
+                                    <input type="date" class="form-control" id="FechaFinal" name="FechaFinal">
+                                </div>
+                            </div>
+                        <?php
+                        }
+                        ?>
+
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Registrar Ruta de Envío</button>
+                    </div>
+                </form>
+
+            </div>
         </div>
     </div>
     <br>
@@ -591,7 +765,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                             <td><?php echo $Cliente_Nombre_B; ?></td>
                                             <td>
                                                 <?php
-                                                if ($_SESSION['Puesto'] == 'Facturación') {
+                                                if ($_SESSION['Departamento'] == 'Facturación') {
                                                     if ($Id_Factura_B != 'N/A' || $Archivo != 'N/A') {
                                                 ?>
                                                         <a href="../Back/Files/Facturas/<?php echo $Archivo; ?>"
@@ -950,14 +1124,25 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                         <div class="col">
                             <div class="card h-100">
 
-                                <!-- Remove data-bs-toggle and data-bs-target, keep only onclick -->
-                                <img src="<?php echo $ruta_imagen; ?>"
-                                    class="card-img-top img-thumbnail expandable-image"
-                                    alt="<?php echo $Imagen['nombre']; ?>"
-                                    style="height: 200px; object-fit: cover;"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#imageModal"
-                                    onclick="expandImage(this)">
+                                <!-- Si el nombre del archivo termina en .zip Mostrar un icono de Zip y no la foto-->
+
+                                <?php if (pathinfo($Imagen['nombre'], PATHINFO_EXTENSION) == 'zip') { ?>
+                                    <img src="/Front/Img/raricon.png" class="card-img-top img-thumbnail expandable-image"
+                                        alt="<?php echo $Imagen['nombre']; ?>"
+                                        style="height: 200px; object-fit: cover;">
+
+                                <?php } else { ?>
+
+                                    <img src="<?php echo $ruta_imagen; ?>"
+                                        class="card-img-top img-thumbnail expandable-image"
+                                        alt="<?php echo $Imagen['nombre']; ?>"
+                                        style="height: 200px; object-fit: cover;"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#imageModal"
+                                        onclick="expandImage(this)">
+
+
+                                <?php } ?>
 
                                 <div class="card-body text-center">
                                     <h6 class="card-title text-truncate"> <?php echo $Imagen['nombre']; ?> </h6>
@@ -1022,522 +1207,383 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
             ?>
         </div>
     </div>
+</div>
 
-    <!--- Zona de Modales -->
-        <!-- Modal para Agregar Información del Empaque -->
-        <div class="modal fade " id="modalAgregarEmpaque" tabindex="-1" aria-labelledby="modalAgregarEmpaqueLabel"
-        aria-hidden="true">
-        <form action="../Back/Empaque/addEmpaque.php?id_salida=<?php echo $id_salida; ?>" method="POST" id="form_agregar_empaque">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalAgregarEmpaqueLabel">Agregar Información del
-                            Empaque
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+<!--- Zona de Modales -->
+<!-- Modal para Asignar Factura a la Etiqueta Base -->
+<div class="modal fade" id="modalFacturacion_BASE<?php echo $Id_Salida_B; ?>" tabindex="-1"
+    aria-labelledby="modalFacturacion_BASE<?php echo $Id_Salida_B; ?>Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalFacturacion_BASE<?php echo $Id_Salida_B; ?>Label">
+                    Asignar Factura a la Etiqueta Base
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form action="../Back/Facturas/addFactura.php?id_salida=<?php echo $Id_Salida_B; ?>" method="POST"
+                    enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="Folio_Orden" class="form-label">Folio Orden:</label>
+                            <input type="text" class="form-control" id="Folio_Orden" name="Folio_Orden"
+                                placeholder="Folio de la Orden" value="<?php echo $Id_Orden_Venta_B; ?>" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="Folio_Entrega" class="form-label">Folio Entrega:</label>
+                            <input type="text" class="form-control" id="Folio_Entrega" name="Folio_Entrega"
+                                placeholder="Folio de la Entrega" value="<?php echo $Id_Entrega_B; ?>" required>
+                        </div>
                     </div>
-
-                    <div class="modal-body text-center">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="FolioSalida" class="form-label">Folio:</label>
-                                <input type="text" class="form-control" id="Id_Salida" name="Id_Salida"
-                                    value="<?php echo $id_salida; ?>" readonly>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="Cliente" class="form-label">Cliente:</label>
-                                <input type="text" class="form-control" id="Cliente" name="Cliente"
-                                    value="<?php echo $nombre_cliente; ?>" readonly>
-                            </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="archivo" class="form-label">Seleccione una Factura:</label>
+                            <input type="file" class="form-control" name="archivo" accept="application/pdf">
                         </div>
-
-                        <!-- Contenedores Section -->
-                        <div id="contenedores">
-                            <div class="contenedor-item mb-3">
-                                <div class="row">
-                                    <div class="col-md-5 mb-3">
-                                        <label for="id_contenedor" class="form-label">Contenedor</label>
-                                        <select class="form-select contenedor-select" name="id_contenedor[]" required>
-                                            <option value="">Selecciona un Contenedor</option>
-                                            <option value="Caja">Caja</option>
-                                            <option value="Paquete">Paquete</option>
-                                            <option value="Rollo">Rollo</option>
-                                            <option value="Carrete">Carrete</option>
-                                            <option value="Tarima">Tarima</option>
-                                            <option value="Otro">Otro</option>
-                                        </select>
-                                    </div>
-                                    <!-- Campo oculto para "Otro" -->
-                                    <div class="col-md-5 mb-3 contenedor-otro" style="display: none;">
-                                        <label for="otro_contenedor" class="form-label">Especificar otro
-                                            contenedor</label>
-                                        <input type="text" class="form-control" name="otro_contenedor[]">
-                                    </div>
-                                    <div class="col-md-5 mb-3">
-                                        <label for="Cantidad_contenedores" class="form-label">Cantidad</label>
-                                        <input type="number" class="form-control" name="Cantidad_contenedores[]"
-                                            required>
-                                    </div>
-                                    <div class="col-md-2 mb-3 d-flex align-items-end">
-                                        <!-- No delete button for the first row -->
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="FolioFactura" class="form-label">Folio Factura:</label>
+                            <input type="text" class="form-control" id="FolioFactura" name="FolioFactura"
+                                placeholder="Ingrese el folio de la factura..." required>
                         </div>
-
-                        <!-- Add Contenedor Button -->
-                        <button type="button" class="btn btn-success" id="btnAgregarContenedor">Agregar
-                            Contenedor</button>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="submit" class="btn btn-primary">Subir Factura</button>
                     </div>
-        </form>
-    </div>
-    <!-- Modal at bottom of page -->
-    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-body text-center">
-                    <img id="expandedImage" src="" class="img-fluid" alt="Expanded view">
-                </div>
+                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Modal para Subir Imagen -->
-    <div class="modal fade" id="modalSubirImagen" tabindex="-1" aria-labelledby="modalSubirImagenLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title" id="modalSubirImagenLabel">Subir Imagen</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="uploadForm" action="../Back/Imagenes/addImagen.php?id_salida=<?php echo $_GET['id']; ?>"
-                        method="POST" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="imagenes" class="form-label">Seleccionar Archivos</label>
-                            <input type="file" class="form-control" id="imagenes" name="imagenes[]" multiple required>
-                            <small class="form-text text-muted">Puedes seleccionar múltiples imágenes</small>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            <button type="submit" class="btn btn-primary">Subir Imágenes</button>
-                        </div>
-                    </form>
-                </div>
+<!-- Modal para mostrar imagen expandida -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-body text-center">
+                <img id="expandedImage" src="" class="img-fluid" alt="Expanded view">
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Modal para Asignar Factura a la Etiqueta Base -->
-    <div class="modal fade" id="modalFacturacion_BASE<?php echo $Id_Salida_B; ?>" tabindex="-1"
-        aria-labelledby="modalFacturacion_BASE<?php echo $Id_Salida_B; ?>Label" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="modalFacturacion_BASE<?php echo $Id_Salida_B; ?>Label">
-                        Asignar Factura a la Etiqueta Base
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="../Back/Facturas/addFactura.php?id_salida=<?php echo $Id_Salida_B; ?>" method="POST"
-                        enctype="multipart/form-data">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="Folio_Orden" class="form-label">Folio Orden:</label>
-                                <input type="text" class="form-control" id="Folio_Orden" name="Folio_Orden"
-                                    placeholder="Folio de la Orden" value="<?php echo $Id_Orden_Venta_B; ?>" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="Folio_Entrega" class="form-label">Folio Entrega:</label>
-                                <input type="text" class="form-control" id="Folio_Entrega" name="Folio_Entrega"
-                                    placeholder="Folio de la Entrega" value="<?php echo $Id_Entrega_B; ?>" required>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="archivo" class="form-label">Seleccione una Factura:</label>
-                                <input type="file" class="form-control" name="archivo" accept="application/pdf">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="FolioFactura" class="form-label">Folio Factura:</label>
-                                <input type="text" class="form-control" id="FolioFactura" name="FolioFactura"
-                                    placeholder="Ingrese el folio de la factura..." required>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            <button type="submit" class="btn btn-primary">Subir Factura</button>
-                        </div>
-                    </form>
-                </div>
+<!-- Modal para fusionar etiquetas -->
+<div class="modal fade" id="modalFusionEtiquetas" tabindex="-1" aria-labelledby="modalFusionEtiquetasLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalFusionEtiquetasLabel">Fusionar Etiquetas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-        </div>
-    </div>
-
-    <!-- Modal para fusionar etiquetas -->
-    <div class="modal fade" id="modalFusionEtiquetas" tabindex="-1" aria-labelledby="modalFusionEtiquetasLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="modalFusionEtiquetasLabel">Fusionar Etiquetas</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="../Back/Etiquetas/fusionEtiquetas.php?id_salida=<?php echo $id_salida; ?>" method="POST"
-                        id="form_fusion" enctype="multipart/form-data">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <!-- Cliente Actual -->
-                                <div class="mb-3">
-                                    <label for="Cliente_Actual" class="form-label">Cliente Actual</label>
-                                    <input type="text" class="form-control" id="Cliente_Actual" name="Cliente_Actual"
-                                        value="<?php echo $nombre_cliente; ?>" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <!-- Input for Current Id_Salida -->
-                                <div class="mb-3">
-                                    <label for="id_salida_actual" class="form-label">Id_Salida
-                                        Actual</label>
-                                    <input type="text" class="form-control" id="id_salida_actual"
-                                        name="id_salida_actual" value="<?php echo $id_salida; ?>" readonly>
-                                </div>
+            <div class="modal-body">
+                <form action="../Back/Etiquetas/fusionEtiquetas.php?id_salida=<?php echo $id_salida; ?>" method="POST"
+                    id="form_fusion" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <!-- Cliente Actual -->
+                            <div class="mb-3">
+                                <label for="Cliente_Actual" class="form-label">Cliente Actual</label>
+                                <input type="text" class="form-control" id="Cliente_Actual" name="Cliente_Actual"
+                                    value="<?php echo $nombre_cliente; ?>" readonly>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <?php
-                            ?>
-                            <label for="Salida_Anidada_Id" class="form-label">Seleccione una opción:</label>
-                            <!-- Seleccionar Unicamente registros de la tabla salida_refactor que tengan el mismo Cliente -->
-                            <?php
+                        <div class="col-md-6 mb-3">
+                            <!-- Input for Current Id_Salida -->
+                            <div class="mb-3">
+                                <label for="id_salida_actual" class="form-label">Id_Salida
+                                    Actual</label>
+                                <input type="text" class="form-control" id="id_salida_actual"
+                                    name="id_salida_actual" value="<?php echo $id_salida; ?>" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <?php
+                        ?>
+                        <label for="Salida_Anidada_Id" class="form-label">Seleccione una opción:</label>
+                        <!-- Seleccionar Unicamente registros de la tabla salida_refactor que tengan el mismo Cliente -->
+                        <?php
 
+                        $ids_excluidos_str = implode(",", $ids_excluidos);
+
+                        if (!empty($ids_excluidos)) {
                             $ids_excluidos_str = implode(",", $ids_excluidos);
-
-                            if (!empty($ids_excluidos)) {
-                                $ids_excluidos_str = implode(",", $ids_excluidos);
-                                $Sql_Same_Clients = "SELECT * FROM salidas 
+                            $Sql_Same_Clients = "SELECT * FROM salidas 
                           WHERE Id != '$id_salida' 
                           AND Nombre_Cliente = '$nombre_cliente'
                           AND Id NOT IN ($ids_excluidos_str)";
-                            } else {
-                                $Sql_Same_Clients = "SELECT * FROM salidas 
+                        } else {
+                            $Sql_Same_Clients = "SELECT * FROM salidas 
                           WHERE Id != '$id_salida' 
                           AND Nombre_Cliente = '$nombre_cliente'";
+                        }
+
+                        $Result_Same_Clients = mysqli_query($conn, $Sql_Same_Clients);
+                        // Mostrar dentro de un select las opciones disponibles
+                        ?>
+                        <select class="form-select" id="Salida_Anidada_Id" name="Salida_Anidada_Id" required>
+                            <option value="">Selecciona una Etiqueta</option>
+                            <?php
+                            while ($row = mysqli_fetch_array($Result_Same_Clients)) {
+                                $Id_Salida = $row['Id'];
+                                $Nombre_Cliente = $row['Nombre_Cliente'];
+                                echo "<option value='$Id_Salida'>$Id_Salida - $Nombre_Cliente</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="submit" form="form_fusion" class="btn btn-primary">Fusionar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Subir Imagen -->
+<div class="modal fade" id="modalSubirImagen" tabindex="-1" aria-labelledby="modalSubirImagenLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="modalSubirImagenLabel">Subir Imagen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" action="../Back/Imagenes/addImagen.php?id_salida=<?php echo $_GET['id']; ?>"
+                    method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="imagenes" class="form-label">Seleccionar Archivos</label>
+                        <input type="file" class="form-control" id="imagenes" name="imagenes[]" multiple required>
+                        <small class="form-text text-muted">Puedes seleccionar múltiples imágenes</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Subir Imágenes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Consolidar Etiquetas -->
+<div class="modal fade" id="modalConsolidarEtiquetas" tabindex="-1" aria-labelledby="modalConsolidarEtiquetasLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalConsolidarEtiquetasLabel">Consolidar Etiquetas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="../Back/Etiquetas/consolidarEtiqueta.php?id_salida=<?php echo $id_salida; ?>
+                        " method="POST" id="form_consolidar">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="Destino" class="form-label">Destino</label>
+                            <select class="form-select" name="Destino" id="Destino" required>
+                                <option value="">Selecciona un destino</option>
+                                <option value="ELECT IND ALEN SUC TIJUANA"> ELECT IND ALEN SUC TIJUANA
+                                </option>
+                                <option value="ELECT IND ALEN SUC VERACRUZ"> ELECT IND ALEN SUC VERACRUZ
+                                </option>
+                                <option value="PERSONAL ALEN INTELLIGENT"> PERSONAL ALEN INTELLIGENT
+                                </option>
+                                <option value="ELECT IND ALEN BODEGA"> ELECT IND ALEN BODEGA </option>
+                                <option value="ELECT IND ALEN SUC MEXICO"> ELECT IND ALEN SUC MEXICO
+                                </option>
+                                <option value="ELECTRICA INDUSTRIAL ALEN"> ELECTRICA INDUSTRIAL ALEN
+                                </option>
+                                <option value="ALEN AUTOMATIZACION"> ALEN AUTOMATIZACION </option>
+                                <option value="ALEN DEL NORTE"> ALEN DEL NORTE </option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <?php
+                            // Select con las opciones de las salidas
+                            /// Excluir los Id que estan fusionados o el mismo Id
+                            $Ids_Excluidos_para_consolidar = array();
+                            $Ids_Excluidos_para_consolidar[] = $id_salida;
+                            $fusion_query = "SELECT * FROM etiquetas_fusionadas WHERE Salida_Base = '$id_salida'";
+                            $fusion_result = mysqli_query($conn, $fusion_query);
+                            while ($fusion = mysqli_fetch_array($fusion_result)) {
+                                $Id_Relacion = $fusion['Id_Relacion_Salida'];
+                                $Ids_Excluidos_para_consolidar[] = $fusion['Id_Relacion_Salida'];
                             }
 
-                            $Result_Same_Clients = mysqli_query($conn, $Sql_Same_Clients);
-                            // Mostrar dentro de un select las opciones disponibles
+                            // Asegurarse de que el arreglo no esté vacío
+                            if (!empty($Ids_Excluidos_para_consolidar)) {
+                                $Ids_Excluidos_str = implode(",", $Ids_Excluidos_para_consolidar);
+                                $Salidas_query = "SELECT * FROM salidas WHERE Id NOT IN ($Ids_Excluidos_str)";
+                            } else {
+                                $Salidas_query = "SELECT * FROM salidas"; // Si no hay IDs para excluir, selecciona todo
+                            }
+
+                            $Salidas_result = mysqli_query($conn, $Salidas_query);
                             ?>
-                            <select class="form-select" id="Salida_Anidada_Id" name="Salida_Anidada_Id" required>
-                                <option value="">Selecciona una Etiqueta</option>
+                            <label for="Salida_Destino" class="form-label">Selecciona una Salida</label>
+                            <select class="form-select" name="Salida_Destino" id="Salida_Destino" required>
+                                <option value="">Selecciona una salida</option>
                                 <?php
-                                while ($row = mysqli_fetch_array($Result_Same_Clients)) {
-                                    $Id_Salida = $row['Id'];
-                                    $Nombre_Cliente = $row['Nombre_Cliente'];
+                                while ($Salida = mysqli_fetch_array($Salidas_result)) {
+                                    $Id_Salida = $Salida['Id'];
+                                    $Nombre_Cliente = $Salida['Nombre_Cliente'];
                                     echo "<option value='$Id_Salida'>$Id_Salida - $Nombre_Cliente</option>";
                                 }
                                 ?>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <table class="table table-striped mt-3">
+                            <thead>
+                                <tr>
+                                    <th>ID Orden Venta</th>
+                                    <th>ID Entrega</th>
+                                    <th>Partida</th>
+                                    <th>ID Factura</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla_entregas">
+                                <tr>
+                                    <td colspan="4" class="text-center">Selecciona una salida para ver
+                                        los
+                                        datos</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <hr>
+                    <button type="submit" class="btn btn-primary">Consolidar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Agregar Información del Empaque -->
+<div class="modal fade " id="modalAgregarEmpaque" tabindex="-1" aria-labelledby="modalAgregarEmpaqueLabel"
+    aria-hidden="true">
+    <form action="../Back/Empaque/addEmpaque.php?id_salida=<?php echo $id_salida; ?>" method="POST" id="form_agregar_empaque">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarEmpaqueLabel">Agregar Información del
+                        Empaque
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body text-center">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="FolioSalida" class="form-label">Folio:</label>
+                            <input type="text" class="form-control" id="Id_Salida" name="Id_Salida"
+                                value="<?php echo $id_salida; ?>" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="Cliente" class="form-label">Cliente:</label>
+                            <input type="text" class="form-control" id="Cliente" name="Cliente"
+                                value="<?php echo $nombre_cliente; ?>" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Contenedores Section -->
+                    <div id="contenedores">
+                        <div class="contenedor-item mb-3">
+                            <div class="row">
+                                <div class="col-md-5 mb-3">
+                                    <label for="id_contenedor" class="form-label">Contenedor</label>
+                                    <select class="form-select contenedor-select" name="id_contenedor[]" required>
+                                        <option value="">Selecciona un Contenedor</option>
+                                        <option value="Caja">Caja</option>
+                                        <option value="Paquete">Paquete</option>
+                                        <option value="Rollo">Rollo</option>
+                                        <option value="Carrete">Carrete</option>
+                                        <option value="Tarima">Tarima</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                                <!-- Campo oculto para "Otro" -->
+                                <div class="col-md-5 mb-3 contenedor-otro" style="display: none;">
+                                    <label for="otro_contenedor" class="form-label">Especificar otro
+                                        contenedor</label>
+                                    <input type="text" class="form-control" name="otro_contenedor[]">
+                                </div>
+                                <div class="col-md-5 mb-3">
+                                    <label for="Cantidad_contenedores" class="form-label">Cantidad</label>
+                                    <input type="number" class="form-control" name="Cantidad_contenedores[]"
+                                        required>
+                                </div>
+                                <div class="col-md-2 mb-3 d-flex align-items-end">
+                                    <!-- No delete button for the first row -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Contenedor Button -->
+                    <button type="button" class="btn btn-success" id="btnAgregarContenedor">Agregar
+                        Contenedor</button>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="submit" form="form_fusion" class="btn btn-primary">Fusionar</button>
-                    </form>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
                 </div>
-            </div>
-        </div>
-    </div>
+    </form>
+</div>
 
-    <!-- Modal para Consolidar Etiquetas -->
-    <div class="modal fade" id="modalConsolidarEtiquetas" tabindex="-1" aria-labelledby="modalConsolidarEtiquetasLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
+
+<!-- Modal para la Ruta -->
+<div class="modal fade" id="modalRuta" tabindex="-1" aria-labelledby="modalRutaLabel" aria-hidden="true">
+    <form action="Back/addRuta.php?id_salida=<?php echo $id_salida; ?>" method="POST">
+        <!-- Ensure modal is centered -->
+        <div class="modal-dialog modal-dialog-centered"> <!-- Add modal-dialog-centered -->
             <div class="modal-content">
+                <!-- Customized modal header -->
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="modalConsolidarEtiquetasLabel">Consolidar Etiquetas</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="modalRutaLabel">Estado del Envio:</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="../Back/Etiquetas/consolidarEtiqueta.php?id_salida=<?php echo $id_salida; ?>
-                        " method="POST" id="form_consolidar">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label for="Destino" class="form-label">Destino</label>
-                                <select class="form-select" name="Destino" id="Destino" required>
-                                    <option value="">Selecciona un destino</option>
-                                    <option value="ELECT IND ALEN SUC TIJUANA"> ELECT IND ALEN SUC TIJUANA
-                                    </option>
-                                    <option value="ELECT IND ALEN SUC VERACRUZ"> ELECT IND ALEN SUC VERACRUZ
-                                    </option>
-                                    <option value="PERSONAL ALEN INTELLIGENT"> PERSONAL ALEN INTELLIGENT
-                                    </option>
-                                    <option value="ELECT IND ALEN BODEGA"> ELECT IND ALEN BODEGA </option>
-                                    <option value="ELECT IND ALEN SUC MEXICO"> ELECT IND ALEN SUC MEXICO
-                                    </option>
-                                    <option value="ELECTRICA INDUSTRIAL ALEN"> ELECTRICA INDUSTRIAL ALEN
-                                    </option>
-                                    <option value="ALEN AUTOMATIZACION"> ALEN AUTOMATIZACION </option>
-                                    <option value="ALEN DEL NORTE"> ALEN DEL NORTE </option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <?php
-                                // Select con las opciones de las salidas
-                                /// Excluir los Id que estan fusionados o el mismo Id
-                                $Ids_Excluidos_para_consolidar = array();
-                                $Ids_Excluidos_para_consolidar[] = $id_salida;
-                                $fusion_query = "SELECT * FROM etiquetas_fusionadas WHERE Salida_Base = '$id_salida'";
-                                $fusion_result = mysqli_query($conn, $fusion_query);
-                                while ($fusion = mysqli_fetch_array($fusion_result)) {
-                                    $Id_Relacion = $fusion['Id_Relacion_Salida'];
-                                    $Ids_Excluidos_para_consolidar[] = $fusion['Id_Relacion_Salida'];
-                                }
-
-                                // Asegurarse de que el arreglo no esté vacío
-                                if (!empty($Ids_Excluidos_para_consolidar)) {
-                                    $Ids_Excluidos_str = implode(",", $Ids_Excluidos_para_consolidar);
-                                    $Salidas_query = "SELECT * FROM salidas WHERE Id NOT IN ($Ids_Excluidos_str)";
-                                } else {
-                                    $Salidas_query = "SELECT * FROM salidas"; // Si no hay IDs para excluir, selecciona todo
-                                }
-
-                                $Salidas_result = mysqli_query($conn, $Salidas_query);
-                                ?>
-                                <label for="Salida_Destino" class="form-label">Selecciona una Salida</label>
-                                <select class="form-select" name="Salida_Destino" id="Salida_Destino" required>
-                                    <option value="">Selecciona una salida</option>
-                                    <?php
-                                    while ($Salida = mysqli_fetch_array($Salidas_result)) {
-                                        $Id_Salida = $Salida['Id'];
-                                        $Nombre_Cliente = $Salida['Nombre_Cliente'];
-                                        echo "<option value='$Id_Salida'>$Id_Salida - $Nombre_Cliente</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="col-md-12">
-                            <table class="table table-striped mt-3">
-                                <thead>
-                                    <tr>
-                                        <th>ID Orden Venta</th>
-                                        <th>ID Entrega</th>
-                                        <th>Partida</th>
-                                        <th>ID Factura</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla_entregas">
-                                    <tr>
-                                        <td colspan="4" class="text-center">Selecciona una salida para ver
-                                            los
-                                            datos</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <hr>
-                        <button type="submit" class="btn btn-primary">Consolidar</button>
-                    </form>
+                    <div class="mb-3">
+                        <select class="form-select" name="Estado" id="Estado" required>
+                            <option value="">Selecciona un estado</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Entregado">Entregado</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <!-- Hidden field for extra information -->
+                    <div class="mb-3" id="extraInfoField" hidden>
+                        <label for="ExtraInfo" class="form-label">Agregar Estado del Envio:</label>
+                        <input type="text" class="form-control" id="ExtraInfo" name="ExtraInfo">
+                    </div>
+                    <div class="mb-3">
+                        <label for="Comentario" class="form-label">Comentario</label>
+                        <input type="text" class="form-control" id="Comentario" name="Comentario">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Modal para agregar "Envios" -->
-    <div class="modal fade" id="modalEnvios" tabindex="-1" aria-labelledby="modalEnviosLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalEnviosLabel">Registrar Información del Envío </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Formulario capaz de enviar archivos -->
-                    <form id="formRuta" action="../Back/Preguia/completarEnvio.php?id_salida=<?php echo $id_salida; ?>" method="POST"
-                        enctype="multipart/form-data">
-
-                        <!-- Enviar El Tipo de Documento EN UN input oculto -->
-                        <?php
-                        if ($Tipo_Doc == "Ruta") {
-                        ?>
-                            <h5 class="text-center">Revisión de Envío por Ruta</h5>
-                            <div class="row text-center">
-                                <div class="col-md-6 mb-3">
-                                    <label for="Tipo_Doc" class="form-label">Tipo de Documento</label>
-                                    <input type="text" class="form-control" id="Tipo_Doc" name="Tipo_Doc"
-                                        value="<?php echo $Tipo_Doc; ?>" readonly>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="Costo" class="form-label">Fecha de Completado</label>
-                                    <input type="date" class="form-control" id="Fecha_Guia" name="Fecha_Guia" required>
-                                </div>
-                            </div>
-                        <?php
-                        } elseif ($Tipo_Doc == "Envio Directo") {
-                        ?>
-                            <h5 class="text-center">Envio Directo</h5>
-                            <input type="text" name="Tipo_Doc" value="<?php echo $Tipo_Doc; ?>">
-                            <div class="row text-center">
-                                <div class="col-md-6 mb-3">
-                                    <label for="fecha" class="form-label">Costo</label>
-                                    <input type="number" class="form-control" id="Costo" name="Costo" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="folio_guia" class="form-label">Folio Guía</label>
-                                    <input type="text" class="form-control" id="folio_guia" name="folio_guia" required>
-                                </div>
-                                <div class="col-md-12 mb-3">
-                                    <label for="Fecha_Guia" class="form-label">Fecha de la Guía</label>
-                                    <input type="date" class="form-control" id="Fecha_Guia" name="Fecha_Guia" required>
-                                </div>
-
-                            </div>
-                        <?php
-                        }
-                        if ($Tipo_Doc == "Reembarque") {
-                        ?>
-                            <small>Primer Registro para el Envio</small>
-                            <h5 class="text-center">Reembarque</h5>
-                            <div class="row text-center">
-                                <input type="hidden" name="Tipo_Doc" value="<?php echo $Tipo_Doc; ?>">
-                                <div class="col-md-6 mb-3">
-                                    <label for="Costo_Reembarque" class="form-label">Costo</label>
-                                    <input type="number" class="form-control" id="Costo" name="Costo"
-                                        required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="folio_guia" class="form-label">Folio Guía</label>
-                                    <input type="text" class="form-control" id="folio_guia"
-                                        name="folio_guia" required>
-                                </div>
-                            </div>
-                            <div class="col-md-12 mb-3">
-                                <label for="Fecha_Guia" class="form-label">Fecha Guía</label>
-                                <input type="date" class="form-control" id="Fecha_Guia"
-                                    name="Fecha_Guia" required>
-                            </div>
-                        <?php
-                        }
-
-                        ?>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Guardar Ruta</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para agregar "Envios2" -->
-    <div class="modal fade" id="modalEnvios2" tabindex="-1" aria-labelledby="modalEnvios2Label" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalEnvios2Label">Registro de Información Del Reembarque (Segundo Registro)</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Formulario capaz de enviar archivos -->
-                    <form id="formRuta" action="../Back/Preguia/segundoRegistro.php?id_salida=<?php echo $id_salida; ?>" method="POST"
-                        enctype="multipart/form-data">
-
-                        <!-- No. de Guia -->
-                        <div class="row text-center">
-                            <div class="col-md-6 mb-3">
-                                <label for="Tipo_Doc" class="form-label">Tipo de Documento</label>
-                                <input type="text" class="form-control" id="Tipo_Doc" name="Tipo_Doc"
-                                    value="<?php echo $Tipo_Doc; ?>" readonly>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="Costo" class="form-label">Costo</label>
-                                <input type="number" class="form-control" id="Costo" name="Costo" required>
-                            </div>
-
-                            <!-- Fecha -->
-                            <div class="col-md-6 mb-3">
-                                <label for="Fecha_Doc" class="form-label">Fecha de Completado</label>
-                                <input type="date" class="form-control" id="Fecha_Doc" name="Fecha_Doc">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="Id_Guia" class="form-label">Guia Reembolso</label>
-                                <input type="text" class="form-control" id="Id_Guia" name="Id_Guia" required>
-                            </div>
-
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-primary">Guardar Ruta</button>
-                            </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    </form>
+</div>
 
 
-    <!-- Modal para la Ruta -->
-    <div class="modal fade" id="modalRuta" tabindex="-1" aria-labelledby="modalRutaLabel" aria-hidden="true">
-        <form action="Back/addRuta.php?id_salida=<?php echo $id_salida; ?>" method="POST">
-            <!-- Ensure modal is centered -->
-            <div class="modal-dialog modal-dialog-centered"> <!-- Add modal-dialog-centered -->
-                <div class="modal-content">
-                    <!-- Customized modal header -->
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title" id="modalRutaLabel">Estado del Envio:</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <select class="form-select" name="Estado" id="Estado" required>
-                                <option value="">Selecciona un estado</option>
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Entregado">Entregado</option>
-                                <option value="Otro">Otro</option>
-                            </select>
-                        </div>
-                        <!-- Hidden field for extra information -->
-                        <div class="mb-3" id="extraInfoField" hidden>
-                            <label for="ExtraInfo" class="form-label">Agregar Estado del Envio:</label>
-                            <input type="text" class="form-control" id="ExtraInfo" name="ExtraInfo">
-                        </div>
-                        <div class="mb-3">
-                            <label for="Comentario" class="form-label">Comentario</label>
-                            <input type="text" class="form-control" id="Comentario" name="Comentario">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </div>
-            </div>
-        </form>
-    </div>
 
-    <!-- Modal para Subir Facturación BASEEE -->
-    <div class="modal fade" id="modalFacturacion_BASE<?php echo $Id_Salida_B; ?>" tabindex="-1"
-        aria-labelledby="modalFacturacionLabel" aria-hidden="true">
 
-    </div>
 
-    <!-- The Modal -->
-    <div id="imageModal" class="modal">
-        <span class="close">&times;</span>
-        <img class="modal-content" id="expandedImage">
-        <div id="caption"></div>
-    </div>
 
 </div>
 
@@ -1613,17 +1659,11 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
 
 
     // Codigo para mostrar el modal para agregar un nuevo contenedor
-    function previewImage(imageUrl) {
-        document.getElementById('fullSizeImage').src = imageUrl;
-
-        // Optional: Add loading state
-        const img = new Image();
-        img.src = imageUrl;
-        img.onload = function() {
-            document.getElementById('fullSizeImage').style.opacity = 1;
-        };
-        document.getElementById('fullSizeImage').style.opacity = 0;
+    function expandImage(imgElement) {
+        const imageUrl = imgElement.src;
+        document.getElementById('expandedImage').src = imageUrl;
     }
+
     /// Codigo para extender el tiempo de la sesion activa :
     setInterval(function() {
         fetch('extender_sesion.php'); // Llama al script cada 5 minutos

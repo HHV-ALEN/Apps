@@ -20,11 +20,24 @@ session_start();
 <body>
   <?php include "../../Front/navbar.php";
   if (isset($_SESSION['mensaje_alerta'])) {
-    echo "<div class='alert alert-success alert-dismissible fade show' role='alert'>
-            {$_SESSION['mensaje_alerta']}
-            <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>
-          </div>";
+    $claseAlerta = '';
+
+    if ($_SESSION['accion'] == 'Aprobada') {
+        $claseAlerta = 'success'; // verde
+    } elseif ($_SESSION['accion'] == 'Rechazada') {
+        $claseAlerta = 'danger'; // rojo
+    } else {
+        $claseAlerta = 'info'; // por si es otro tipo
+    }
+
+    echo "<div class='alert alert-{$claseAlerta} alert-dismissible fade show' role='alert'>
+    {$_SESSION['mensaje_alerta']}
+    <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>
+  </div>";
+
+
     unset($_SESSION['mensaje_alerta']);
+    unset($_SESSION['accion']);
   }
   ?>
 
@@ -34,7 +47,7 @@ session_start();
       <table class="table table-bordered table-striped">
         <thead class="table-dark">
           <tr>
-            <th>Empleado</th>
+            <th>Responsable</th>
             <th>Días Solicitados</th>
             <th>Fecha Inicio</th>
             <th>Fecha Fin</th>

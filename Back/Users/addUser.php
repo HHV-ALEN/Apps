@@ -15,7 +15,7 @@ $Contraseña = $_POST['Contraseña'];
 $Antiguedad = $_POST['Antiguedad'];
 $Rol = $_POST['Rol'];
 $Area = $_POST['Area'];
-$Puesto = $_POST['Puesto'];
+$Departamento = $_POST['Departamento'];
 $Sucursal = $_POST['Sucursal'];
 $Jerarquia = $_POST['Jerarquia'];
 
@@ -27,7 +27,7 @@ echo "<br> ---> <strong> Contraseña: </strong>". $Contraseña;
 echo "<br> ---> <strong> Antiguedad: </strong>". $Antiguedad;
 echo "<br> ---> <strong> Rol: </strong>". $Rol;
 echo "<br> ---> <strong> Area: </strong>". $Area;
-echo "<br> ---> <strong> Puesto: </strong>". $Puesto;
+echo "<br> ---> <strong> Departamento: </strong>". $Departamento;
 echo "<br> ---> <strong> Sucursal: </strong>". $Sucursal;
 echo "<br> ---> <strong> Jerarquia: </strong>". $Jerarquia;
 
@@ -36,8 +36,8 @@ echo "<br> Contraseña Encrypto: " . $encrypted;
 $Fecha_Actual = date("Y-m-d H:i:s");
 echo "<br> ----------------------------------------> <strong> Registro del Usuario: </strong>";
 /// Insertar Información de Usuario en la tabla: Usuarios
-$query = "INSERT INTO usuarios (Nombre, Username, Email, Fecha_Ingreso, Jerarquia, Password, Area, Rol, Sucursal, Puesto, Estado) VALUES
-    ('$Nombre', '$Username', '$Correo', '$Antiguedad', '$Jerarquia', '$encrypted', '$Area', '$Rol', '$Sucursal', '$Puesto', 'Activo')";
+$query = "INSERT INTO usuarios (Nombre, Username, Email, Fecha_Ingreso, Jerarquia, Password, Area, Rol, Sucursal, Departamento, Estado) VALUES
+    ('$Nombre', '$Username', '$Correo', '$Antiguedad', '$Jerarquia', '$encrypted', '$Area', '$Rol', '$Sucursal', '$Departamento', 'Activo')";
     mysqli_query($conn, $query);
     if (mysqli_affected_rows($conn) > 0) {
         echo "<br> Registro Exitoso! <br>";

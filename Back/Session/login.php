@@ -26,7 +26,7 @@ try {
             $_SESSION['Area'] = $user['Area'];
             $_SESSION['Role'] = $user['Rol'];
             $_SESSION['Sucursal'] = $user['Sucursal'];
-            $_SESSION['Puesto'] = $user['Puesto'];
+            $_SESSION['Departamento'] = $user['Departamento'];
             echo "<br> ---> <strong> Login successful! Welcome, " . $_SESSION['Name'] . ".</strong>";
 
             header('Location: ../../Front/dashboard.php');

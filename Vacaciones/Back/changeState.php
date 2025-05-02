@@ -14,10 +14,10 @@ echo "<br><strong>- Respuesta</strong>: " . $Response;
 
 if ($Response == "Aprobada") {
     $sql_update_vacaciones = "UPDATE vacaciones_solicitudes SET Estado = 'Aprobada' WHERE Id = '$Id'";
-    $accion = "Aprobada ✅🎉";
+    $accion = "Aprobada";
 } elseif ($Response == "Rechazado") {
     $sql_update_vacaciones = "UPDATE vacaciones_solicitudes SET Estado = 'Rechazado' WHERE Id = '$Id'";
-    $accion = "Rechazada ❌";
+    $accion = "Rechazada";
 } else {
     echo "<br><strong>Respuesta no válida.</strong>";
     exit;
@@ -26,6 +26,7 @@ if ($Response == "Aprobada") {
 $result_update_vacaciones = $conn->query($sql_update_vacaciones);
 if ($result_update_vacaciones) {
     $_SESSION['mensaje_alerta'] = "📄 La solicitud #$Id con Fecha de Salida: $Fecha_Inicio y Fecha de Fin: $Fecha_Fin solicitada por $Nombre ha sido <strong>$Response</strong>";
+    $_SESSION['accion'] = $accion;
     header("Location: ../Front/listado_revision.php");
     
     exit;

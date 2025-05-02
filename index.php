@@ -1,5 +1,6 @@
-<?php 
+<?php
 session_start();
+
 // Check if there's an error message in the session
 if (isset($_SESSION['error'])) {
   $errorMessage = $_SESSION['error'];
@@ -8,9 +9,12 @@ if (isset($_SESSION['error'])) {
   $errorMessage = ''; // No error message
 }
 
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,16 +22,17 @@ if (isset($_SESSION['error'])) {
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- import css -->
-   <link rel="stylesheet" href="Front/css/login.css">
-   <link rel="icon" type="image/png" href="Front/Img/Icono-A.png" />
+  <link rel="stylesheet" href="Front/css/login.css">
+  <link rel="icon" type="image/png" href="Front/Img/Icono-A.png" />
 </head>
+
 <body>
   <div class="login-card card p-4 shadow" id="loginCard" style="max-width: 400px; width: 100%;">
     <!-- Logo -->
     <img src="Back/SystemFiles/Alen.png" alt="Logo" class="img-fluid mx-auto d-block mb-4" style="max-width: 250px;">
-        <!-- Error Message Display -->
-  <!-- Error Message Display -->
-  <?php if (!empty($errorMessage)): ?>
+    <!-- Error Message Display -->
+    <!-- Error Message Display -->
+    <?php if (!empty($errorMessage)): ?>
       <div class="error-label" id="errorLabel">
         <?php echo htmlspecialchars($errorMessage); ?>
       </div>
@@ -75,8 +80,7 @@ if (isset($_SESSION['error'])) {
         }, 5000); // Start fade-out after 5 seconds
       }
     });
-
-
   </script>
 </body>
+
 </html>

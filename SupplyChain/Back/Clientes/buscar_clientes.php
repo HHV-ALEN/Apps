@@ -1,5 +1,5 @@
 <?php
-require_once("../../Back/config/config.php"); //Contiene las variables de configuracion para conectar a la base de datos
+require_once("../../../Back/config/config.php"); //Contiene las variables de configuracion para conectar a la base de datos
 $conn = connectMySQLi();
 session_start();
 
@@ -19,7 +19,6 @@ if (isset($_POST['query'])) {
             'nombre' => "{$row['Nombre']} ({$row['Clave_Sap']})"
         ];
     }
-
     echo json_encode($data);
 }
 ?>
