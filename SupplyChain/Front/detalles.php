@@ -523,8 +523,8 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                             } else {
                             ?>
                                 <div class="col-md-6">
-                                    <a 
-                                        class="btn btn-success btn-sm disabled" >
+                                    <a
+                                        class="btn btn-success btn-sm disabled">
                                         <i class="fas fa-file-download"></i> Formato Detalles de Envio
                                     </a>
                                 </div>
@@ -723,6 +723,15 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                 ?>
 
             </div>
+
+
+            <?php
+
+            $Arreglo_OrdenVenta_Registrados = array();
+
+            ?>
+
+
             <div class="card-body">
                 <div class="row">
                     <!-- Table for Etiqueta Base -->
@@ -750,6 +759,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                         $Id_Contenido = $entrega['Id'];
                                         $Id_Salida_B = $entrega['Id_Salida'];
                                         $Id_Orden_Venta_B = $entrega['Id_Orden_Venta'];
+                                        array_push($Arreglo_OrdenVenta_Registrados, $Id_Orden_Venta_B);
                                         $Id_Entrega_B = $entrega['Id_Entrega'];
                                         $Partida_B = $entrega['Partida'];
                                         $Id_Factura_B = ($entrega['Id_Factura'] == 0) ? 'N/A' : $entrega['Id_Factura'];
@@ -846,6 +856,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                         while ($entrega = mysqli_fetch_array($entrega_result)) {
                                             $Id_Contenido = $entrega['Id'];
                                             $Id_Orden_Venta = $entrega['Id_Orden_Venta'];
+                                            array_push($Arreglo_OrdenVenta_Registrados, $Id_Orden_Venta);
                                             $Id_Entrega = $entrega['Id_Entrega'];
                                             $Partida = $entrega['Partida'];
                                             $Id_Factura = $entrega['Id_Factura'] ?? 'N/A';
@@ -917,6 +928,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
 
                                         while ($row = mysqli_fetch_assoc($result_entrega)) {
                                             $Id_Orden_venta = $row['Id_Orden_Venta'];
+                                            array_push($Arreglo_OrdenVenta_Registrados, $Id_Orden_venta);
                                             $Id_Entrega = $row['Id_Entrega'];
                                             $Partida = $row['Partida'];
                                             $Cliente_Nombre = $row['Cliente_Nombre'];
@@ -939,6 +951,54 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
             </div>
         </div>
     </div>
+
+    <!-- Información de registros de compra con la misma Orden de Venta -->
+
+
+
+
+
+
+    <div class="container mt-4">
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-success text-white text-center">
+                <h5 class="mb-0">🧾 Registros por Orden de Venta</h5>
+            </div>
+
+            <div class="card-body px-4">
+                <?php
+                $lista_ordenes = implode(',', array_map('intval', $Arreglo_OrdenVenta_Registrados));
+                $sql = "SELECT OrdenCompra, NombreCliente, Fecha, CodigoItem, OrdenVenta 
+                    FROM supply_compras 
+                    WHERE OrdenVenta IN ($lista_ordenes)";
+                $resultado = $conn->query($sql);
+                ?>
+
+                <?php if ($resultado->num_rows > 0): ?>
+                    <div class="row gx-4 gy-4">
+                        <?php while ($row = $resultado->fetch_assoc()): ?>
+                            <div class="col-md-4">
+                                <div class="card h-100 border-primary shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-primary">🛒 Orden de Compra: <?= htmlspecialchars($row['OrdenCompra']) ?></h6>
+                                        <p class="card-text mb-1">👤 <strong>Cliente:</strong> <?= htmlspecialchars($row['NombreCliente']) ?></p>
+                                        <p class="card-text mb-1">📅 <strong>Fecha:</strong> <?= date("d/m/Y", strtotime($row['Fecha'])) ?></p>
+                                        <p class="card-text">📦 <strong>Código Item:</strong> <?= htmlspecialchars($row['CodigoItem']) ?></p>
+                                    </div>
+                                    <div class="card-footer bg-transparent border-top-0">
+                                        <span class="badge bg-info text-dark">🔁 OV: <?= htmlspecialchars($row['OrdenVenta']) ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endwhile; ?>
+                    </div>
+                <?php else: ?>
+                    <p class="text-center text-muted mt-3">❌ No se encontraron registros relacionados.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Información del Empaque -->
     <div class="col-md-12">
