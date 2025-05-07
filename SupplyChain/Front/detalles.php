@@ -22,7 +22,6 @@ if (isset($_SESSION['alerta_estado'])) {
 
 $conn = connectMySQLi();
 
-
 //print_r($_SESSION);
 $CarpetaContenedora = '../Back/Files/'; // Carpeta contenedora de los archivoss
 $rutaWeb = "../Back/Files/img/";
@@ -57,7 +56,8 @@ $Sucursal = $Salida['Sucursal'];
 //echo "<br> - Sucursal: " . $id_sucursal;
 
 // Consulta en la tabla "cliente"
-$Cliente_query = "SELECT * FROM clientes WHERE Id = '$id_cliente'";
+
+$Cliente_query = "SELECT * FROM clientes WHERE Id_Original = $id_cliente";
 $Cliente_result = mysqli_query($conn, $Cliente_query);
 $Cliente = mysqli_fetch_array($Cliente_result);
 $nombre_cliente = $Cliente['Nombre'];
@@ -99,7 +99,6 @@ $rutaWeb_Factura = "C:/xampp/htdocs/archivos/pdf/";
 foreach ($Facturas as $Factura) {
     /// Si el archivo existe 
     if (file_exists($rutaWeb_Factura . $Factura)) {
-
         /// Verificar que el archivo no exista ya en la carpeta contenedora
         if (file_exists($CarpetaContenedora . 'Facturas/' . $Factura)) {
             //echo "<br>*** El archivo " . $Factura . " ya existe en la carpeta contenedora  ***<br>";
@@ -561,6 +560,9 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                     <div class="modal-body">
 
                         <!-- Hidden Inputs -->
+                         <?php 
+                         echo "<br><strong>Tipo de documento: </strong>" . $Tipo_Doc;
+                         ?>
                         <input type="hidden" name="Id_Salida" value="<?php echo $id_salida; ?>">
                         <input type="hidden" name="Tipo_Doc" value="<?php echo $Tipo_Doc; ?>">
 
@@ -962,15 +964,13 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
     <div class="container mt-4">
         <div class="card mb-4 shadow">
             <div class="card-header bg-success text-white text-center">
-                <h5 class="mb-0">🧾 Registros por Orden de Venta</h5>
+                <h5 class="mb-0">🧾 Registros Articulos de Compras</h5>
             </div>
 
             <div class="card-body px-4">
                 <?php
                 $lista_ordenes = implode(',', array_map('intval', $Arreglo_OrdenVenta_Registrados));
-                $sql = "SELECT OrdenCompra, NombreCliente, Fecha, CodigoItem, OrdenVenta 
-                    FROM supply_compras 
-                    WHERE OrdenVenta IN ($lista_ordenes)";
+                $sql = "SELECT * FROM supply_compras WHERE OrdenVenta IN ($lista_ordenes)";
                 $resultado = $conn->query($sql);
                 ?>
 
@@ -982,11 +982,20 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                     <div class="card-body">
                                         <h6 class="card-title text-primary">🛒 Orden de Compra: <?= htmlspecialchars($row['OrdenCompra']) ?></h6>
                                         <p class="card-text mb-1">👤 <strong>Cliente:</strong> <?= htmlspecialchars($row['NombreCliente']) ?></p>
-                                        <p class="card-text mb-1">📅 <strong>Fecha:</strong> <?= date("d/m/Y", strtotime($row['Fecha'])) ?></p>
-                                        <p class="card-text">📦 <strong>Código Item:</strong> <?= htmlspecialchars($row['CodigoItem']) ?></p>
+                                        <p class="card-text mb-1">📅 <strong>Fecha:</strong> <?= date("d/m/Y", strtotime($row['FechaEntregaCliente'])) ?></p>
+                                        <p class="card-text">📦 <strong>Número De Articulo:</strong> <?= htmlspecialchars($row['NoDeArticulo']) ?></p>
                                     </div>
                                     <div class="card-footer bg-transparent border-top-0">
-                                        <span class="badge bg-info text-dark">🔁 OV: <?= htmlspecialchars($row['OrdenVenta']) ?></span>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <span class="badge bg-info text-dark">🔁 OV: <?= htmlspecialchars($row['OrdenVenta']) ?></span>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <!--BOTON PARA VER DETALLES LOS DETALLES DEL REGISTRO EN OTRA VENTANA -->
+                                                <a href="detallesCompra.php?id=<?= htmlspecialchars($row['Id']) ?>">Detalles del Articulo</a>
+                                            </div>
+                                        </div>
+                                       
                                     </div>
                                 </div>
                             </div>

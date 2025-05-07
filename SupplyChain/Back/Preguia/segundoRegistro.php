@@ -5,7 +5,7 @@ session_start();
 
 $firstname = $_SESSION['Name'];
 $id_salida = $_GET['id_salida'];
-$Tipo_doc = $_POST['Tipo_doc'];
+$Tipo_doc = $_POST['Tipo_Doc'];
 $folio_doc = $_POST['folio_doc'];
 $costo = $_POST['costo'];
 $Fecha_Actual = date("Y-m-d H:i:s");
@@ -73,6 +73,7 @@ if ($conn->query($insertBitacora) === TRUE) {
 } else {
     echo "<br><strong>Error al registrar la bitacora: </strong>" . $conn->error;
 }
+
 
 header("Location: ../../Front/detalles.php?id=$id_salida");
 

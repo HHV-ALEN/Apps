@@ -44,8 +44,9 @@ $conn = connectMySQLi();
           <div>
             <h2 class="h4 mb-0">Bienvenido, <strong><?php echo htmlspecialchars($_SESSION['Username']); ?></strong></h2>
             <small class="text-white-50">Miembro de Alen desde: <?php echo htmlspecialchars($_SESSION['Date']); ?></small>
+            <!-- 
             <button><a href="../Academy/index.php">Index - Academy</a></button>
-            <button><a href="../SupplyChain/Front/compras.php">Compras</a></button>
+            <button><a href="../SupplyChain/Front/compras.php">Compras</a></button> -->
 
           </div>
           <div class="bg-white rounded-circle p-2 shadow-sm">

@@ -47,6 +47,14 @@ $result_salida = mysqli_query($conn, $query_salida);
   <title>Dashboard</title>
   <link rel="icon" type="image/png" href="../Front/Img/Icono-A.png" />
   <style>
+    #listaClientes.show {
+      display: block !important;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+
     #listaClientes {
       position: absolute;
       z-index: 1000;
@@ -335,24 +343,24 @@ $result_salida = mysqli_query($conn, $query_salida);
                     }
 
                     if ($_SESSION['Departamento'] == 'Logistica' && $fila['Estado'] == 'Facturación') {
-                    /// Para recibir de estado Facturación a Logistica:
-                    //1.- Verificar que se encuentre registrado una factura 
-                    /// Consultar la tabla entregas donde Id_Salida = $fila['Id'] y el campo Archivo o N/A o 0 no sea nulo
-                    $query_factura = "SELECT * FROM entregas WHERE Id_Salida = {$fila['Id']} AND Archivo != '0'";
-                    $result_factura = mysqli_query($conn, $query_factura);
-                    $factura_registrada = mysqli_num_rows($result_factura) > 0;
-                    if ($factura_registrada) {
-                      echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Logistica' class='btn btn-warning'>
+                      /// Para recibir de estado Facturación a Logistica:
+                      //1.- Verificar que se encuentre registrado una factura 
+                      /// Consultar la tabla entregas donde Id_Salida = $fila['Id'] y el campo Archivo o N/A o 0 no sea nulo
+                      $query_factura = "SELECT * FROM entregas WHERE Id_Salida = {$fila['Id']} AND Archivo != '0'";
+                      $result_factura = mysqli_query($conn, $query_factura);
+                      $factura_registrada = mysqli_num_rows($result_factura) > 0;
+                      if ($factura_registrada) {
+                        echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Logistica' class='btn btn-warning'>
                       <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Logistica)
                     </a>";
-                    } else {
-    
-                      echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Logistica' class='btn btn-warning disabled'>
+                      } else {
+
+                        echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Logistica' class='btn btn-warning disabled'>
                       <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Falta Factura)
                     </a>";
+                      }
                     }
-                  }
-                  
+
                     if ($_SESSION['Departamento'] == 'Logistica' && $fila['Estado'] == 'Logistica') {
                       /// Botón para abrir modal de la Pre-guia 
                       /// Mandar $fila['Id'] y $fila['Nombre_Cliente']
@@ -485,14 +493,31 @@ $result_salida = mysqli_query($conn, $query_salida);
 
               <!-- Primer Cliente -->
               <!-- Input con Autocompletado -->
-              <div class="col-md-12 position-relative">
+              <div class="col-md-12 position-relative dropdown">
                 <div class="form-floating mb-3">
-                  <input type="text" class="form-control" id="cliente_nombre" placeholder="Escribe el nombre del cliente..." autocomplete="off">
-                  <input type="hidden" id="id_cliente" name="id_cliente"> <!-- ID del cliente oculto -->
-                  <label for="cliente_nombre">Selecciona un Cliente <---</label>
-                  <div id="listaClientes" class="dropdown-menu w-100"></div> <!-- Opciones dinámicas -->
+                  <input type="text" class="form-control dropdown-toggle" id="cliente_nombre" placeholder="Escribe el nombre del cliente..." autocomplete="off" data-bs-toggle="dropdown" aria-expanded="false">
+                  <input type="hidden" id="id_cliente" name="id_cliente">
+                  <label for="cliente_nombre">Digite un caracter para buscar un cliente</label>
+                  <div id="listaClientes" class="dropdown-menu w-100"></div>
                 </div>
               </div>
+
+              <!-- Campos para nuevo cliente (inicialmente ocultos) -->
+              <div id="contenedor_nuevos" style="display:none;">
+                <div class="col-md-12">
+                  <label for="nuevo_nombre">Nombre del Cliente</label>
+                  <input type="text" class="form-control" id="nuevo_nombre" name="nuevo_nombre">
+                </div>
+                <div class="col-md-12">
+                  <label for="nuevo_clave">Clave SAP</label>
+                  <input type="text" class="form-control" id="nuevo_clave" name="nuevo_clave">
+                </div>
+                <div class="col-md-12">
+                  <label for="nuevo_rfc">RFC</label>
+                  <input type="text" class="form-control" id="nuevo_rfc" name="nuevo_rfc">
+                </div>
+              </div>
+
 
 
               <!-- Header de la Sección de Partidas -->
@@ -614,31 +639,26 @@ $result_salida = mysqli_query($conn, $query_salida);
                 response.forEach(function(item) {
                   console.log(item);
                   tbody.append(`
-    <tr>
-        <td>${item.Id}</td>
-        <td>${item.Nombre_Cliente}</td>
-        <td>${item.Id_Orden_Venta ? item.Id_Orden_Venta : 'N/A'}</td>
-        <td>${item.Estado}</td>
-        <td>${item.Sucursal}</td>
-        <td>
-            <a href='Front/detalles.php?id=${item.Id}' class='btn btn-primary detalles-btn'>
-                <i class="bi bi-file-earmark-medical"></i> Detalles
-            </a>
-        </td>
-    </tr>
-`);
-
-
+                              <tr>
+                                  <td>${item.Id}</td>
+                                  <td>${item.Nombre_Cliente}</td>
+                                  <td>${item.Id_Orden_Venta ? item.Id_Orden_Venta : 'N/A'}</td>
+                                  <td>${item.Estado}</td>
+                                  <td>${item.Sucursal}</td>
+                                  <td>
+                                      <a href='Front/detalles.php?id=${item.Id}' class='btn btn-primary detalles-btn'>
+                                          <i class="bi bi-file-earmark-medical"></i> Detalles
+                                      </a>
+                                  </td>
+                              </tr>
+                          `);
                 });
               } else {
                 tbody.append('<tr><td colspan="7" class="text-center text-danger">No se encontraron resultados</td></tr>');
               }
             }
-
           });
         }
-
-
         $("#buscar_btn").on("click", function() {
           buscarSalidas();
         });
@@ -654,9 +674,6 @@ $result_salida = mysqli_query($conn, $query_salida);
         let url = $(this).attr("href");
         window.location.assign(url); // Redirige inmediatamente
       });
-
-
-
 
 
       /// Codigo para extender el tiempo de la sesion activa :
@@ -846,32 +863,74 @@ $result_salida = mysqli_query($conn, $query_salida);
       });
 
       // Agregar Dinamismo al formulario del registro de salidas en el campo de cliente
-      $(document).ready(function() {
-        $("#cliente_nombre").on("keyup", function() {
-          let query = $(this).val();
-          if (query.length > 1) { // Solo busca si hay más de 1 letra
-            $.ajax({
-              url: "Back/Clientes/buscar_clientes.php",
-              method: "POST",
-              data: {
-                query: query
-              },
-              dataType: "json",
-              success: function(data) {
-                let dropdown = $("#listaClientes");
-                dropdown.empty().show();
+      document.addEventListener("DOMContentLoaded", function() {
+        const inputCliente = document.getElementById("cliente_nombre");
+        const idCliente = document.getElementById("id_cliente");
+        const listaClientes = document.getElementById("listaClientes");
 
-                if (data.length > 0) {
-                  data.forEach(cliente => {
-                    dropdown.append(`<div class="dropdown-item text-truncate" data-id="${cliente.id}" title="${cliente.nombre}">${cliente.nombre}</div>`);
-                  });
-                } else {
-                  dropdown.append(`<div class="dropdown-item text-muted">No hay coincidencias</div>`);
-                }
+        const nombreNuevo = document.getElementById("nuevo_nombre");
+        const claveNuevo = document.getElementById("nuevo_clave");
+        const rfcNuevo = document.getElementById("nuevo_rfc");
+        const contenedorNuevos = document.getElementById("contenedor_nuevos");
+
+        inputCliente.addEventListener("input", function() {
+          const query = this.value;
+          if (query.length === 0) {
+            listaClientes.classList.remove("show");
+            return;
+          }
+
+          fetch("Back/Clientes/buscar_clientes.php", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+              },
+              body: "query=" + encodeURIComponent(query)
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log("Respuesta del servidor:", data); // <-- DEBUG
+              listaClientes.innerHTML = "";
+
+              if (data.length > 0) {
+                data.forEach(cliente => {
+                  const item = document.createElement("button");
+                  item.type = "button";
+                  item.className = "dropdown-item";
+                  item.textContent = cliente.nombre;
+                  item.dataset.id = cliente.id;
+                  listaClientes.appendChild(item);
+                });
+              } else {
+                const item = document.createElement("button");
+                item.type = "button";
+                item.className = "dropdown-item text-success";
+                item.textContent = "➕ Agregar nuevo cliente";
+                item.dataset.id = "nuevo"; // Para que dispare el bloque correspondiente
+                listaClientes.appendChild(item);
               }
+
+              listaClientes.classList.add("show");
             });
-          } else {
-            $("#listaClientes").hide();
+        });
+
+        listaClientes.addEventListener("click", function(e) {
+          if (e.target.classList.contains("dropdown-item")) {
+            const id = e.target.dataset.id;
+            const nombre = e.target.textContent;
+
+            inputCliente.value = nombre;
+            idCliente.value = id;
+            listaClientes.classList.remove("show");
+
+            if (id === "nuevo") {
+              contenedorNuevos.style.display = "block";
+            } else {
+              contenedorNuevos.style.display = "none";
+              nombreNuevo.value = "";
+              claveNuevo.value = "";
+              rfcNuevo.value = "";
+            }
           }
         });
 

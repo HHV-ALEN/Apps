@@ -36,21 +36,34 @@ echo '<table class="table table-bordered table-hover align-middle text-center">'
 echo '<thead class="table-dark"><tr>
         <th>ID</th>
         <th>Orden de Compra</th>
+        <th>Orden de Venta</th>
         <th>Nombre del Cliente</th>
-        <th>Código del Ítem</th>
-        <th>Fecha</th>
-        <th>Estado</th>
+        <th>Número de Articulo</th>
+        <th>Titular</th>
+        
         <th>Acciones</th>
     </tr></thead><tbody>';
+
+    /*
+
+    
+    (OrdenCompra, NombreCliente, FechaEntregaCliente,
+        NoDeArticulo, Descripcion, CantidadAbiertaRestante, Precio, ImportePendiente, Titular, Fecha_Titular,
+        FechaDeRegistro, Estado, OrdenVenta)
+
+
+    */
+
 
 while ($row = $resultado->fetch_assoc()) {
     echo '<tr>';
     echo '<td>' . $row['Id'] . '</td>';
     echo '<td>' . $row['OrdenCompra'] . '</td>';
+    echo '<td>' . $row['OrdenVenta'] . '</td>';
     echo '<td>' . $row['NombreCliente'] . '</td>';
-    echo '<td>' . $row['CodigoItem'] . '</td>';
-    echo '<td>' . date('d/m/Y', strtotime($row['Fecha'])) . '</td>';
-    echo '<td>' . $row['Estado'] . '</td>';
+    echo '<td>' . $row['NoDeArticulo'] . '</td>';
+    echo '<td>' . $row['Titular'] . '</td>';
+    
     echo '<td> <a class="btn btn-outline-primary" href="detallesCompra.php?id='. $row['Id'] .'">🔎 Detalles </a>  </td>';
     echo '</tr>';
 }
