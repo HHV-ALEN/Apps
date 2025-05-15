@@ -44,9 +44,18 @@ $conn = connectMySQLi();
           <div>
             <h2 class="h4 mb-0">Bienvenido, <strong><?php echo htmlspecialchars($_SESSION['Username']); ?></strong></h2>
             <small class="text-white-50">Miembro de Alen desde: <?php echo htmlspecialchars($_SESSION['Date']); ?></small>
-            <!-- 
-            <button><a href="../Academy/index.php">Index - Academy</a></button>
-            <button><a href="../SupplyChain/Front/compras.php">Compras</a></button> -->
+
+
+            <?php
+
+            if ($_SESSION['Role'] == 'Control') {
+            ?>
+              <button><a href="../Academy/index.php">Index - Academy</a></button>
+              <button><a href="../SupplyChain/Front/compras.php">Compras</a></button>
+              <button><a href="../RIO/index.php">RIO</a></button>
+            <?php
+            }
+            ?>
 
           </div>
           <div class="bg-white rounded-circle p-2 shadow-sm">
@@ -408,7 +417,8 @@ $conn = connectMySQLi();
           if (boton.classList.contains("disabled")) {
             e.preventDefault(); // Evita doble click
             return;
-          }y
+          }
+          y
           boton.classList.add("disabled");
           boton.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando...`;
         });

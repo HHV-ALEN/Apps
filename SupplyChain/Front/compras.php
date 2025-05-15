@@ -125,12 +125,8 @@ $conn = connectMySQLi();
         - Fecha entrega cliente *** K
 
         echo "<th>Orden de Venta</th>";
-
-        
         echo "<th></th>";
         echo "<th></th>";
-
-
         - ov
         - Titular
         . Fecha
@@ -211,7 +207,7 @@ $conn = connectMySQLi();
     ?>
 
     <!--------------------------------------------------------------------------------------------------------------------------------------------->
-    <hr>
+
     <br>
 
     <?php
@@ -243,9 +239,10 @@ $conn = connectMySQLi();
     $sql_data = "SELECT * FROM supply_compras $where_sql ORDER BY Id DESC LIMIT $inicio, $por_pagina";
     $resultado = $conn->query($sql_data);
     ?>
+
     <div class="container mt-5 text-center">
         <h3 class="mb-4">📝 Compras Registradas</h3>
-        <div class="table-responsive ">
+        <div class="table-responsive">
 
             <div class="row g-3 mb-4 text-center">
                 <div class="col-md-3 ">
@@ -255,12 +252,13 @@ $conn = connectMySQLi();
                     <input type="text" id="filtroCliente" class="form-control" placeholder="Nombre del Cliente">
                 </div>
                 <div class="col-md-3">
-                    <input type="text" id="filtroItem" class="form-control" placeholder="Código del Ítem">
+                    <input type="text" id="NoDeArticulo" class="form-control" placeholder="No. De Articulo">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" id="NombreTitular" class="form-control" placeholder="Nombre del Titular">
                 </div>
             </div>
-
             <div id="tabla-compras"></div>
-
         </div>
     </div>
 
@@ -270,7 +268,8 @@ $conn = connectMySQLi();
         function cargarTabla(pagina = 1) {
             let orden = $('#filtroOrden').val();
             let cliente = $('#filtroCliente').val();
-            let item = $('#filtroItem').val();
+            let Articulo = $('#NoDeArticulo').val();
+            let titular = $('#NombreTitular').val();
 
             $.ajax({
                 url: '../Back/Compras/comprasFiltro.php',
@@ -278,8 +277,9 @@ $conn = connectMySQLi();
                 data: {
                     orden: orden,
                     cliente: cliente,
-                    item: item,
-                    pagina: pagina
+                    Articulo: Articulo,
+                    pagina: pagina,
+                    titular: titular
                 },
                 success: function(response) {
                     $('#tabla-compras').html(response);
@@ -292,7 +292,7 @@ $conn = connectMySQLi();
             cargarTabla();
 
             // Escuchar inputs
-            $('#filtroOrden, #filtroCliente, #filtroItem').on('input', function() {
+            $('#filtroOrden, #filtroCliente, #NoDeArticulo, #NombreTitular').on('input', function() {
                 cargarTabla();
             });
 

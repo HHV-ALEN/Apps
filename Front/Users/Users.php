@@ -222,6 +222,7 @@ $result = $conn->query($query);
                                     </a>
                                 </td>
                             </tr>
+
                             <!-- Modal to edit user (for each user) -->
                             <!-- Fields: Nombre, Username, Email, Fecha_Ingreso, Jerarquia, Rol, Area, Departamento, Sucursal,  -->
                             <div class="modal fade" id="editUserModal<?php echo $row['Id']; ?>" tabindex="-1" aria-labelledby="editUserLabel<?php echo $row['Id']; ?>" aria-hidden="true">
@@ -232,7 +233,7 @@ $result = $conn->query($query);
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                         </div>
 
-                                        <form action="Back/edit_user.php" method="POST">
+                                        <form action="Back/edit_user.php" method="POST" onsubmit="console.log('Formulario enviado');">
                                             <div class="modal-body">
                                                 <!-- Campos del formulario -->
                                                 <input type="hidden" name="id_usuario" value="<?php echo $row['Id']; ?>">

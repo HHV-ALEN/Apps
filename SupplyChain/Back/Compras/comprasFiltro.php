@@ -7,7 +7,8 @@ ob_start();
 
 $ordenFiltro   = $conn->real_escape_string($_POST['orden'] ?? '');
 $clienteFiltro = $conn->real_escape_string($_POST['cliente'] ?? '');
-$itemFiltro    = $conn->real_escape_string($_POST['item'] ?? '');
+$NoDeArticulo    = $conn->real_escape_string($_POST['Articulo'] ?? '');
+$titular = $conn->real_escape_string($_POST['titular'] ?? '');
 $pagina        = isset($_POST['pagina']) ? (int)$_POST['pagina'] : 1;
 
 $por_pagina = 10;
@@ -17,7 +18,9 @@ $inicio = ($pagina > 1) ? ($pagina * $por_pagina - $por_pagina) : 0;
 $where = [];
 if ($ordenFiltro !== '')   $where[] = "OrdenCompra LIKE '%$ordenFiltro%'";
 if ($clienteFiltro !== '') $where[] = "NombreCliente LIKE '%$clienteFiltro%'";
-if ($itemFiltro !== '')    $where[] = "CodigoItem LIKE '%$itemFiltro%'";
+if ($NoDeArticulo !== '')    $where[] = "NoDeArticulo LIKE '%$NoDeArticulo%'";
+if ($titular !== '') $where[] = "Titular LIKE '%$titular%'";
+
 $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 // Total

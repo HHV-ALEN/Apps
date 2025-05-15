@@ -157,7 +157,7 @@ $Nombre = explode(" ", $Nombre)[0];
                         </a>
                     </li>
                     <?php
-                    if ($_SESSION['Area'] == 'Cadena De Suministros') {
+                    if ($_SESSION['Area'] == 'Cadena De Suministros' || $_SESSION['Area'] == 'Cadena de Suministros') {
                     ?>
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="/SupplyChain/index.php">

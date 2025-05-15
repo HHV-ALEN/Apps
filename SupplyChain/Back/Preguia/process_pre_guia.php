@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('America/Mexico_City');
 require_once("../../../Back/config/config.php");
 $conn = connectMySQLi();
 session_start();
@@ -42,6 +43,29 @@ $OtrasOpciones = [
     "Proveedor Recolecta"
 ];
 
+// Si se envió información de dirección, actualizamos el cliente
+if (!empty($_POST['Calle'])) {
+    $nombre = $_POST['clienteNombre'];
+    $calle = $_POST['Calle'];
+    $colonia = $_POST['Colonia'];
+    $ciudad = $_POST['Ciudad'];
+    $estado = $_POST['Estado'];
+    $cp = $_POST['CP'];
+
+    echo "<hr><br><strong>Información de la dirección:</strong>";
+    echo "<br><strong> Calle:</strong> " . $calle;
+    echo "<br><strong> Colonia:</strong> " . $colonia;
+    echo "<br><strong> Ciudad:</strong> " . $ciudad;
+    echo "<br><strong> Estado:</strong> " . $estado;
+    echo "<br><strong> CP:</strong> " . $cp;
+
+    $query_update_cliente = "UPDATE clientes SET Calle = '$calle', Colonia = '$colonia', Ciudad = '$ciudad', Estado = '$estado', CP = '$cp' WHERE Nombre = '$nombre'";
+    if ($conn->query($query_update_cliente) === TRUE) {
+        echo "<br><strong>Actualización de cliente exitosa</strong>";
+    } else {
+        echo "<br><strong>Error al actualizar el cliente: </strong>" . $conn->error;
+    }
+}
 
 
 /// Si $Chofer_Asignado esta en las opciones de $OtrasOpciones:
@@ -66,7 +90,7 @@ if (in_array($Chofer_Asignado, $OtrasOpciones)) {
     }
 
     $insertBitacora = "INSERT INTO bitacora (Id_Salida, Responsable, Fecha, Accion)
-    VALUES ('$id_salida', '$firstname', '$Fecha_Actual', 'Registro de preguía ( $Chofer_Asignado )')";
+    VALUES ('$id_salida', '$firstname', 'Registro de preguía ( $Chofer_Asignado )', '$Fecha_Actual')";
     if ($conn->query($insertBitacora) === TRUE) {
         echo "<br><strong>Registro de bitacora exitoso</strong>";
     } else {

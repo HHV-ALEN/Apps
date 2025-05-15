@@ -38,6 +38,13 @@ $query_salida = "SELECT salidas.*, entregas.Id_Orden_Venta
 $result_salida = mysqli_query($conn, $query_salida);
 ?>
 
+<script>
+  const currentUserDept = "<?php echo $_SESSION['Departamento']; ?>";
+  const currentUserId = "<?php echo $_SESSION['User_Id']; ?>";
+  console.log("User Department:", currentUserDept);
+  console.log("User ID:", currentUserId);
+</script>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -232,6 +239,22 @@ $result_salida = mysqli_query($conn, $query_salida);
   <?php
     exit();
   }
+
+  if (isset($_SESSION['success_message'])) {
+    echo "<div class='alert alert-success alert-dismissible fade show' role='alert'>
+            {$_SESSION['success_message']}
+            <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>
+          </div>";
+    unset($_SESSION['success_message']);
+  }
+
+  if (isset($_SESSION['error_message'])) {
+    echo "<div class='alert alert-danger alert-dismissible fade show' role='alert'>
+            {$_SESSION['error_message']}
+            <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>
+          </div>";
+    unset($_SESSION['error_message']);
+  }
   ?>
 
   <div class="container mt-5 text-center">
@@ -241,12 +264,17 @@ $result_salida = mysqli_query($conn, $query_salida);
           <div class="col-md-12">
             <h2>Listado General</h2>
             <?php
-            if ($_SESSION['Departamento'] == 'Entrega') {
+            //print_r($_SESSION);
+            //echo "<h5>Bienvenido " . $_SESSION['User_Id'] . "</h5>";
+            // Permitil que el usuario 'Raquel Cabrales' con User_Id = 34 PUEDA acceder a los botones de todos los procesosl sin importar que no tenga el mismo 'Departamento'
+
+
+            if ($_SESSION['Departamento'] == 'Entrega y Surtido' || $_SESSION['User_Id'] == 34) {
+              // Mostrar botón para agregar nueva etiqueta de salida
             ?>
               <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#agregarModal">
                 <i class="bi bi-plus-lg"></i> Agregar Nueva Etiqueta de Salida
               </button>
-
             <?php
 
             }
@@ -328,21 +356,27 @@ $result_salida = mysqli_query($conn, $query_salida);
                       <i class="bi bi-file-earmark-medical"></i> Detalles
                     </a>
                     <?php
-                    /// Para Recbir la entrega con el Departamento Empaque
-                    if ($_SESSION['Departamento'] == 'Empaque' && $fila['Estado'] == 'Entrega') {
-                      echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Empaque' class='btn btn-warning'>
-                        <i class='bi bi-box-seam me-2'></i> Recibir Entrega (Empaque)
+                    $isGerente = ($_SESSION['User_Id'] == 34);
+                    //print_r($_SESSION);
+
+                    // Empaque puede recibir cuando el estado es 'Entrega'
+                    if (($isGerente || $_SESSION['Departamento'] == 'Empaque') && $fila['Estado'] == 'Entrega') {
+                      echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Empaque' class='btn btn-warning btn-sm'>
+                        <i class='bi bi-box-seam me-sm-2'></i> 
+                        <span class='d-none d-sm-inline'>Recibir Entrega (<strong>Empaque</strong>)</span>
                       </a>";
                     }
 
                     /// Para recibir de estado Empaque a Facturación:
-                    if ($_SESSION['Departamento'] == 'Facturación' && $fila['Estado'] == 'Empaque') {
+                    /// Permitir a Raquel Cabrales recibir de Empaque a Facturación, pero que se muestre solo cuando el estado esta en Empaque, pero no en otros estados
+                    /// Para recibir de estado Empaque a Facturación:
+                    if (($isGerente || $_SESSION['Departamento'] == 'Facturación') && $fila['Estado'] == 'Empaque') {
                       echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Facturación' class='btn btn-warning'>
                       <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Facturación)
                     </a>";
                     }
 
-                    if ($_SESSION['Departamento'] == 'Logistica' && $fila['Estado'] == 'Facturación') {
+                    if (($isGerente || $_SESSION['Departamento'] == 'Logistica') && $fila['Estado'] == 'Facturación') {
                       /// Para recibir de estado Facturación a Logistica:
                       //1.- Verificar que se encuentre registrado una factura 
                       /// Consultar la tabla entregas donde Id_Salida = $fila['Id'] y el campo Archivo o N/A o 0 no sea nulo
@@ -361,7 +395,7 @@ $result_salida = mysqli_query($conn, $query_salida);
                       }
                     }
 
-                    if ($_SESSION['Departamento'] == 'Logistica' && $fila['Estado'] == 'Logistica') {
+                    if (($isGerente || $_SESSION['Departamento'] == 'Logistica') && $fila['Estado'] == 'Logistica') {
                       /// Botón para abrir modal de la Pre-guia 
                       /// Mandar $fila['Id'] y $fila['Nombre_Cliente']
                       echo "<button class='btn btn-info me-2' 
@@ -372,6 +406,15 @@ $result_salida = mysqli_query($conn, $query_salida);
                           <i class='bi bi-truck me-1'></i> Pre-Guía
                         </button>";
                     }
+
+                    if (($isGerente || $_SESSION['Departamento'] == 'Logistica') && $fila['Estado'] == 'A Ruta') {
+                      echo "<button class='btn btn-danger me-2' data-bs-toggle='modal' 
+                            data-bs-target='#RutaModal'
+                            data-pedido-id='{$fila['Id']}'
+                            data-cliente-nombre='{$fila['Nombre_Cliente']}'>
+                          <i class='bi bi-arrow-clockwise'></i></i> Reasignación
+                        </button>";
+                    }
                     ?>
                   </td>
                 </tr>
@@ -379,6 +422,48 @@ $result_salida = mysqli_query($conn, $query_salida);
             </tbody>
           </table>
         </div>
+
+        <!-- ModalRuta -->
+        <div class="modal fade" id="RutaModal" tabindex="-1" aria-labelledby="RutaModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <form method="POST" action="Back/reasignar_chofer.php">
+              <div class="modal-content">
+                <div class="modal-header bg-warning text-white">
+                  <h5 class="modal-title" id="RutaModalLabel">Reasignar Chofer</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body">
+                  <input type="hidden" name="Id_Salida" id="modalSalidaId">
+
+                  <!-- DEBUG: mostrar ID recibido -->
+                  <div class="mb-3">
+                    <label for="mostrarId" class="form-label">ID de la salida:</label>
+                    <input type="text" class="form-control" id="mostrarId" disabled>
+                  </div>
+
+
+                  <div class="mb-3">
+                    <label for="choferActual" class="form-label">Chofer actual:</label>
+                    <input type="text" class="form-control" id="choferActual" disabled>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="nuevoChofer" class="form-label">Nuevo chofer:</label>
+                    <select class="form-select" name="nuevo_chofer" id="nuevoChofer" required>
+                      <option value="">Selecciona un chofer</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-success">Guardar</button>
+                </div>
+              </div>
+            </form>
+
+          </div>
+        </div>
+
 
         <!-- Pagination Controls -->
         <nav aria-label="Page navigation">
@@ -425,9 +510,7 @@ $result_salida = mysqli_query($conn, $query_salida);
         </div>
         <div class="modal-body">
           <form action="Back/Preguia/process_pre_guia.php" method="POST" id="form_logistica">
-
             <div class="row">
-
               <div class="col-md-6">
                 <label for="Id" class="form-label">Numero Id:</label>
                 <input type="number" class="form-control" id="modalPedidoId" name="pedido_id">
@@ -437,6 +520,33 @@ $result_salida = mysqli_query($conn, $query_salida);
                 <input type="text" class="form-control" id="clienteNombre" name="clienteNombre" readonly disabled="false">
                 <input type="hidden" id="clienteNombreHidden" name="clienteNombre">
               </div>
+              <div id="camposExtraCliente" style="display: none;" class="mt-3">
+                <div class="row">
+                  <div class="col-md-6">
+                    <label for="inputCalle" class="form-label">Calle</label>
+                    <input type="text" class="form-control" id="inputCalle" name="Calle">
+                  </div>
+                  <div class="col-md-6">
+                    <label for="inputColonia" class="form-label">Colonia</label>
+                    <input type="text" class="form-control" id="inputColonia" name="Colonia">
+                  </div>
+                </div>
+                <div class="row mt-2">
+                  <div class="col-md-4">
+                    <label for="inputCiudad" class="form-label">Ciudad</label>
+                    <input type="text" class="form-control" id="inputCiudad" name="Ciudad">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="inputEstado" class="form-label">Estado</label>
+                    <input type="text" class="form-control" id="inputEstado" name="Estado">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="inputCP" class="form-label">CP</label>
+                    <input type="text" class="form-control" id="inputCP" name="CP">
+                  </div>
+                </div>
+              </div>
+
             </div>
             <br>
             <div class="row">
@@ -518,8 +628,6 @@ $result_salida = mysqli_query($conn, $query_salida);
                 </div>
               </div>
 
-
-
               <!-- Header de la Sección de Partidas -->
               <div class="modal-header">
                 <h5 class="modal-title" id="agregarModalLabel">Agregar Nueva Partida</h5>
@@ -544,6 +652,7 @@ $result_salida = mysqli_query($conn, $query_salida);
                   </div>
                 </div>
               </div>
+
               <!-- Partidas -->
               <div class="row">
                 <div class="col-md-6">
@@ -582,7 +691,7 @@ $result_salida = mysqli_query($conn, $query_salida);
             <!-- Footer del Modal -->
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-              <button type="submit" class="btn btn-primary">Guardar</button>
+              <button type="submit" class="btn btn-primary" id="btnGuardar">Guardar</button>
             </div>
           </form>
         </div>
@@ -597,6 +706,53 @@ $result_salida = mysqli_query($conn, $query_salida);
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var rutaModal = document.getElementById('RutaModal');
+
+        rutaModal.addEventListener('show.bs.modal', function(event) {
+          var button = event.relatedTarget;
+          var salidaId = button.getAttribute('data-pedido-id');
+
+          document.getElementById('modalSalidaId').value = salidaId;
+          document.getElementById('mostrarId').value = salidaId;
+
+          // Limpiar antes de cargar
+          document.getElementById('choferActual').value = '';
+          const selectChoferes = document.getElementById('nuevoChofer');
+          selectChoferes.innerHTML = '<option value="">Cargando...</option>';
+
+          // Fetch al backend
+          fetch('Back/obtener_choferes.php', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: 'Id_Salida=' + encodeURIComponent(salidaId)
+            })
+            .then(res => res.json())
+            .then(data => {
+              console.log("Respuesta del servidor:", data);
+
+              // Mostrar chofer actual
+              document.getElementById('choferActual').value = data.chofer_actual;
+
+              // Llenar select con choferes
+              selectChoferes.innerHTML = '<option value="">Selecciona un chofer</option>';
+              data.choferes.forEach(chofer => {
+                const option = document.createElement('option');
+                option.value = chofer.Id;
+                option.textContent = chofer.Nombre;
+                selectChoferes.appendChild(option);
+              });
+            })
+            .catch(err => {
+              console.error("Error al obtener los choferes:", err);
+            });
+        });
+      });
+    </script>
+
+    <script>
       /// Animación de salida para el mensaje:
       window.addEventListener('DOMContentLoaded', () => {
         const alerta = document.getElementById("alertaBanner");
@@ -609,6 +765,7 @@ $result_salida = mysqli_query($conn, $query_salida);
           }, 4000); // Desaparece después de 4 segundos
         }
       });
+
 
       // Filtros para la tabla:
       $(document).ready(function() {
@@ -632,29 +789,85 @@ $result_salida = mysqli_query($conn, $query_salida);
 
             success: function(response) {
               let tbody = $("#tabla_resultados");
-              tbody.empty(); // Limpiar tabla antes de insertar nuevos datos
-              //console.log(response);
-              if (response.length > 0) {
+              tbody.empty(); // Clear table before inserting new data
 
+
+              if (response.length > 0) {
                 response.forEach(function(item) {
                   console.log(item);
+                  // Determine button HTML based on conditions (similar to your PHP logic)
+                  let buttonsHtml = `
+                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    <a href='Front/detalles.php?id=${item.Id}' class='btn btn-primary btn-sm'>
+                        <i class="bi bi-file-earmark-medical"></i> <span class="d-none d-sm-inline">Detalles</span>
+                    </a>`;
+
+                  // Entrega button
+                  if (item.Estado == 'Entrega') {
+                    if (currentUserDept == 'Empaque' || currentUserId == 34) {
+                      buttonsHtml += `
+                        <a href='Back/changeState.php?id=${item.Id}&estado=Empaque' class='btn btn-warning btn-sm'>
+                            <i class='bi bi-box-seam me-sm-2'></i> 
+                            <span class='d-none d-sm-inline'>Recibir Entrega (<strong>Empaque</strong>)</span>
+                        </a>`;
+                    }
+                  }
+
+                  // Empaque button logic - js
+                  if (item.Estado == 'Empaque') {
+                    console.log("Registro en estado Empaque");
+                    if (currentUserDept == 'Facturación' || currentUserId == 34) {
+                      console.log("Se Cumple la condicion");
+                      buttonsHtml += `
+                      <a href='Back/changeState.php?id=${item.Id}&estado=Facturación' class='btn btn-warning'>
+                      <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Facturación)
+                    </a>`;
+                    }
+                  }
+
+                  // Pasar a Logistica cuando tiene archivo asignado 
+                  if (item.Estado === 'Facturación' &&
+                    (currentUserDept === 'Logistica' || currentUserId === 34) &&
+                    parseInt(item.Factura_Registrada) > 0) {
+
+                    buttonsHtml += `
+    <a href='Back/changeState.php?id=${item.Id}&estado=Logistica' class='btn btn-warning'>
+      <i class='bi bi-truck'></i> Recibir Entrega (Logística)
+    </a>`;
+                  }
+
+                  // Pre-Guía button
+                  if (item.Estado === 'Logistica' &&
+                    (currentUserDept === 'Logistica' || currentUserId === 34)) {
+                    buttonsHtml += `
+                      <button class='btn btn-info me-2' 
+                              data-bs-toggle='modal' 
+                              data-bs-target='#preGuiaModal'
+                              data-pedido-id='${item.Id}'
+                              data-cliente-nombre='${item.Nombre_Cliente}'>
+                          <i class='bi bi-truck me-1'></i> Pre-Guía
+                      </button>`;
+                  }
+
+
+
+                  // Close buttons div
+                  buttonsHtml += `</div>`;
+
+                  // Add row to table
                   tbody.append(`
-                              <tr>
-                                  <td>${item.Id}</td>
-                                  <td>${item.Nombre_Cliente}</td>
-                                  <td>${item.Id_Orden_Venta ? item.Id_Orden_Venta : 'N/A'}</td>
-                                  <td>${item.Estado}</td>
-                                  <td>${item.Sucursal}</td>
-                                  <td>
-                                      <a href='Front/detalles.php?id=${item.Id}' class='btn btn-primary detalles-btn'>
-                                          <i class="bi bi-file-earmark-medical"></i> Detalles
-                                      </a>
-                                  </td>
-                              </tr>
-                          `);
+                <tr class="${item.Urgencia == 'Si' ? 'table-danger' : 'table-success'}">
+                    <td>${item.Id}</td>
+                    <td>${item.Nombre_Cliente}</td>
+                    <td>${item.Id_Orden_Venta ? item.Id_Orden_Venta : 'N/A'}</td>
+                    <td>${item.Estado}</td>
+                    <td>${item.Sucursal}</td>
+                    <td>${buttonsHtml}</td>
+                </tr>
+            `);
                 });
               } else {
-                tbody.append('<tr><td colspan="7" class="text-center text-danger">No se encontraron resultados</td></tr>');
+                tbody.append('<tr><td colspan="6" class="text-center text-danger py-3">No se encontraron resultados</td></tr>');
               }
             }
           });
@@ -738,8 +951,7 @@ $result_salida = mysqli_query($conn, $query_salida);
                                     <option value="">Selecciona un chofer</option>
                                     <option value="Manuel Lopez Romero">Manuel Lopez Romero</option>
                                     <option value="Jose de Jesus Torres Aguilar">Jose de Jesus Torres Aguilar</option>
-                                    <option value="Brandon Alexis Hernandez Robles">Brandon Alexis Hernandez Robles
-                                    </option>
+                                    <option value="Brandon Alexis Hernandez Robles">Brandon Alexis Hernandez Robles</option>
                                     <option value="Daniel Soto Mayor">Daniel Soto Mayor</option>
                                     <option value="Jonathan Islas Hernandez">Jonathan Islas Hernandez</option>
                                     <option value="Rene Canche Couoh">Rene Canche Couoh</option>
@@ -811,11 +1023,9 @@ $result_salida = mysqli_query($conn, $query_salida);
                                     <option value="">Selecciona un chofer</option>
                                     <option value="Manuel Lopez Romero">Manuel Lopez Romero</option>
                                     <option value="Jose de Jesus Torres Aguilar">Jose de Jesus Torres Aguilar</option>
-                                    <option value="Brandon Alexis Hernandez Robles">Brandon Alexis Hernandez Robles
-                                    </option>
+                                    <option value="Brandon Alexis Hernandez Robles">Brandon Alexis Hernandez Robles</option>
                                     <option value="Daniel Soto Mayor">Daniel Soto Mayor</option>
                                     <option value="Jonathan Islas Hernandez">Jonathan Islas Hernandez</option>
-                                    <option value="Rene Canche Couoh">Rene Canche Couoh</option>
                                     <option value="Rene Canche Couoh">Rene Canche Couoh</option>
                                     <option value="">---------------------------</option>
                                     <option value="Cliente Pasa">Cliente Pasa</option>
@@ -945,6 +1155,90 @@ $result_salida = mysqli_query($conn, $query_salida);
         $(document).click(function(e) {
           if (!$(e.target).closest("#cliente_nombre, #listaClientes").length) {
             $("#listaClientes").hide();
+          }
+        });
+      });
+    </script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var preGuiaModal = document.getElementById('preGuiaModal');
+
+        preGuiaModal.addEventListener('show.bs.modal', function(event) {
+          var button = event.relatedTarget;
+          var pedidoId = button.getAttribute('data-pedido-id');
+          var clienteNombre = button.getAttribute('data-cliente-nombre');
+
+          document.getElementById('modalPedidoId').value = pedidoId;
+          document.getElementById('clienteNombre').value = clienteNombre;
+          document.getElementById('clienteNombreHidden').value = clienteNombre;
+
+          // Consulta al backend para saber si tiene los datos completos
+          fetch('Back/Clientes/get_info_cliente.php', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: 'nombre=' + encodeURIComponent(clienteNombre)
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (!data || Object.values(data).some(val => val === null || val === '')) {
+                // Mostrar campos para completar info
+                document.getElementById('camposExtraCliente').style.display = 'block';
+              } else {
+                document.getElementById('camposExtraCliente').style.display = 'none';
+              }
+
+              // Si quieres precargar lo que sí tenga:
+              document.getElementById('inputCalle').value = data.Calle ?? '';
+              document.getElementById('inputColonia').value = data.Colonia ?? '';
+              document.getElementById('inputCiudad').value = data.Ciudad ?? '';
+              document.getElementById('inputEstado').value = data.Estado ?? '';
+              document.getElementById('inputCP').value = data.CP ?? '';
+            });
+        });
+      });
+    </script>
+
+    <script>
+      /// Revisar si el folio de entrega ya existe:
+      document.addEventListener('DOMContentLoaded', function() {
+        const inputFolio = document.getElementById('folio_entrega');
+        const btnGuardar = document.getElementById('btnGuardar');
+        const mensajeFolio = document.createElement('small');
+
+        mensajeFolio.classList.add('text-danger', 'mt-1');
+        inputFolio.parentNode.appendChild(mensajeFolio);
+
+        inputFolio.addEventListener('input', function() {
+          const folio = this.value.trim();
+
+          if (folio.length > 0) {
+            fetch('Back/Entregas/validar_entregas.php', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'folio_entrega=' + encodeURIComponent(folio)
+              })
+              .then(res => res.json())
+              .then(data => {
+                if (data.existe) {
+                  mensajeFolio.textContent = `⚠️ El folio ya se encuentra registrado en la salida ${data.id_salida}`;
+                  btnGuardar.disabled = true;
+                } else {
+                  mensajeFolio.textContent = '';
+                  btnGuardar.disabled = false;
+                }
+              })
+              .catch(err => {
+                console.error('Error al validar el folio:', err);
+                mensajeFolio.textContent = '';
+                btnGuardar.disabled = false;
+              });
+          } else {
+            mensajeFolio.textContent = '';
+            btnGuardar.disabled = false;
           }
         });
       });

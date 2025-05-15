@@ -1,5 +1,5 @@
 <?php
-
+date_default_timezone_set('America/Mexico_City');
 require_once("../../../Back/config/config.php");
 $conn = connectMySQLi();
 session_start();

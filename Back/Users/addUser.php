@@ -1,6 +1,7 @@
 <?php
 include '../config/config.php';
 session_start();
+date_default_timezone_set('America/Mexico_City');
 
 $Nombre_Responsable = $_SESSION['Name'];
 
@@ -44,7 +45,7 @@ $query = "INSERT INTO usuarios (Nombre, Username, Email, Fecha_Ingreso, Jerarqui
 
         $Mensaje_Registro = "El usuario: " . $Nombre_Responsable . " Realizo el registro de : " . $Nombre . " Correctamente";
         $queryBitacora = "INSERT INTO bitacora (Accion, Fecha, Responsable) VALUES
-        ('$Mensaje_Registro', NOW(), '$Nombre_Responsable')";
+        ('$Mensaje_Registro', '$Fecha_Actual', '$Nombre_Responsable')";
         mysqli_query($conn, $queryBitacora);
         mysqli_close($conn);
         header("Location: ../../Front/Users/Users.php");

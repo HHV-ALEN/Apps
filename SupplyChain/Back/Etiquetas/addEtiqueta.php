@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('America/Mexico_City');
 require_once("../../../Back/config/config.php");
 // Mostrar todos los errores:
 
@@ -59,6 +60,7 @@ $Id_Sucursal = array_search($Sucursal, $Sucursales);
 echo "<br>Id_Sucursales:" . $Id_Sucursal; // Si $Sucursal es "Guadalajara", imprime: 1
 
 $FechaHoy = date('Y-m-d H:i:s');
+echo "<br> <strong>Fecha: </strong>" . $FechaHoy;
 /// Información Recibida del formulario de nueva etiqueta
 $Numero_Etiqueta = $_POST['numero_salida'];
 $id_cliente = $_POST['id_cliente'];
@@ -152,7 +154,6 @@ if ($query_salida) {
   echo "<h1>Error al registrar la salida</h1>";
   echo "**************************************";
 }
-
 
 // Registrar Partida
 //entrega_factura -> entrega_factura_regactor

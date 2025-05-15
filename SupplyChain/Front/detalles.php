@@ -10,7 +10,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Conexión a la base de datos
+// Conexión a la base de  datos
 
 if (isset($_SESSION['alerta_estado'])) {
     echo "<div id='alertaBanner' class='alerta fade-in'>
@@ -45,29 +45,28 @@ $id_cliente = $Salida['Id_Cliente'];
 $Nombre_Cliente = $Salida['Nombre_Cliente'];
 $id_status = $Salida['Id_Status'];
 $Estado = $Salida['Estado'];
+$Estado_Original_DeSalida = $Salida['Estado'];
 $Id_Sucursal = $Salida['Id_Sucursal'];
 $Sucursal = $Salida['Sucursal'];
 //echo "<strong>TABLA SALIDA:</strong>";
 //echo "<br> - Cliente: " . $id_cliente;
 //echo "<br> - Status: " . $id_status;
-//echo "<br> - Estado: " . $Estado;
+//echo "<br> - Nombre: " . $Nombre_Cliente ;
 //echo "<br> - Fecha: " . $fecha;
 //echo "<br> - Comentario: " . $comentario;
 //echo "<br> - Sucursal: " . $id_sucursal;
+//echo "<br> - Estado: " . $Estado;
 
 // Consulta en la tabla "cliente"
-
-$Cliente_query = "SELECT * FROM clientes WHERE Id_Original = $id_cliente";
+//echo "<br> Id Cliente: " . $id_cliente;
+$Cliente_query = "SELECT * FROM clientes WHERE Id = $id_cliente";
 $Cliente_result = mysqli_query($conn, $Cliente_query);
 $Cliente = mysqli_fetch_array($Cliente_result);
-$nombre_cliente = $Cliente['Nombre'];
-$rfc = $Cliente['RFC'];
-$clave_sap = $Cliente['Clave_Sap'];
+$nombre_cliente = $Cliente['Nombre'] ?? 'N/A';
+$rfc = $Cliente['RFC'] ?? 'N/A';
+$clave_sap = $Cliente['Clave_Sap'] ?? 'N/A';
 
-//echo "<br><br><strong>TABLA CLIENTE:</strong>";
-//echo "<br> - Nombre del cliente: " . $nombre_cliente;
-//echo "<br> - RFC: " . $rfc;
-//echo "<br> - Clave SAP: " . $clave_sap;
+//echo "<br> en minusculas: nombre_cliente: " . $nombre_cliente;
 
 
 /// Consulta en la tabla "entrega_factura" para obtener el folio de la orden `entrega_factura_refactor`
@@ -560,9 +559,9 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                     <div class="modal-body">
 
                         <!-- Hidden Inputs -->
-                         <?php 
-                         echo "<br><strong>Tipo de documento: </strong>" . $Tipo_Doc;
-                         ?>
+                        <?php
+                        echo "<br><strong>Tipo de documento: </strong>" . $Tipo_Doc;
+                        ?>
                         <input type="hidden" name="Id_Salida" value="<?php echo $id_salida; ?>">
                         <input type="hidden" name="Tipo_Doc" value="<?php echo $Tipo_Doc; ?>">
 
@@ -790,12 +789,16 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                                         </a>
                                                     <?php
                                                     } else {
+                                                        if ($Estado_Original_DeSalida == 'Facturación'){
                                                     ?>
                                                         <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
                                                             data-bs-target="#modalFacturacion_BASE<?php echo $Id_Salida_B; ?>">
                                                             <i class="fas fa-file-pdf"></i> Asignar Factura
                                                         </button>
                                                     <?php
+                                                    }else{
+                                                        echo "No disponible";
+                                                    }
                                                     }
                                                 } else {
                                                     if ($Id_Factura_B != 'N/A' || $Archivo != 'N/A') {
@@ -995,7 +998,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                                 <a href="detallesCompra.php?id=<?= htmlspecialchars($row['Id']) ?>">Detalles del Articulo</a>
                                             </div>
                                         </div>
-                                       
+
                                     </div>
                                 </div>
                             </div>
@@ -1372,33 +1375,31 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                         <?php
                         ?>
                         <label for="Salida_Anidada_Id" class="form-label">Seleccione una opción:</label>
+
                         <!-- Seleccionar Unicamente registros de la tabla salida_refactor que tengan el mismo Cliente -->
                         <?php
+                        $nombre_cliente = trim($nombre_cliente);
+                        $id_salida = intval($id_salida);
 
-                        $ids_excluidos_str = implode(",", $ids_excluidos);
-
-                        if (!empty($ids_excluidos)) {
-                            $ids_excluidos_str = implode(",", $ids_excluidos);
-                            $Sql_Same_Clients = "SELECT * FROM salidas 
-                          WHERE Id != '$id_salida' 
-                          AND Nombre_Cliente = '$nombre_cliente'
-                          AND Id NOT IN ($ids_excluidos_str)";
-                        } else {
-                            $Sql_Same_Clients = "SELECT * FROM salidas 
-                          WHERE Id != '$id_salida' 
-                          AND Nombre_Cliente = '$nombre_cliente'";
-                        }
+                        $Sql_Same_Clients = "SELECT * FROM salidas 
+                     WHERE Id != $id_salida 
+                     AND Nombre_Cliente = '" . mysqli_real_escape_string($conn, $nombre_cliente) . "'";
 
                         $Result_Same_Clients = mysqli_query($conn, $Sql_Same_Clients);
-                        // Mostrar dentro de un select las opciones disponibles
                         ?>
+
+
                         <select class="form-select" id="Salida_Anidada_Id" name="Salida_Anidada_Id" required>
                             <option value="">Selecciona una Etiqueta</option>
                             <?php
-                            while ($row = mysqli_fetch_array($Result_Same_Clients)) {
-                                $Id_Salida = $row['Id'];
-                                $Nombre_Cliente = $row['Nombre_Cliente'];
-                                echo "<option value='$Id_Salida'>$Id_Salida - $Nombre_Cliente</option>";
+                            if (mysqli_num_rows($Result_Same_Clients) > 0) {
+                                while ($row = mysqli_fetch_assoc($Result_Same_Clients)) {
+                                    $Id_Salida = $row['Id'];
+                                    $Nombre_Cliente = $row['Nombre_Cliente'];
+                                    echo "<option value='$Id_Salida'>$Id_Salida - $Nombre_Cliente</option>";
+                                }
+                            } else {
+                                echo "<option disabled>No hay otras etiquetas del mismo cliente</option>";
                             }
                             ?>
                         </select>
@@ -1648,11 +1649,6 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
         </div>
     </form>
 </div>
-
-
-
-
-
 
 </div>
 
