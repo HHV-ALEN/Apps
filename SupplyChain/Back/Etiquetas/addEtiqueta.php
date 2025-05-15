@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('America/Mexico_City');
 require_once("../../../Back/config/config.php");
 // Mostrar todos los errores:
 
@@ -9,8 +10,10 @@ error_reporting(E_ALL);
 // Conectar a la base de datos
 $conn = connectMySQLi();
 session_start();
-print_r($_SESSION);
+print_r($_POST);
 /// Arreglos para cotejar el Id de la sucursal y estado
+
+//Array ( [numero_salida] => 9 [id_cliente] => nuevo [nuevo_nombre] => nOMBRE cLIENTE [nuevo_clave] => SApCode [nuevo_rfc] => RFCCCCC [orden_venta] => 23 [folio_entrega] => 34 [partida1] => 1 [partida2] => 3 [prioridad] => nada [Comentarios] => )
 
 $Estados = array(
   1 => "Entrega",
@@ -57,6 +60,7 @@ $Id_Sucursal = array_search($Sucursal, $Sucursales);
 echo "<br>Id_Sucursales:" . $Id_Sucursal; // Si $Sucursal es "Guadalajara", imprime: 1
 
 $FechaHoy = date('Y-m-d H:i:s');
+echo "<br> <strong>Fecha: </strong>" . $FechaHoy;
 /// Información Recibida del formulario de nueva etiqueta
 $Numero_Etiqueta = $_POST['numero_salida'];
 $id_cliente = $_POST['id_cliente'];
@@ -69,6 +73,11 @@ $prioridad = $_POST['prioridad'];
 $Comentario = $_POST['Comentarios'] ?? "";
 $Cliente2 = $_POST['Cliente2'] ?? "";
 
+$NuevoNombre = $_POST['nuevo_nombre'];
+$NuevaClave = $_POST['nuevo_clave'];
+$NuevaRFC = $_POST['nuevo_rfc'];
+
+
 echo "<br>------------------------------- <strong>Información del Formulario</strong>";
 echo "<br> ----> Numero de etiqueta: $Numero_Etiqueta";
 echo "<br> ----> Orden de venta: $orden_venta";
@@ -80,17 +89,43 @@ echo "<br> ----> Comentarios: $Comentario";
 echo "<br> ----> Cliente 2: $Cliente2";
 echo "<br>";
 
-/// Obtener Información del Cliente
-$sql_cliente = "SELECT * FROM clientes WHERE Id = '$id_cliente'";
-$query_cliente = mysqli_query($conn, $sql_cliente);
-$info_cliente = mysqli_fetch_array($query_cliente);
-$nombre_cliente = $info_cliente['Nombre'];
-$clave_sap = $info_cliente['Clave_Sap'];
-$RFC = $info_cliente['RFC'];
 
-echo "<br>-------------------------->  <strong>Información del cliente</strong>";
-echo "<p>Nombre del cliente: $nombre_cliente</p>";
-echo "<p>Clave SAP: $clave_sap</p>";
+if ($id_cliente == 'nuevo') {
+  // Registrar cliente y obtener el nuevo nombre y el Id
+  echo "<br> <strong>Nuevo Nombre: </strong>" . $NuevoNombre;
+  echo "<br> <strong>Nueva Clave: </strong>" . $NuevaClave;
+  echo "<br> <strong>Nueva RFC: </strong>" . $NuevaRFC;
+
+  // Registrar la base del nuevo cliente
+  $insert_cliente = "INSERT INTO clientes (Nombre, RFC, Clave_Sap) VALUES 
+  ('$NuevoNombre', '$NuevaClave', '$NuevaRFC')";
+  $query_cliente = mysqli_query($conn, $insert_cliente);
+
+  if($query_cliente){
+    echo "<br> Nuevo CLiente registrado";
+  } else {
+    echo "<br> Error en el registro del cliente";
+  }
+
+  // Obtener el último ID insertado
+  $id_cliente = mysqli_insert_id($conn);
+  $nombre_cliente = $NuevoNombre;
+
+
+} else {
+
+  /// Obtener Información del Cliente
+  $sql_cliente = "SELECT * FROM clientes WHERE Id = '$id_cliente'";
+  $query_cliente = mysqli_query($conn, $sql_cliente);
+  $info_cliente = mysqli_fetch_array($query_cliente);
+  $nombre_cliente = $info_cliente['Nombre'];
+  $clave_sap = $info_cliente['Clave_Sap'];
+  $RFC = $info_cliente['RFC'];
+
+  echo "<br>-------------------------->  <strong>Información del cliente</strong>";
+  echo "<p>Nombre del cliente: $nombre_cliente</p>";
+  echo "<p>Clave SAP: $clave_sap</p>";
+}
 
 
 echo "**************************************";
@@ -119,7 +154,6 @@ if ($query_salida) {
   echo "<h1>Error al registrar la salida</h1>";
   echo "**************************************";
 }
-
 
 // Registrar Partida
 //entrega_factura -> entrega_factura_regactor
@@ -152,6 +186,8 @@ if ($Comentario != "") {
 // Una vez registrados todos los datos, se redirige a la página de los detalles de la salida registrada
 /// http://www.alenturno.com/Vinculacion/detalles.php?id_salida=33887
 //echo "<br> Id a enviar: " . $Numero_Etiqueta ;
-header("Location: ../../Front/detalles.php?id=".$Numero_Etiqueta);
+header("Location: ../../Front/detalles.php?id=" . $Numero_Etiqueta);
+
+
 
 ?>

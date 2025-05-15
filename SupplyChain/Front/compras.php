@@ -58,23 +58,83 @@ $conn = connectMySQLi();
             transform: translateY(0);
         }
     </style>
+    <style>
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table thead th {
+            background-color: #007bff;
+            color: white;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        table td input {
+            min-width: 120px;
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+        }
+
+        table td input:focus {
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25);
+        }
+
+        .table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 <body>
 
     <?php require_once("../../Front/navbar.php"); ?>
+    <?php
+    if ($_SESSION['Role'] != 'Empleado') {
+    ?>
+        <div class="container text-center">
+            <h2 class="mb-4">📦 Líneas Abiertas</h2>
+            <p class="lead">Sube tu archivo Excel exportado desde SAP para continuar con el registro.</p>
 
-    <div class="container text-center">
-        <h2 class="mb-4">📦 Líneas Abiertas</h2>
-        <p class="lead">Sube tu archivo Excel exportado desde SAP para continuar con el registro.</p>
-
-        <form method="POST" enctype="multipart/form-data" class="mt-4">
-            <input type="file" name="archivo_excel" class="form-control mb-3" required>
-            <button type="submit" name="procesar" class="btn btn-success">📤 Procesar Archivo</button>
-        </form>
-    </div>
+            <form method="POST" enctype="multipart/form-data" class="mt-4">
+                <input type="file" name="archivo_excel" class="form-control mb-3" required>
+                <button type="submit" name="procesar" class="btn btn-success">📤 Procesar Archivo</button>
+            </form>
+        </div>
+    <?php
+    }
+    ?>
 
     <?php
+    /* 
+        - Orden de Venta <- Pendiente *****
+        - Orden de Compra ** A
+        ( PARTIDAS )
+        - No. De Articulo *** C
+        - Código Item D
+        - Descripción Articulo *** E
+        - Códígo de Almacen
+        - Cantidad abierta restante **** G
+        - Precio **** H
+        - Importe Pendiente*** I
+        - Fecha OC ** J
+        - Fecha entrega cliente *** K
+
+        echo "<th>Orden de Venta</th>";
+        echo "<th></th>";
+        echo "<th></th>";
+        - ov
+        - Titular
+        . Fecha
+        - Status
+        - Pago a proveedores
+        */
+
+
     if (isset($_POST['procesar'])) {
         $archivoTmp = $_FILES['archivo_excel']['tmp_name'];
         $spreadsheet = IOFactory::load($archivoTmp);
@@ -82,20 +142,36 @@ $conn = connectMySQLi();
         $datos = $hoja->toArray(null, true, true, true);
 
         // Solo estas columnas deseamos
-        $columnasDeseadas = ['A', 'B', 'C', 'J'];
+        $columnasDeseadas = ['A', 'B', 'C', 'D', 'F', 'H', 'I', 'J', 'K', 'L', 'Q', 'R'];
+
 
         echo "<form method='post' action='../Back/Compras/guardar_compras.php'>";
         echo '<div class="container mt-5">';
         echo "<h4 class='mb-4'>📄 Vista previa de datos cargados</h4>";
-        echo "<div class='table-responsive'>";
+        echo "<div class='table-wrapper'>";
         echo "<table class='table table-bordered table-hover align-middle text-center'>";
 
         // Encabezados fijos
         echo "<thead class='table-primary'><tr>";
+        echo "<th>Orden de Compra</th>";
+        echo "<th>Cliente</th>";
+        echo "<th>No. De Articulo</th>";
+        echo "<th>Código Item</th>";
+        echo "<th>Descripción artículo/serv.</th>";
+        echo "<th>Cantidad abierta restante</th>";
+        echo "<th>Precio</th>";
+        echo "<th>Importe Pendiente</th>";
+        echo "<th>Fecha OC</th>";
+        echo "<th>Fecha entrega cliente</th>";
+        echo "<th>Titular</th>";
+        echo "<th>Fecha</th>";
+        echo "<th>Status</th>";
+        /*
         foreach ($columnasDeseadas as $col) {
             $titulo = $datos[1][$col] ?? $col;
             echo "<th>" . htmlspecialchars($titulo) . "</th>";
-        }
+            
+        }*/
         echo "</tr></thead><tbody>";
 
         // Filas de datos desde la fila 2
@@ -108,7 +184,7 @@ $conn = connectMySQLi();
                 $extraClass = ($col === 'B') ? 'form-control-lg' : '';
 
                 // Si es la columna J (fecha), intenta convertir
-                if ($col === 'J') {
+                if ($col === 'K' || $col === 'L') {
                     if (is_numeric($valor)) {
                         try {
                             $valor = Date::excelToDateTimeObject($valor)->format('Y-m-d');
@@ -124,7 +200,6 @@ $conn = connectMySQLi();
             }
             echo "</tr>";
         }
-
         echo "</tbody></table></div>";
         echo "<div class='text-center mt-3'><button type='submit' name='guardar' class='btn btn-success btn-lg'>💾 Guardar en BD</button></div>";
         echo "</div></form>";
@@ -132,7 +207,7 @@ $conn = connectMySQLi();
     ?>
 
     <!--------------------------------------------------------------------------------------------------------------------------------------------->
-    <hr>
+
     <br>
 
     <?php
@@ -163,34 +238,29 @@ $conn = connectMySQLi();
     // Obtener datos con filtro + paginación
     $sql_data = "SELECT * FROM supply_compras $where_sql ORDER BY Id DESC LIMIT $inicio, $por_pagina";
     $resultado = $conn->query($sql_data);
-
-
     ?>
 
-    <div class="container mt-5">
+    <div class="container mt-5 text-center">
         <h3 class="mb-4">📝 Compras Registradas</h3>
         <div class="table-responsive">
 
-            <div class="row g-3 mb-4">
-                <div class="col-md-3">
+            <div class="row g-3 mb-4 text-center">
+                <div class="col-md-3 ">
                     <input type="text" id="filtroOrden" class="form-control" placeholder="Orden de Compra">
                 </div>
                 <div class="col-md-3">
                     <input type="text" id="filtroCliente" class="form-control" placeholder="Nombre del Cliente">
                 </div>
                 <div class="col-md-3">
-                    <input type="text" id="filtroItem" class="form-control" placeholder="Código del Ítem">
+                    <input type="text" id="NoDeArticulo" class="form-control" placeholder="No. De Articulo">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" id="NombreTitular" class="form-control" placeholder="Nombre del Titular">
                 </div>
             </div>
-
             <div id="tabla-compras"></div>
-
         </div>
     </div>
-
-
-
-
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -198,7 +268,8 @@ $conn = connectMySQLi();
         function cargarTabla(pagina = 1) {
             let orden = $('#filtroOrden').val();
             let cliente = $('#filtroCliente').val();
-            let item = $('#filtroItem').val();
+            let Articulo = $('#NoDeArticulo').val();
+            let titular = $('#NombreTitular').val();
 
             $.ajax({
                 url: '../Back/Compras/comprasFiltro.php',
@@ -206,8 +277,9 @@ $conn = connectMySQLi();
                 data: {
                     orden: orden,
                     cliente: cliente,
-                    item: item,
-                    pagina: pagina
+                    Articulo: Articulo,
+                    pagina: pagina,
+                    titular: titular
                 },
                 success: function(response) {
                     $('#tabla-compras').html(response);
@@ -220,7 +292,7 @@ $conn = connectMySQLi();
             cargarTabla();
 
             // Escuchar inputs
-            $('#filtroOrden, #filtroCliente, #filtroItem').on('input', function() {
+            $('#filtroOrden, #filtroCliente, #NoDeArticulo, #NombreTitular').on('input', function() {
                 cargarTabla();
             });
 

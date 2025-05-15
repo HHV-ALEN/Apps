@@ -6,9 +6,12 @@ session_start();
 if (isset($_POST['query'])) {
     $search = mysqli_real_escape_string($conn, $_POST['query']);
 
-    $query = "SELECT Id, Nombre, Clave_Sap FROM clientes 
-              WHERE Nombre LIKE '%$search%' OR Clave_Sap LIKE '%$search%' 
-              ORDER BY Nombre LIMIT 10";
+$query = "SELECT MIN(Id) as Id, Nombre, MIN(Clave_Sap) as Clave_Sap 
+          FROM clientes 
+          WHERE Nombre LIKE '%$search%' OR Clave_Sap LIKE '%$search%' 
+          GROUP BY Nombre
+          ORDER BY Nombre 
+          LIMIT 15";
     
     $result = mysqli_query($conn, $query);
 

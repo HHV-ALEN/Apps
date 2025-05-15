@@ -1,6 +1,7 @@
 
 
 <?php
+date_default_timezone_set('America/Mexico_City');
 require_once("../../../Back/config/config.php");
 $conn = connectMySQLi();
 session_start();
@@ -9,7 +10,7 @@ echo "<h1>Información de la Session</h1>";
 $id_salida = $_GET['id_salida'];
 $Nombre_Archivo = $_GET['Nombre_Archivo'];
 $Nombre_Usuario = $_SESSION['Name'];
-$Fecha = date("Y-m-d");
+$Fecha = date("Y-m-d H:i:s");
 echo "<strong>Id Salida: </strong>" . $id_salida;
 echo "<br><strong>Nombre del Archivo: </strong>". $Nombre_Archivo;
 

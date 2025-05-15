@@ -79,7 +79,9 @@ $conn = connectMySQLi();
                                 <button class="btn btn-info btn-sm btn-custom" data-bs-toggle="collapse" data-bs-target="#collapseCurso<?= $idCurso ?>" aria-expanded="false" aria-controls="collapseCurso<?= $idCurso ?>">
                                     👁️ Detalle
                                 </button>
-                                <a class="btn btn-primary" href="vista.php?id=<?php echo $idCurso; ?> ">Ir al curso</a>
+                                <a class="btn btn-primary" href="vista2.php?id=<?php echo $idCurso; ?>&capitulo=1" role="button">
+                                    ➕ Capítulo
+                                </a>
                             </td>
                         </tr>
 

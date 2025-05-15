@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('America/Mexico_City');
 require_once("../../../Back/config/config.php");
 $conn = connectMySQLi();
 session_start();
@@ -37,12 +38,11 @@ while ($row = mysqli_fetch_array($query)) {
         echo "<br><strong> Registro en tabla consolidados para el Id_Entrega</strong> " . $Id_Entrega . " <strong>Exitoso</strong>";
         // Registrar proceso de Consolidación dentro de la tabla de Bitacora
         $Id_Salida_Base = mysqli_real_escape_string($conn, $Id_Salida_Base);
-$Salida = mysqli_real_escape_string($conn, $Salida);
-$fecha = mysqli_real_escape_string($conn, $fecha); 
-$Nombre = mysqli_real_escape_string($conn, $Nombre);
+        $Salida = mysqli_real_escape_string($conn, $Salida);
+        $Nombre = mysqli_real_escape_string($conn, $Nombre);
 
-// Now build the query with proper concatenation
-$sql_Bitacora = "INSERT INTO bitacora (Id_Salida, Accion, Fecha, Responsable) 
+        // Now build the query with proper concatenation
+        $sql_Bitacora = "INSERT INTO bitacora (Id_Salida, Accion, Fecha, Responsable) 
         VALUES ('$Id_Salida_Base', 'Consolidación de la Salida $Salida', '$fecha', '$Nombre')";
         $query_Bitacora = mysqli_query($conn, $sql_Bitacora);
         if ($query_Bitacora) {
@@ -54,9 +54,6 @@ $sql_Bitacora = "INSERT INTO bitacora (Id_Salida, Accion, Fecha, Responsable)
         echo "<br><strong> Registro en tabla consolidados para el Id_Entrega</strong> " . $Id_Entrega . " <strong>Fallido</strong>";
     }
     echo "<br>--------------------------------------------------------------- <br>";
-
 }
 
-header("Location: ../../Front/detalles.php?id=".$Id_Salida_Base );
-
-?>
+header("Location: ../../Front/detalles.php?id=" . $Id_Salida_Base);

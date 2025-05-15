@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('America/Mexico_City');
 require_once("../../Back/config/config.php"); //Contiene las variables de configuracion para conectar a la base de datos
 $conn = connectMySQLi();
 session_start();
