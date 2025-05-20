@@ -6,3 +6,5 @@
 *.rar
 .DS_Store
 /fpdf/
+/Files/
+/SupplyChain/Back/Files/

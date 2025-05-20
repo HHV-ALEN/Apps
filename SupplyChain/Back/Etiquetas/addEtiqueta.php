@@ -77,9 +77,54 @@ $NuevoNombre = $_POST['nuevo_nombre'];
 $NuevaClave = $_POST['nuevo_clave'];
 $NuevaRFC = $_POST['nuevo_rfc'];
 
+// Verificar cual fue el Id mas alto del atributo Id_Salida de la tabla entregas
+$sql = "SELECT MAX(Id_Salida) AS max_id FROM entregas";
+$query = mysqli_query($conn, $sql);
+$result = mysqli_fetch_array($query);
+$max_id = $result['max_id'];
+$max_id += 1;
 
+// Verificar cual fue el Id mas alto del Atributo Id_salida_consolidada
+$sql = "SELECT MAX(Id) AS max_id_consolidado FROM consolidados";
+$query = mysqli_query($conn, $sql);
+$result = mysqli_fetch_array($query);
+$max_id_consolidado = $result['max_id_consolidado'];
+$max_id_consolidado += 1;
+
+// Verificar cual fue el Id mas alto del Atributo Id de la tabla salidas
+$sql = "SELECT MAX(Id) AS max_id_salida FROM salidas";
+$query = mysqli_query($conn, $sql);
+$result = mysqli_fetch_array($query);
+$max_id_salida = $result['max_id_salida'];
+$max_id_salida += 1;
+
+
+
+$max_final = max(
+  intval($max_id), 
+  intval($max_id_consolidado), 
+  intval($max_id_salida)
+);
+
+echo "<br><strong>Nuevo ID sugerido:</strong> " . $max_final;
+
+
+
+
+// Verificar si el núm. de Etiqueta ya existe
+$sql = "SELECT * FROM salidas WHERE Id = '$max_final'";
+$query = mysqli_query($conn, $sql);
+if (mysqli_num_rows($query) > 0) {
+  echo "<h1>El número de etiqueta ya existe</h1>";
+  $max_final += 1;
+  
+} else {
+  echo "<h1>El número: $max_id de etiqueta no existe</h1>";
+}
+
+$Numero_Etiqueta = $max_final;
 echo "<br>------------------------------- <strong>Información del Formulario</strong>";
-echo "<br> ----> Numero de etiqueta: $Numero_Etiqueta";
+echo "<br> ----> Numero de etiqueta: $max_final";
 echo "<br> ----> Orden de venta: $orden_venta";
 echo "<br> ----> Folio de entrega: $folio_entrega";
 echo "<br> ----> Id_Cliente: $id_cliente";
@@ -90,7 +135,7 @@ echo "<br> ----> Cliente 2: $Cliente2";
 echo "<br>";
 
 
-if ($id_cliente == 'nuevo') {
+if ($id_cliente == 'nuevo ') {
   // Registrar cliente y obtener el nuevo nombre y el Id
   echo "<br> <strong>Nuevo Nombre: </strong>" . $NuevoNombre;
   echo "<br> <strong>Nueva Clave: </strong>" . $NuevaClave;
@@ -110,7 +155,6 @@ if ($id_cliente == 'nuevo') {
   // Obtener el último ID insertado
   $id_cliente = mysqli_insert_id($conn);
   $nombre_cliente = $NuevoNombre;
-
 
 } else {
 
@@ -136,8 +180,8 @@ echo "**************************************";
 echo "<h1>Registros</h1>";
 
 // Registrar Salida
-$sql_salida = "INSERT INTO salidas (Id_Cliente, Nombre_Cliente, Id_Status, Estado, Id_Sucursal, Sucursal)
-VALUES ('$id_cliente','$nombre_cliente','21','Entrega','$Id_Sucursal','$Sucursal');";
+$sql_salida = "INSERT INTO salidas (Id, Id_Cliente, Nombre_Cliente, Id_Status, Estado, Id_Sucursal, Sucursal)
+VALUES ('$max_final', '$id_cliente','$nombre_cliente','21','Entrega','$Id_Sucursal','$Sucursal');";
 $query_salida = mysqli_query($conn, $sql_salida);
 if ($query_salida) {
   echo "<br>-> Salida Registrada Correctamente<br>";
@@ -187,7 +231,6 @@ if ($Comentario != "") {
 /// http://www.alenturno.com/Vinculacion/detalles.php?id_salida=33887
 //echo "<br> Id a enviar: " . $Numero_Etiqueta ;
 header("Location: ../../Front/detalles.php?id=" . $Numero_Etiqueta);
-
 
 
 ?>
