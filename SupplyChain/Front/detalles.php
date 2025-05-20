@@ -719,20 +719,12 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                         </div>
                     </div>
                 <?php
-                } else {
                 }
                 ?>
-
             </div>
-
-
             <?php
-
             $Arreglo_OrdenVenta_Registrados = array();
-
             ?>
-
-
             <div class="card-body">
                 <div class="row">
                     <!-- Table for Etiqueta Base -->
@@ -741,14 +733,14 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped">
                                 <thead>
-                                    <tr>
-                                        <th>Id Salida Base</th>
+                                    <tr class="text-center">
                                         <th>Orden de Venta</th>
                                         <th>Entrega</th>
                                         <th>Partida</th>
-                                        <th>Factura</th>
                                         <th>Cliente</th>
+                                        <th>Factura</th>
                                         <th>Archivo</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -763,57 +755,149 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                         array_push($Arreglo_OrdenVenta_Registrados, $Id_Orden_Venta_B);
                                         $Id_Entrega_B = $entrega['Id_Entrega'];
                                         $Partida_B = $entrega['Partida'];
-                                        $Id_Factura_B = ($entrega['Id_Factura'] == 0) ? 'N/A' : $entrega['Id_Factura'];
-                                        $Archivo = ($entrega['Archivo'] == 0) ? 'N/A' : $entrega['Archivo'];
+                                        $Id_Factura_B = $entrega['Id_Factura'];
+                                        $Archivo = $entrega['Archivo'];
                                         $Cliente_Nombre_B = $entrega['Cliente_Nombre'];
                                     ?>
                                         <tr>
-                                            <td><?php echo $Id_Salida_B; ?></td>
                                             <td><?php echo $Id_Orden_Venta_B; ?></td>
                                             <td><?php echo $Id_Entrega_B; ?></td>
                                             <td><?php echo $Partida_B; ?></td>
-                                            <td><?php echo $Id_Factura_B; ?></td>
                                             <td><?php echo $Cliente_Nombre_B; ?></td>
+                                            <td><?php
+                                                if ($Archivo == '0') {
+                                                    echo " - Sin Factura";
+                                                } elseif ($Id_Factura == '1') {
+                                                    echo "<strong>Remisión</strong>";
+                                                } else {
+                                                    echo $Id_Factura;
+                                                }
+                                                ?></td>
                                             <td>
                                                 <?php
-                                                if ($_SESSION['Departamento'] == 'Facturación') {
-                                                    if ($Id_Factura_B != 'N/A' || $Archivo != 'N/A') {
+                                                if ($Estado_Original_DeSalida == 'Facturación') {
+                                                    /// Se muestra boton de agregar Factura solo si esta en el estado de facturación
+                                                    if ($_SESSION['Departamento'] == 'Facturación') {
+                                                        if ($Id_Factura_B == '0' && $Archivo == '0') {
                                                 ?>
-                                                        <a href="../Back/Files/Facturas/<?php echo $Archivo; ?>"
-                                                            class="btn btn-success btn-sm" download>
-                                                            <i class="bi bi-cloud-arrow-down"></i> Descargar Factura
-                                                        </a>
-                                                        <a href="../Back/Facturas/deleteFactura.php?Id_Salida=<?php echo $Id_Salida_B; ?>&Id_Factura=<?php echo $Id_Factura_B; ?>&Archivo=<?php echo $Archivo; ?>"
-                                                            class="btn btn-danger btn-sm">
-                                                            <i class="bi bi-file-earmark-x"></i> Eliminar Factura
-                                                        </a>
-                                                    <?php
-                                                    } else {
-                                                        if ($Estado_Original_DeSalida == 'Facturación'){
-                                                    ?>
-                                                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                                            data-bs-target="#modalFacturacion_BASE<?php echo $Id_Salida_B; ?>">
-                                                            <i class="fas fa-file-pdf"></i> Asignar Factura
-                                                        </button>
-                                                    <?php
-                                                    }else{
-                                                        echo "No disponible";
-                                                    }
-                                                    }
-                                                } else {
-                                                    if ($Id_Factura_B != 'N/A' || $Archivo != 'N/A') {
-                                                    ?>
-                                                        <a href="../Back/Files/Facturas/<?php echo $Archivo; ?>"
-                                                            class="btn btn-success btn-sm" download>
-                                                            <i class="bi bi-cloud-arrow-down"></i> Descargar Factura
-                                                        </a>
+                                                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                                                data-bs-target="#modalFacturacion_BASE<?php echo $Id_Salida_B; ?>">
+                                                                <i class="fas fa-file-pdf"></i> Asignar Factura
+                                                            </button>
+                                                            <a href="../Back/Facturas/addRemision.php?Id_Salida=<?php echo $Id_Salida_B; ?>&Parametro=Base" class="btn btn-outline-primary btn-sm">Agregar Remisión</a>
+
+                                                        <?php
+                                                        } elseif ($Id_Factura_B == '1' && $Archivo == 'REMISION') {
+                                                        ?>
+                                                            <a href="../Back/Facturas/deleteRemision.php?Id_Salida=<?php echo $Id_Salida_B; ?>&Parametro=Base"
+                                                                class="btn btn-danger btn-sm">
+                                                                <i class="bi bi-file-earmark-x"></i> Eliminar Remisión
+                                                            </a>
+                                                        <?php
+                                                        } else {
+                                                        ?>
+
+                                                            <div class="row">
+                                                                <div class="col-md-6">
+                                                                    <a href="../Back/Files/Facturas/<?php echo $Archivo; ?>"
+                                                                        class="btn btn-success btn-sm" download>
+                                                                        <i class="bi bi-cloud-arrow-down"></i> Descargar Factura
+                                                                    </a>
+                                                                </div>
+                                                                <!-- Eliminar Factura -->
+                                                                <div class="col-md-6">
+                                                                    <a href="../Back/Facturas/deleteFactura.php?Id_Salida=<?php echo $Id_Salida_B; ?>&Id_Factura=<?php echo $Id_Factura_B; ?>&Archivo=<?php echo $Archivo; ?>&Parametro=Base"
+                                                                        class="btn btn-danger btn-sm">
+                                                                        <i class="bi bi-file-earmark-x"></i> Eliminar Factura
+                                                                    </a>
+                                                                </div>
+                                                            </div>
                                                 <?php
-                                                    } else {
-                                                        echo "No disponible";
+                                                        }
                                                     }
                                                 }
                                                 ?>
                                             </td>
+                                            <td>
+                                                <?php
+                                                if ($_SESSION['Departamento'] == 'Empaque') {
+                                                ?>
+                                                    <!-- Botón para abrir modal para editar la información de la etiqueta Base -->
+                                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                        data-bs-target="#modalEditarEtiquetaBase<?php echo $Id_Contenido; ?>">
+                                                        <i class="fas fa-edit"></i> Editar Etiqueta Base
+                                                    </button>
+                                                <?php
+                                                }
+                                                ?>
+
+                                                <!-- Modal para editar la información de la etiqueta Base -->
+                                                <div class="modal fade "
+                                                    id="modalEditarEtiquetaBase<?php echo $Id_Contenido; ?>" tabindex="-1"
+                                                    aria-labelledby="modalEditarEtiquetaBaseLabel" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="modalEditarEtiquetaBaseLabel">Editar
+                                                                    Etiqueta Base <?php echo $Id_Contenido; ?> </h5>
+                                                                <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <form action="../Back/Etiquetas/editEtiqueta.php?Id_Contenido=<?php echo $Id_Contenido; ?>&Id_Salida=<?php echo $id_salida; ?>" method="POST">
+                                                                    <div class="row">
+                                                                        <div class="col-md-6">
+                                                                            <div class="mb-3">
+                                                                                <label for="Folio_Orden" class="form-label">Folio Orden de Venta:</label>
+                                                                                <input type="text" class="form-control" id="Folio_Orden" name="Folio_Orden" value="<?php echo $Id_Orden_Venta_B; ?>" required>
+                                                                            </div>
+
+                                                                        </div>
+                                                                        <div class="col-md-6">
+                                                                            <div class="mb-3">
+                                                                                <label for="Folio_Entrega" class="form-label">Folio Entrega:</label>
+                                                                                <input type="text" class="form-control" id="Folio_Entrega" name="Folio_Entrega" value="<?php echo $Id_Entrega_B; ?>" required>
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+
+                                                                    <div class="mb-3">
+                                                                        <label for="Partida" class="form-label">Partida:</label>
+                                                                        <input type="text" class="form-control" id="Partida" name="Partida" value="<?php echo $Partida_B; ?>" required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <?php
+                                                                        // Obtener nombres únicos de la tabla clientes
+                                                                        $queryClientes = "SELECT DISTINCT Nombre FROM clientes ORDER BY Nombre ASC";
+                                                                        $resultClientes = mysqli_query($conn, $queryClientes);
+                                                                        ?>
+
+                                                                        <div class="mb-3">
+                                                                            <label for="Cliente_Nombre" class="form-label">Cliente Nombre:</label>
+                                                                            <select class="form-select" id="Cliente_Nombre" name="Cliente_Nombre" required>
+                                                                                <option value="">Seleccione un cliente</option>
+                                                                                <?php
+                                                                                while ($row = mysqli_fetch_assoc($resultClientes)) {
+                                                                                    $nombre = $row['Nombre'];
+                                                                                    $selected = ($nombre === $Cliente_Nombre_B) ? 'selected' : '';
+                                                                                    echo "<option value=\"$nombre\" $selected>$nombre</option>";
+                                                                                }
+                                                                                ?>
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+
                                         </tr>
                                     <?php
                                     } // End of loop
@@ -839,15 +923,16 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                             <table class="table table-bordered table-striped">
                                 <thead>
                                     <tr>
-                                        <th>Salida_Id</th>
                                         <th>Orden de Venta</th>
                                         <th>Entrega</th>
                                         <th>Partida</th>
-                                        <th>Factura</th>
                                         <th>Cliente</th>
+                                        <th>Factura</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+
                                     <?php
                                     $ids_excluidos = [];
                                     // Query to display Etiquetas Fusionadas information
@@ -856,27 +941,185 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                     while ($fusion = mysqli_fetch_array($fusion_result)) {
                                         $Id_Relacion = $fusion['Id_Relacion_Salida'];
                                         $ids_excluidos[] = $fusion['Id_Relacion_Salida'];
-                                        $entrega_query = "SELECT * FROM entregas WHERE Id_Salida = '$Id_Relacion'";
-                                        $entrega_result = mysqli_query($conn, $entrega_query);
-                                        while ($entrega = mysqli_fetch_array($entrega_result)) {
-                                            $Id_Contenido = $entrega['Id'];
-                                            $Id_Orden_Venta = $entrega['Id_Orden_Venta'];
-                                            array_push($Arreglo_OrdenVenta_Registrados, $Id_Orden_Venta);
-                                            $Id_Entrega = $entrega['Id_Entrega'];
-                                            $Partida = $entrega['Partida'];
-                                            $Id_Factura = $entrega['Id_Factura'] ?? 'N/A';
-                                            $Cliente_Nombre = $entrega['Cliente_Nombre'];
+                                        $Id_Orden_Venta_Fusion = $fusion['Orden_Venta'];
+                                        $Id_Entrega_Fusion = $fusion['Entrega'];
+                                        $Partida_Fusion = $fusion['Partida'];
+                                        $Id_Factura_Fusion = $fusion['Id_Factura'];
+                                        $Archivo_Fusion = $fusion['Archivo'];
+                                        $Cliente_Nombre_Fusion = $fusion['Cliente_Nombre'];
+
                                     ?>
-                                            <tr>
-                                                <td><?php echo $Id_Relacion; ?></td>
-                                                <td><?php echo $Id_Orden_Venta; ?></td>
-                                                <td><?php echo $Id_Entrega; ?></td>
-                                                <td><?php echo $Partida; ?></td>
-                                                <td><?php echo $Id_Factura; ?></td>
-                                                <td><?php echo $Cliente_Nombre; ?></td>
-                                            </tr>
+                                        <tr>
+                                            <td><?php echo $Id_Orden_Venta_Fusion; ?></td>
+                                            <td><?php echo $Id_Entrega_Fusion; ?></td>
+                                            <td><?php echo $Partida_Fusion; ?></td>
+                                            <td><?php echo $Cliente_Nombre_Fusion; ?></td>
+                                            <td><?php
+
+                                                if ($Id_Factura_Fusion == '0') {
+                                                    echo " - Sin Factura";
+                                                } elseif ($Id_Factura_Fusion == '1') {
+                                                    echo " Remisión";
+                                                } else {
+                                                    echo $Id_Factura_Fusion;
+                                                }
+                                                ?></td>
+                                            <td>
+                                                <?php
+                                                if ($Estado_Original_DeSalida == 'Facturación' && $_SESSION['Departamento'] == 'Facturación') {
+                                                    if ($Id_Factura_Fusion == '0' && $Archivo_Fusion == '0') {
+                                                ?>
+                                                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                                            data-bs-target="#modalFacturacion<?php echo $Id_Relacion; ?>">
+                                                            <i class="fas fa-file-pdf"></i> Asignar Factura
+                                                        </button>
+                                                        <a href="../Back/Facturas/addRemision.php?Id_Salida_Relacion=<?php echo $Id_Relacion; ?>&Parametro=Fusion&Id_Salida=<?php echo $id_salida; ?>"
+                                                            class="btn btn-outline-primary btn-sm">Agregar Remisión</a>
+                                                    <?php
+                                                    } elseif ($Id_Factura_Fusion == '1' && $Archivo_Fusion == 'REMISION') {
+                                                        // Boton para eliminar remision
+                                                    ?>
+                                                        <a href="../Back/Facturas/deleteRemision.php?Id_Salida_Relacion=<?php echo $Id_Relacion; ?>&Id_Salida=<?php echo $id_salida; ?>&Parametro=Fusion" class="btn btn-danger btn-sm">
+                                                            <i class="bi bi-file-earmark-x"></i> Eliminar Remisión
+                                                        </a>
+                                                    <?php
+                                                    } else {
+                                                    ?>
+                                                        <a href="../Back/Files/Facturas/<?php echo $Archivo_Fusion; ?>"
+                                                            class="btn btn-success btn-sm" download>
+                                                            <i class="bi bi-cloud-arrow-down"></i> Descargar Factura
+                                                        </a>
+                                                        <a href="../Back/Facturas/deleteFactura.php?Id_Salida_Relacion=<?php echo $Id_Relacion; ?>&Id_Factura=<?php echo $Id_Factura_Fusion; ?>&Archivo=<?php echo $Archivo_Fusion; ?>&Parametro=Fusion&Id_Salida=<?php echo $id_salida; ?>"
+                                                            class="btn btn-danger btn-sm">
+                                                            <i class="bi bi-file-earmark-x"></i> Eliminar Factura
+                                                        </a>
+                                                <?php
+                                                    }
+                                                }
+                                                ?>
+                                                <?php
+                                                if ($_SESSION['Departamento'] == 'Empaque') {
+                                                ?>
+                                                    <!-- Botón para abrir modal para editar la información de la etiqueta Fusionada -->
+                                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                        data-bs-target="#modalEditarEtiquetaFusionada<?php echo $Id_Relacion; ?>">
+                                                        <i class="fas fa-edit"></i> Editar Etiqueta Fusionada
+                                                    </button>
+                                                <?php
+                                                }
+                                                ?>
+
+                                                <!-- Modal para editar la información de la etiqueta fusionada -->
+                                                <div class="modal fade "
+                                                    id="modalEditarEtiquetaFusionada<?php echo $Id_Relacion; ?>" tabindex="-1"
+                                                    aria-labelledby="modalEditarEtiquetaFusionadaLabel" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="modalEditarEtiquetaFusionadaLabel">Editar
+                                                                    Etiqueta Fusionada <?php echo $Id_Relacion; ?> </h5>
+                                                                <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body ">
+                                                                <form action="../Back/Etiquetas/editEtiquetaFusionada.php?Id_Relacion_Salida=<?php echo $Id_Relacion; ?>&Id_Salida=<?php echo $id_salida; ?>" method="POST">
+                                                                    <div class="row">
+                                                                        <div class="col-md-6">
+                                                                            <div class="mb-3">
+                                                                                <label for="Folio_Orden" class="form-label">Folio Orden de Venta:</label>
+                                                                                <input type="text" class="form-control" id="Folio_Orden" name="Folio_Orden" value="<?php echo $Id_Orden_Venta_Fusion; ?>" required>
+                                                                            </div>
+
+                                                                        </div>
+                                                                        <div class="col-md-6">
+                                                                            <div class="mb-3">
+                                                                                <label for="Folio_Entrega" class="form-label">Folio Entrega:</label>
+                                                                                <input type="text" class="form-control" id="Folio_Entrega" name="Folio_Entrega" value="<?php echo $Id_Entrega_Fusion; ?>" required>
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+
+                                                                    <div class="mb-3">
+                                                                        <label for="Partida" class="form-label">Partida:</label>
+                                                                        <input type="text" class="form-control" id="Partida" name="Partida" value="<?php echo $Partida_Fusion; ?>" required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <?php
+                                                                        // Obtener nombres únicos de la tabla clientes
+                                                                        $queryClientes = "SELECT DISTINCT Nombre FROM clientes ORDER BY Nombre ASC";
+                                                                        $resultClientes = mysqli_query($conn, $queryClientes);
+                                                                        ?>
+
+                                                                        <div class="mb-3">
+                                                                            <label for="Cliente_Nombre" class="form-label">Cliente Nombre:</label>
+                                                                            <select class="form-select" id="Cliente_Nombre" name="Cliente_Nombre" required>
+                                                                                <option value="">Seleccione un cliente</option>
+                                                                                <?php
+                                                                                while ($row = mysqli_fetch_assoc($resultClientes)) {
+                                                                                    $nombre = $row['Nombre'];
+                                                                                    $selected = ($nombre === $Cliente_Nombre_Fusion) ? 'selected' : '';
+                                                                                    echo "<option value=\"$nombre\" $selected>$nombre</option>";
+                                                                                }
+                                                                                ?>
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                        </tr>
+                                        <!-- Modal para esta fila -->
+                                        <div class="modal fade" id="modalFacturacion<?php echo $Id_Relacion; ?>" tabindex="-1" aria-labelledby="modalFacturacion<?php echo $Id_Relacion; ?>Label" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-primary text-white">
+                                                        <h5 class="modal-title" id="modalFacturacion<?php echo $Id_Relacion; ?>Label">
+                                                            Asignar Factura a la Etiqueta Fusionada
+                                                        </h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <form action="../Back/Facturas/addFactura.php?id_salida_Relacion=<?php echo $Id_Relacion; ?>&Parametro=Fusion&id_salida=<?php echo $id_salida; ?>" method="POST" enctype="multipart/form-data">
+                                                            <div class="row">
+                                                                <div class="col-md-6 mb-3">
+                                                                    <label for="Folio_Orden_<?php echo $Id_Relacion; ?>" class="form-label">Folio Orden:</label>
+                                                                    <input type="text" class="form-control" id="Folio_Orden_<?php echo $Id_Relacion; ?>" name="Folio_Orden" value="<?php echo $Id_Orden_Venta_Fusion; ?>" required>
+                                                                </div>
+                                                                <div class="col-md-6 mb-3">
+                                                                    <label for="Folio_Entrega_<?php echo $Id_Relacion; ?>" class="form-label">Folio Entrega:</label>
+                                                                    <input type="text" class="form-control" id="Folio_Entrega_<?php echo $Id_Relacion; ?>" name="Folio_Entrega" value="<?php echo $Id_Entrega_Fusion; ?>" required>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-md-6 mb-3">
+                                                                    <label for="archivo_<?php echo $Id_Relacion; ?>" class="form-label">Seleccione una Factura:</label>
+                                                                    <input type="file" class="form-control" name="archivo" id="archivo_<?php echo $Id_Relacion; ?>" accept="application/pdf" required>
+                                                                </div>
+                                                                <div class="col-md-6 mb-3">
+                                                                    <label for="FolioFactura_<?php echo $Id_Relacion; ?>" class="form-label">Folio Factura:</label>
+                                                                    <input type="text" class="form-control" id="FolioFactura_<?php echo $Id_Relacion; ?>" name="FolioFactura" required>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                                <button type="submit" class="btn btn-primary">Subir Factura</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     <?php
-                                        } // End of loop
                                     } // End of loop
                                     ?>
                                 </tbody>
@@ -887,6 +1130,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
             </div>
         </div>
     </div>
+
 
     <!-- Etiquetas Consolidadas -->
     <div class="container mb-3">
@@ -900,54 +1144,200 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                             <table class="table table-bordered table-striped">
                                 <thead>
                                     <tr>
-                                        <th>Id Salida</th>
                                         <th>Orden de venta</th>
                                         <th>Entrega</th>
                                         <th>Partida</th>
                                         <th>Cliente</th>
+                                        <th>Factura</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php
-                                    $Arreglo_Folios_consolidados = array();
+                                    /// Query to display Consolidados
+                                    $Consolidados_Query = "SELECT * FROM consolidados WHERE Id_Base = '$id_salida'";
+                                    $Consolidados_result = mysqli_query($conn, $Consolidados_Query);
+                                    while ($Consolidados = mysqli_fetch_array($Consolidados_result)) {
+                                        $Id_Consolidado = $Consolidados['Id'];
+                                        $Id_Salida_Consolidada = $Consolidados['Id_salida_consolidada'];
+                                        $Destino_Consolidado = $Consolidados['Destino'];
+                                        $Nombre_Cliente_Consolidado = $Consolidados['Nombre_Cliente'];
+                                        $Entrega_Consolidado = $Consolidados['Id_Entrega'];
+                                        $Orden_Venta_Consolidado = $Consolidados['Orden_Venta'];
+                                        $Partida_Consolidado = $Consolidados['Partida'];
+                                        $Id_Factura_Consolidado = $Consolidados['Id_Factura'];
+                                        $Archivo_Consolidado = $Consolidados['Archivo'];
+                                    ?>
+                                        <tr>
+                                            <td><?php echo $Orden_Venta_Consolidado; ?></td>
+                                            <td><?php echo $Entrega_Consolidado; ?></td>
+                                            <td><?php echo $Partida_Consolidado; ?></td>
+                                            <td><?php echo $Nombre_Cliente_Consolidado; ?></td>
+                                            <td><?php
+                                                if ($Id_Factura_Consolidado == '0') {
+                                                    echo " - Sin Factura";
+                                                } elseif ($Id_Factura_Consolidado == '1') {
+                                                    echo " Remisión";
+                                                } else {
+                                                    echo $Id_Factura_Consolidado;
+                                                }
+                                                ?></td>
+                                            <td>
+                                                <?php
+                                                if ($Estado_Original_DeSalida == 'Facturación' && $_SESSION['Departamento'] == 'Facturación') {
+                                                    if ($Id_Factura_Consolidado == '0' && $Archivo_Consolidado == '0') {
+                                                ?>
+                                                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                                            data-bs-target="#modalFacturacionConsolidada<?php echo $Id_Consolidado; ?>">
+                                                            <i class="fas fa-file-pdf"></i> Asignar Factura
+                                                        </button>
+                                                        <a href="../Back/Facturas/addRemision.php?Id_Salida=<?php echo $id_salida; ?>&Parametro=Consolidado&Id_Salida_Relacion=<?php echo $Id_Consolidado; ?>" class="btn btn-outline-primary btn-sm">Agregar Remisión</a>
+                                                    <?php
+                                                    } elseif ($Id_Factura_Consolidado == '1' && $Archivo_Consolidado == 'REMISION') {
+                                                        // Boton para eliminar remision
+                                                    ?>
+                                                        <a href="../Back/Facturas/deleteRemision.php?Id_Salida=<?php echo $id_salida; ?>&Parametro=Consolidado&Id_Salida_Relacion=<?php echo $Id_Consolidado; ?>" class="btn btn-danger btn-sm">
+                                                            <i class="bi bi-file-earmark-x"></i> Eliminar Remisión
+                                                        </a>
+                                                    <?php
+                                                    } else {
+                                                    ?>
+                                                        <a href="../Back/Files/Facturas/<?php echo $Archivo_Consolidado; ?>"
+                                                            class="btn btn-success btn-sm" download>
+                                                            <i class="bi bi-cloud-arrow-down"></i> Descargar Factura
+                                                        </a>
+                                                        <a href="../Back/Facturas/deleteFactura.php?Id_Salida_consolidado=<?php echo $Id_Consolidado; ?>&Parametro=Consolidado&Id_Salida=<?php echo $id_salida; ?>&Id_Factura=<?php echo $Id_Factura_Consolidado; ?>" class="btn btn-danger btn-sm">
+                                                            <i class="bi bi-file-earmark-x"></i> Eliminar Factura
+                                                        </a>
+                                                <?php
+                                                    }
+                                                }
+                                                ?>
+                                                <?php 
+                                                if ($_SESSION['Departamento'] == 'Empaque'){
+                                                ?>
+                                                <!-- Botón para abrir modal para editar la información de la etiqueta Consolidada -->
+                                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                    data-bs-target="#modalEditarEtiquetaConsolidada<?php echo $Id_Consolidado; ?>">
+                                                    <i class="fas fa-edit"></i> Editar Etiqueta Consolidada
+                                                </button>
+                                                <?php
+                                                }
+                                                ?>
 
-                                    // Consulta principal para obtener Id de salidas consolidadas
-                                    $query = "SELECT *
-                                          FROM consolidados 
-                                          WHERE Id_Base = '$id_salida' 
-                                          GROUP BY Id_salida_consolidada, Nombre_Cliente";
+                                                <!-- Modal para editar la información de la etiqueta consolidada -->
+                                                <div class="modal fade "
+                                                    id="modalEditarEtiquetaConsolidada<?php echo $Id_Consolidado; ?>" tabindex="-1"
+                                                    aria-labelledby="modalEditarEtiquetaConsolidadaLabel" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="modalEditarEtiquetaConsolidadaLabel">Editar
+                                                                    Etiqueta Consolidada <?php echo $Id_Salida_Consolidada; ?> </h5>
+                                                                <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <form action="../Back/Etiquetas/editEtiquetaConsolidada.php?Id_Relacion_Salida=<?php echo $Id_Salida_Consolidada; ?>&Id_Salida=<?php echo $id_salida; ?>" method="POST">
+                                                                    <div class="row">
+                                                                        <div class="col-md-6">
+                                                                            <div class="mb-3">
+                                                                                <label for="Folio_Orden" class="form-label">Folio Orden de Venta:</label>
+                                                                                <input type="text" class="form-control" id="Folio_Orden" name="Folio_Orden" value="<?php echo $Orden_Venta_Consolidado; ?>" required>
+                                                                            </div>
 
-                                    $result = mysqli_query($conn, $query);
+                                                                        </div>
+                                                                        <div class="col-md-6">
+                                                                            <div class="mb-3">
+                                                                                <label for="Folio_Entrega" class="form-label">Folio Entrega:</label>
+                                                                                <input type="text" class="form-control" id="Folio_Entrega" name="Folio_Entrega" value="<?php echo $Entrega_Consolidado; ?>" required>
+                                                                            </div>
+                                                                        </div>
 
-                                    while ($row = mysqli_fetch_assoc($result)) {
-                                        $Id_salida_consolidada = $row['Id_salida_consolidada'];
-                                        $Arreglo_Folios_consolidados[] = $Id_salida_consolidada;
-                                    }
+                                                                    </div>
 
-                                    // Iterar y mostrar los resultados en la tabla
-                                    foreach ($Arreglo_Folios_consolidados as $id_folio_consolidado) {
+                                                                    <div class="mb-3">
+                                                                        <label for="Partida" class="form-label">Partida:</label>
+                                                                        <input type="text" class="form-control" id="Partida" name="Partida" value="<?php echo $Partida_Consolidado; ?>" required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <?php
+                                                                        // Obtener nombres únicos de la tabla clientes
+                                                                        $queryClientes = "SELECT DISTINCT Nombre FROM clientes ORDER BY Nombre ASC";
+                                                                        $resultClientes = mysqli_query($conn, $queryClientes);
+                                                                        ?>
 
-                                        // Consulta secundaria para obtener la información adicional
-                                        $consolidad_entrega = "SELECT * FROM entregas WHERE Id_Salida = $id_folio_consolidado";
-                                        $result_entrega = mysqli_query($conn, $consolidad_entrega);
+                                                                        <div class="mb-3">
+                                                                            <label for="Cliente_Nombre" class="form-label">Cliente Nombre:</label>
+                                                                            <select class="form-select" id="Cliente_Nombre" name="Cliente_Nombre" required>
+                                                                                <option value="">Seleccione un cliente</option>
+                                                                                <?php
+                                                                                while ($row = mysqli_fetch_assoc($resultClientes)) {
+                                                                                    $nombre = $row['Nombre'];
+                                                                                    $selected = ($nombre === $Nombre_Cliente_Consolidado) ? 'selected' : '';
+                                                                                    echo "<option value=\"$nombre\" $selected>$nombre</option>";
+                                                                                }
+                                                                                ?>
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
-                                        while ($row = mysqli_fetch_assoc($result_entrega)) {
-                                            $Id_Orden_venta = $row['Id_Orden_Venta'];
-                                            array_push($Arreglo_OrdenVenta_Registrados, $Id_Orden_venta);
-                                            $Id_Entrega = $row['Id_Entrega'];
-                                            $Partida = $row['Partida'];
-                                            $Cliente_Nombre = $row['Cliente_Nombre'];
-
-                                            echo "<tr>
-                                                <td>$id_folio_consolidado</td>
-                                                <td>$Id_Orden_venta</td>
-                                                <td>$Id_Entrega</td>
-                                                <td>$Partida</td>
-                                                <td>$Cliente_Nombre</td>
-                                              </tr>";
-                                        }
+                                            </td>
+                                        </tr>
+                                        <!-- Modal para esta fila -->
+                                        <div class="modal fade" id="modalFacturacionConsolidada<?php echo $Id_Consolidado; ?>" tabindex="-1" aria-labelledby="modalFacturacionConsolidada<?php echo $Id_Consolidado; ?>Label" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-primary text-white">
+                                                        <h5 class="modal-title" id="modalFacturacionConsolidada<?php echo $Id_Consolidado; ?>Label">
+                                                            Asignar Factura a la Etiqueta Consolidada <?php echo $Id_Salida_Consolidada; ?>
+                                                        </h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <form action="../Back/Facturas/addFactura.php?id_salida_Relacion=<?php echo $Id_Consolidado; ?>&Parametro=Consolidado&id_salida=<?php echo $id_salida; ?>" method="POST" enctype="multipart/form-data">
+                                                            <div class="row">
+                                                                <div class="col-md-6 mb-3">
+                                                                    <label for="Folio_Orden_<?php echo $Id_Salida_Consolidada; ?>" class="form-label">Folio Salida Consolidada:</label>
+                                                                    <input type="text" class="form-control" id="Folio_Orden_<?php echo $Id_Salida_Consolidada; ?>" name="Folio_Orden" value="<?php echo $Id_Salida_Consolidada; ?>" required>
+                                                                </div>
+                                                                <div class="col-md-6 mb-3">
+                                                                    <label for="Folio_Entrega_<?php echo $Id_Consolidado; ?>" class="form-label">Folio Entrega:</label>
+                                                                    <input type="text" class="form-control" id="Folio_Entrega_<?php echo $Id_Consolidado; ?>" name="Folio_Entrega" value="<?php echo $Entrega_Consolidado; ?>" required>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-md-6 mb-3">
+                                                                    <label for="archivo_<?php echo $Id_Consolidado; ?>" class="form-label">Seleccione una Factura:</label>
+                                                                    <input type="file" class="form-control" name="archivo" id="archivo_<?php echo $Id_Consolidado; ?>" accept="application/pdf" required>
+                                                                </div>
+                                                                <div class="col-md-6 mb-3">
+                                                                    <label for="FolioFactura_<?php echo $Id_Consolidado; ?>" class="form-label">Folio Factura:</label>
+                                                                    <input type="text" class="form-control" id="FolioFactura_<?php echo $Id_Consolidado; ?>" name="FolioFactura" required>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                                <button type="submit" class="btn btn-primary">Subir Factura</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php
                                     }
                                     ?>
+
                                 </tbody>
                             </table>
                         </div>
@@ -958,11 +1348,6 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
     </div>
 
     <!-- Información de registros de compra con la misma Orden de Venta -->
-
-
-
-
-
 
     <div class="container mt-4">
         <div class="card mb-4 shadow">
@@ -1294,7 +1679,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
-                <form action="../Back/Facturas/addFactura.php?id_salida=<?php echo $Id_Salida_B; ?>" method="POST"
+                <form action="../Back/Facturas/addFactura.php?id_salida=<?php echo $Id_Salida_B; ?>&Parametro=Base" method="POST"
                     enctype="multipart/form-data">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -1381,10 +1766,11 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                         $nombre_cliente = trim($nombre_cliente);
                         $id_salida = intval($id_salida);
 
-                        $Sql_Same_Clients = "SELECT * FROM salidas 
-                     WHERE Id != $id_salida 
-                     AND Nombre_Cliente = '" . mysqli_real_escape_string($conn, $nombre_cliente) . "'";
-
+                        $Sql_Same_Clients = "SELECT * FROM salidas WHERE Id != $id_salida 
+  AND Nombre_Cliente = '" . mysqli_real_escape_string($conn, $nombre_cliente) . "'
+  AND Id NOT IN (
+    SELECT Id_Relacion_Salida FROM etiquetas_fusionadas
+  )";
                         $Result_Same_Clients = mysqli_query($conn, $Sql_Same_Clients);
                         ?>
 

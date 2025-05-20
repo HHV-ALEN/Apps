@@ -18,7 +18,7 @@ error_reporting(E_ALL);
 $conn = connectMySQLi();
 
 // Pagination logic
-$records_per_page = 7;
+$records_per_page = 10;
 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($current_page - 1) * $records_per_page;
 
@@ -29,7 +29,7 @@ $total_records = mysqli_fetch_assoc($total_records_result)['total'];
 $total_pages = ceil($total_records / $records_per_page);
 
 // Fetch records for current page
-$query_salida = "SELECT salidas.*, entregas.Id_Orden_Venta 
+$query_salida = "SELECT salidas.*, entregas.Id_Orden_Venta, entregas.Id_Entrega
                  FROM salidas
                  LEFT JOIN entregas ON salidas.Id = entregas.Id_Salida
                  ORDER BY salidas.Id DESC 
@@ -117,7 +117,7 @@ $result_salida = mysqli_query($conn, $query_salida);
             <?php
             $_SESSION['Name'];
 
-            $query_salida = "SELECT p.Id, p.Id_Salida, p.Cliente, p.Tipo_Doc, p.Paqueteria, s.Estado 
+            $query_salida = "SELECT p.Id, p.Id_Salida, p.Cliente, p.Tipo_Doc, p.Paqueteria ,s.Estado 
                          FROM preguia p
                          INNER JOIN salidas s ON p.Id_Salida = s.Id
                          WHERE s.Estado = 'A Ruta' AND p.Chofer = '{$_SESSION['Name']}'
@@ -286,7 +286,7 @@ $result_salida = mysqli_query($conn, $query_salida);
             <div class="row">
               <div class="col-md-6">
                 <label for="buscar_salida" class="form-label">Número de Salida:</label>
-                <input type="text" class="form-control" id="buscar_salida" placeholder="Buscar...">
+                <input type="text" class="form-control" id="buscar_salida" placeholder="Presione Enter para buscar...">
               </div>
               <div class="col-md-6">
                 <label for="buscar_cliente" class="form-label">Cliente:</label>
@@ -303,13 +303,18 @@ $result_salida = mysqli_query($conn, $query_salida);
             </div>
 
             <div class="row mt-3">
-              <div class="col-md-6">
+              <div class="col-md-4">
+                <label for="buscar_entrega" class="form-label">Folio Entrega:</label>
+                <input type="text" class="form-control" id="buscar_entrega" placeholder="Buscar...">
+              </div>
+              <div class="col-md-4">
                 <label for="buscar_orden" class="form-label">Orden de Venta:</label>
                 <input type="text" class="form-control" id="buscar_orden" placeholder="Buscar...">
               </div>
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label for="buscar_estado" class="form-label">Buscar por Estado:</label>
                 <select class="form-select" id="buscar_estado">
+                  <option value="">Todos</option>
                   <option value="Entrega">Entrega</option>
                   <option value="Empaque">Empaque</option>
                   <option value="Facturación">Facturación</option>
@@ -335,6 +340,7 @@ $result_salida = mysqli_query($conn, $query_salida);
                 <th>ID</th>
                 <th>Nombre Cliente</th>
                 <th>Orden De Venta</th>
+                <th>Folio Entrega</th>
                 <th>Estado</th>
                 <th>Sucursal</th>
                 <th>Acciones</th>
@@ -348,6 +354,7 @@ $result_salida = mysqli_query($conn, $query_salida);
                   <td><?= htmlspecialchars($fila['Id']) ?></td>
                   <td><?= htmlspecialchars($fila['Nombre_Cliente']) ?></td>
                   <td><?php echo  $Id_Orden_Venta  ?></td> <!-- Manejo de valores nulos -->
+                  <td><?php echo $fila['Id_Entrega']; ?></td>
                   <td><?= htmlspecialchars($fila['Estado']) ?></td>
                   <td><?= htmlspecialchars($fila['Sucursal']) ?></td>
 
@@ -460,7 +467,6 @@ $result_salida = mysqli_query($conn, $query_salida);
                 </div>
               </div>
             </form>
-
           </div>
         </div>
 
@@ -774,7 +780,10 @@ $result_salida = mysqli_query($conn, $query_salida);
           let cliente = $("#buscar_cliente").val();
           let orden_venta = $("#buscar_orden").val();
           let estado = $("#buscar_estado").val();
-          console.log("Cliente seleccionad", cliente);
+          let Id_Entrega = $("#buscar_entrega").val();
+          //console.log("Cliente seleccionad", cliente);
+          //console.log("Entrega seleccionada", Id_Entrega);
+          console.log("Salida seleccionada", numero_salida);
 
           $.ajax({
             url: "Back/buscar_salidas.php",
@@ -783,6 +792,7 @@ $result_salida = mysqli_query($conn, $query_salida);
               numero_salida: numero_salida,
               cliente: cliente,
               orden_venta: orden_venta,
+              id_entrega: Id_Entrega,
               estado: estado
             },
             dataType: "json",
@@ -790,7 +800,6 @@ $result_salida = mysqli_query($conn, $query_salida);
             success: function(response) {
               let tbody = $("#tabla_resultados");
               tbody.empty(); // Clear table before inserting new data
-
 
               if (response.length > 0) {
                 response.forEach(function(item) {
@@ -831,9 +840,9 @@ $result_salida = mysqli_query($conn, $query_salida);
                     parseInt(item.Factura_Registrada) > 0) {
 
                     buttonsHtml += `
-    <a href='Back/changeState.php?id=${item.Id}&estado=Logistica' class='btn btn-warning'>
-      <i class='bi bi-truck'></i> Recibir Entrega (Logística)
-    </a>`;
+                    <a href='Back/changeState.php?id=${item.Id}&estado=Logistica' class='btn btn-warning'>
+                      <i class='bi bi-truck'></i> Recibir Entrega (Logística)
+                    </a>`;
                   }
 
                   // Pre-Guía button
@@ -848,9 +857,6 @@ $result_salida = mysqli_query($conn, $query_salida);
                           <i class='bi bi-truck me-1'></i> Pre-Guía
                       </button>`;
                   }
-
-
-
                   // Close buttons div
                   buttonsHtml += `</div>`;
 
@@ -860,6 +866,7 @@ $result_salida = mysqli_query($conn, $query_salida);
                     <td>${item.Id}</td>
                     <td>${item.Nombre_Cliente}</td>
                     <td>${item.Id_Orden_Venta ? item.Id_Orden_Venta : 'N/A'}</td>
+                    <td>${item.Id_Entrega}</td>
                     <td>${item.Estado}</td>
                     <td>${item.Sucursal}</td>
                     <td>${buttonsHtml}</td>
@@ -872,12 +879,20 @@ $result_salida = mysqli_query($conn, $query_salida);
             }
           });
         }
+
         $("#buscar_btn").on("click", function() {
           buscarSalidas();
         });
 
+        $("#buscar_salida").on("keyup", function(e) {
+          if (e.key === "Enter") {
+            console.log("Enter key pressed");
+            buscarSalidas();
+          }
+        });
+
         // Para que se actualice al escribir en los inputs sin dar clic en el botón
-        $("#buscar_salida, #buscar_cliente, #buscar_orden, #buscar_estado").on("keyup change", function() {
+        $("#buscar_entrega, #buscar_cliente, #buscar_orden, #buscar_estado").on("keyup change", function() {
           buscarSalidas();
         });
       });
@@ -887,7 +902,6 @@ $result_salida = mysqli_query($conn, $query_salida);
         let url = $(this).attr("href");
         window.location.assign(url); // Redirige inmediatamente
       });
-
 
       /// Codigo para extender el tiempo de la sesion activa :
       setInterval(function() {

@@ -128,22 +128,20 @@ $siguiente = mysqli_fetch_assoc($resSiguiente);
                             <h5 class="modal-title" id="modalPreguntaLabel">Pregunta del capítulo</h5>
                         </div>
                         <div class="modal-body">
-                            <p><strong><?php echo $pregunta['Pregunta']; ?></strong></p>
-                            <?php for ($i = 1; $i <= 4; $i++): ?>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="respuesta" value="<?php echo $i; ?>" required>
-                                    <label class="form-check-label">
-                                        <?php echo htmlspecialchars($pregunta["Opcion$i"]); ?>
-                                    </label>
-                                </div>
-                            <?php endfor; ?>
-                            <input type="hidden" name="capitulo" value="<?php echo $capitulo; ?>">
-                            <input type="hidden" name="curso" value="<?php echo $idCurso; ?>">
+                            <p>¿Qué te ha parecido el capítulo?</p>
+                            <div class="form-group">
+                                <label for="respuesta">Tu respuesta:</label>
+                                <textarea class="form-control" id="respuesta" name="respuesta" rows="3" required></textarea>
+                            </div>
+                            <p>¿Cual es el Modelo de Ilumador Necesario??</p>
+                            <div class="form-group">
+                                <label for="respuesta">Tu respuesta:</label>
+                                <textarea class="form-control" id="respuesta" name="respuesta" rows="3" required></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-success">Responder</button>
+                            </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-success">Responder</button>
-                        </div>
-                    </div>
                 </form>
             </div>
         </div>
