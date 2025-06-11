@@ -50,9 +50,11 @@ $conn = connectMySQLi();
 
             if ($_SESSION['Role'] == 'Control') {
             ?>
-              <button><a href="../Academy/index.php">Index - Academy</a></button>
-              <button><a href="../SupplyChain/Front/compras.php">Compras</a></button>
-              <button><a href="../RIO/index.php">RIO</a></button>
+              <a href="../Academy/index.php" class="btn btn-primary">Index - Academy</a>
+              <a href="../SupplyChain/Front/compras.php" class="btn btn-primary">Compras</a>
+              <a href="../RIO/index.php" class="btn btn-primary">RIO</a>
+              <a href="../IA/index.php" class="btn btn-primary">IA</a>
+              <a href="../SupplyChain/index.php" class="btn btn-primary">SupplyChain</a>
             <?php
             }
             ?>
@@ -343,8 +345,15 @@ $conn = connectMySQLi();
         <hr>
         <?php
         // Define the user's role and area
+        print_r($_SESSION);
         $role = $_SESSION['Role'];
         $Area_Del_Personal = $_SESSION['Area'];
+
+        echo "<br> Area del Personal: " . $Area_Del_Personal;
+        
+        if($Area_Del_Personal = 'Entrega y Surtido'){
+          $Area_Del_Personal == 'Almacen';
+        }
         $Departamento_Del_Personal = $_SESSION['Departamento'];
         // echo "Rol: " . $role;
         // echo "<br>";

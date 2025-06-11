@@ -1,141 +1,152 @@
-
 <?php
 include "../Back/config/config.php";
 session_start();
 
+$id_curso = $_GET['id_curso'];
+$Nombre_Usuario = $_SESSION['Name'];
 $conn = connectMySQLi();
 
+$sql = "SELECT * FROM academy_capitulos WHERE id_curso = $id_curso ORDER BY orden ASC";
+$result = $conn->query($sql);
 
+$capitulosTotales = [];
+while ($row = $result->fetch_assoc()) {
+  $capitulosTotales[] = $row;
+}
+
+//echo "<br><h1>Capítulos del Curso (Totales)</h1>";
+//print_r($capitulosTotales);
+
+/// 1.- Obtener los capitulos del curso
+/// 2.- Obtener los capitulos que el usuario ya ha completado
+
+$sql_progreso = "SELECT * FROM academy_progreso WHERE Usuario = '$Nombre_Usuario' AND Curso = $id_curso AND Completado = 1";
+$result_progreso = $conn->query($sql_progreso);
+
+$capitulosCompletados = [];
+while ($row = $result_progreso->fetch_assoc()) {
+  $capitulosCompletados[] = $row['Capitulo'];
+}
+//echo "<br><h1>Capítulos del Curso (Completados)</h1>";
+//print_r($capitulosCompletados);
+
+
+// Obtener los IDs de todos los capítulos del curso
+$idsCapitulos = array_column($capitulosTotales, 'Id');
+
+// Comprobar si todos los capítulos están en el arreglo de completados
+$completadosTodos = !array_diff($idsCapitulos, $capitulosCompletados);
+
+if ($completadosTodos) {
+  // Redirigir a la página final del curso
+  header("Location: Final.php?id_curso=$id_curso");
+  exit;
+}
 
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alen Academy - Mapa de Curso</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f0f4f8;
-    }
+  <title>Mapa del Curso</title>
+  <!-- Css Import -->
+  <link rel="stylesheet" href="Front/css/dashboard.css">
+  <link rel="icon" type="image/png" href="../Front/Img/Icono-A.png" />
 
-    .map-container {
-      position: relative;
-      width: 100%;
-      max-width: 1200px;
-      margin: auto;
-      overflow: hidden;
-    }
-
-    .map-bg {
-      
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .modulo {
-      position: absolute;
-      width: 90px;
-      height: 90px;
-      cursor: pointer;
-      transition: transform 0.3s ease;
-      z-index: 2;
-    }
-
-    .modulo img {
-      width: 100%;
-      height: 100%;
-    }
-
-    .modulo:hover {
-      transform: scale(1.1);
-    }
-
-    .locked img {
-      filter: grayscale(100%) brightness(0.6);
-    }
-
-    /* Responsivo */
-    @media (max-width: 768px) {
-      .modulo {
-        width: 32px;
-        height: 32px;
-      }
-    }
-  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
+
 <body>
-<?php include "../Front/navbar.php"; ?>
+  <?php include "../Front/navbar.php"; ?>
+  <div class="mapa-container">
+    <img src="Front/img/campus2.png" alt="Mapa Campus" class="mapa-fondo">
+    <?php foreach ($capitulosTotales as $capitulo):
+      $id = $capitulo['Id'];
+      $orden = $capitulo['Orden'];
+      $titulo = $capitulo['Titulo'];
+      $descripcion = $capitulo['Descripcion'];
+      $top = $capitulo['Coordenada_Top'] ? $capitulo['Coordenada_Top'] : '0px';
+      $left = $capitulo['Coordenada_Left'] ? $capitulo['Coordenada_Left'] : '0px';
 
-  <div class="map-container">
-    <!-- Mapa de fondo (Tamaño completo) -->
-    <img src="Front/img/Campus.png" alt="Mapa del Curso" class="map-bg">
+      $completado = in_array($id, $capitulosCompletados);
+      $clase = $completado ? '' : 'incompleto';
+    ?>
+      <div
+        class="icono-capitulo <?= $clase ?>"
+        style="top: <?= $top ?>; left: <?= $left ?>;"
+        data-id="<?= $id ?>"
+        data-orden="<?= $orden ?>"
+        data-titulo="<?= htmlspecialchars($titulo) ?>"
+        data-descripcion="<?= htmlspecialchars($descripcion) ?>"
+        data-curso="<?= $id_curso ?>"
+        data-completado="<?= $completado ? '1' : '0' ?>"
+        onclick="mostrarModal(this)">
+        <img src="Front/img/cubo.png" width="100%" height="100%">
+      </div>
+    <?php endforeach; ?>
 
-    <!-- Módulo 1 (desbloqueado) -->
-    <div class="modulo" id="modulo1" style="top: 1%; left: 21%;">
-      <img src="Front/img/cofre.png" alt="Electrica Basica" style="cursor:pointer; width:100px;" 
-     data-bs-toggle="modal" 
-     data-bs-target="#modalElectrica">
+  </div>
+  <br>
+  <!-- Modal para los detalles del capitulo -->
+  <div class="modal fade" id="modalCapitulo" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="tituloModal">Título del Capítulo</h5>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+
+        <div class="modal-body d-flex align-items-center">
+          <!-- Columna Izquierda (Mascota) -->
+          <div class="col-4 text-center">
+            <img src="Front/img/Alenitos/AlenitoCompu.png" alt="Alenito" class="img-fluid mascota-modal">
+          </div>
+
+          <!-- Columna Derecha (Texto) -->
+          <div class="col-8">
+            <h5 id="tituloModal">Título del Capítulo</h5>
+            <p id="descripcionModal">Descripción...</p>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <a id="btnVerCapitulo" class="btn btn-dark">Ver capítulo</a>
+          <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
     </div>
-
-    <!-- Módulo 2 (bloqueado) -->
-    <div class="modulo locked" id="modulo2" style="top: 22%; left: 45%;">
-      <img src="Front/img/cofre.png" alt="Módulo 2">
-    </div>
-
-    <!-- Módulo 3 (bloqueado) -->
-    <div class="modulo locked" id="modulo3" style="top: 38%; left: 78%;">
-      <img src="Front/img/cofre.png" alt="Módulo 3">
-    </div>
-
-     <!-- Módulo 4 (bloqueado) -->
-     <div class="modulo locked" id="modulo3" style="top: 65%; left: 75%;">
-      <img src="Front/img/cofre.png" alt="Módulo 3">
-    </div>
-
-    <!-- Línea SVG de conexión -->
-    <svg viewBox="0 0 1000 1000" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;">
-      <path d="M 35 100 Q 500 270 450 300 Q 900 400 1050 450 Q 1000 700 1020 650 " stroke="#007bff" stroke-width="4" fill="none" stroke-dasharray="12 6">
-        <animate attributeName="stroke-dashoffset" from="0" to="-100" dur="6s" repeatCount="indefinite" />
-      </path>
-    </svg>
   </div>
 
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap JS + Popper + jQuery -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Modal -->
-<div class="modal fade" id="modalElectrica" tabindex="-1" aria-labelledby="modalElectricaLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content rounded-4 shadow">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="modalElectricaLabel">Eléctrica Básica <i class="bi bi-lightning-fill"></i></h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <p><strong><i class="bi bi-pencil-fill"></i> Descripción:</strong> Módulo para conocer sobre la electrónica básica que se genera en la empresa Alen.</p>
-        <p><strong><i class="bi bi-clock"></i>Duración:</strong> 2 horas</p>
-      </div>
-      <div class="modal-footer justify-content-between">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        <a href="modulos/electrica.php" class="btn btn-primary">Iniciar Módulo</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Simular que se desbloquea el módulo 2 después de 2 segundos
-    setTimeout(() => {
-      const modulo2 = document.getElementById('modulo2');
-      modulo2.classList.remove('locked');
-    }, 8000);
+    function mostrarModal(el) {
+      const titulo = el.dataset.titulo;
+      const descripcion = el.dataset.descripcion;
+      const capitulo = el.dataset.id;
+      const curso = el.dataset.curso;
+      const completado = el.dataset.completado;
+
+      if (completado === "1") {
+        alert("✅ Este capítulo ya fue completado.");
+        return; // Evita que se abra el modal
+      }
+
+      console.log(titulo);
+
+      document.getElementById('tituloModal').textContent = titulo;
+      document.getElementById('descripcionModal').textContent = descripcion;
+      document.getElementById('btnVerCapitulo').href = `Back/conteo.php?id_curso=${curso}&capitulo=${capitulo}&razon=Inicio`;
+
+      $('#modalCapitulo').modal('show');
+    }
   </script>
 
 </body>
-</html>  
+
+</html>

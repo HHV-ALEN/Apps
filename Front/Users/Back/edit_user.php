@@ -2,16 +2,17 @@
 include '../../../Back/config/config.php';
 $conn = connectMySQLi();
 session_start(); // ¡No olvides esto!
+print_r($_POST); // Para depurar, puedes eliminarlo después
 
 $id_usuario = $_POST['id_usuario'];
-$Nombre = $_POST['Nombre'];
-$Correo = $_POST['Correo'];
-$Fecha_Ingreso = $_POST['Fecha_Ingreso'];
-$Jerarquia = $_POST['Jerarquia'];
-$Area = $_POST['Area'];
-$Rol = $_POST['Rol'];
-$Sucursal = $_POST['Sucursal'];
-$Departamento = $_POST['Departamento'];
+$Nombre = $_POST['nombre'];
+$Correo = $_POST['email'];
+$Fecha_Ingreso = $_POST['antiguedad'];
+$Jerarquia = $_POST['jerarquia'];
+$Area = $_POST['area'];
+$Rol = $_POST['rol'];
+$Sucursal = $_POST['sucursal'];
+$Departamento = $_POST['departamento'];
 
 echo "<strong>Información del Formulario</strong>";
 echo "<br><strong>-------------------------------------</strong>";

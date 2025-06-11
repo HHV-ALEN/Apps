@@ -3,7 +3,7 @@ include "../Back/config/config.php";
 session_start();
 $conn = connectMySQLi();
 
-$idCurso = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$idCurso = isset($_GET['id_curso']) ? intval($_GET['id_curso']) : 0;
 $capitulo = isset($_GET['capitulo']) ? intval($_GET['capitulo']) : 1;
 
 // Info del curso
@@ -44,21 +44,26 @@ $querySiguiente = "SELECT Orden FROM academy_capitulos WHERE Id_Curso = $idCurso
 $resSiguiente = mysqli_query($conn, $querySiguiente);
 $siguiente = mysqli_fetch_assoc($resSiguiente);
 
+echo "<script>console.log('ID del video: " . $videoId . "');</script>";
+
 ?>
+<script>
+    const videoId = "<?php echo $videoId ?: 'VIDEO_DEFAULT'; ?>";
+    console.log("VideoID:", videoId);
+</script>
+
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($curso['Titulo']); ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .video-responsive {
             position: relative;
             padding-bottom: 56.25%;
             padding-top: 30px;
-            height: 0;
-            overflow: hidden;
+            height: 0;  
         }
 
         .video-responsive iframe {
@@ -82,70 +87,45 @@ $siguiente = mysqli_fetch_assoc($resSiguiente);
     <?php include "../Front/navbar.php"; ?>
 
     <div class="container mt-5">
-        <div class="info-box mb-4">
-            <h2 class="text-primary"><?php echo htmlspecialchars($curso['Titulo']); ?></h2>
-            <p><?php echo nl2br(htmlspecialchars($curso['Descripcion'])); ?></p>
-        </div>
+
 
         <div class="info-box mb-4">
             <h4 class="text-success">Capítulo <?php echo $capitulo; ?>: <?php echo htmlspecialchars($cap['Titulo']); ?></h4>
             <p><?php echo nl2br(htmlspecialchars($cap['Descripcion'])); ?></p>
 
+            <!-- Contenedor del reproductor -->
             <div class="video-responsive rounded shadow">
-                <div id="player"></div>
-            </div>
-        </div>
-        <div class="info-box mb-4 d-flex justify-content-between">
-            <!-- Botón anterior -->
-            <div>
-                <?php if ($anterior): ?>
-                    <a href="?id=<?php echo $idCurso; ?>&capitulo=<?php echo $anterior['Orden']; ?>" class="btn btn-outline-primary">
-                        ← Capítulo <?php echo $anterior['Orden']; ?>
-                    </a>
-                <?php else: ?>
-                    <span class="text-muted">No hay capítulo anterior</span>
-                <?php endif; ?>
-            </div>
-
-            <!-- Botón siguiente -->
-            <div>
-                <?php if ($siguiente): ?>
-                    <a href="?id=<?php echo $idCurso; ?>&capitulo=<?php echo $siguiente['Orden']; ?>" class="btn btn-outline-primary">
-                        Capítulo <?php echo $siguiente['Orden']; ?> →
-                    </a>
-                <?php else: ?>
-                    <span class="text-muted">No hay más capítulos</span>
-                <?php endif; ?>
+                <div id="playerContainer">
+                    <div id="player"></div>
+                </div>
             </div>
         </div>
 
-        <!-- Modal -->
-        <div class="modal fade" id="modalPregunta" tabindex="-1" aria-labelledby="modalPreguntaLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <form method="POST" action="evaluar_pregunta.php">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalPreguntaLabel">Pregunta del capítulo</h5>
-                        </div>
-                        <div class="modal-body">
-                            <p>¿Qué te ha parecido el capítulo?</p>
-                            <div class="form-group">
-                                <label for="respuesta">Tu respuesta:</label>
-                                <textarea class="form-control" id="respuesta" name="respuesta" rows="3" required></textarea>
-                            </div>
-                            <p>¿Cual es el Modelo de Ilumador Necesario??</p>
-                            <div class="form-group">
-                                <label for="respuesta">Tu respuesta:</label>
-                                <textarea class="form-control" id="respuesta" name="respuesta" rows="3" required></textarea>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-success">Responder</button>
-                            </div>
-                        </div>
-                </form>
-            </div>
+        <div class="info-box mb-4">
+            <h2 class="text-primary"><?php echo htmlspecialchars($curso['Titulo']); ?></h2>
+            <p><?php echo nl2br(htmlspecialchars($curso['Descripcion'])); ?></p>
         </div>
 
+        <?php if ($anterior): ?>
+            <button onclick="window.location.href='?id_curso=<?php echo $idCurso; ?>&capitulo=<?php echo $anterior['Orden']; ?>'" class="btn btn-secondary">Anterior</button>
+        <?php endif; ?>
+
+        <?php if ($siguiente): ?>
+            <button onclick="window.location.href='?id_curso=<?php echo $idCurso; ?>&capitulo=<?php echo $siguiente['Orden']; ?>'" class="btn btn-primary">Siguiente</button>
+        <?php endif; ?>
+
+
+        <?php
+        // Obtener la pregunta del capítulo
+        $queryPregunta = "SELECT * FROM academy_preguntas WHERE Curso = $idCurso AND Capitulo = $capitulo";
+        $resultPregunta = mysqli_query($conn, $queryPregunta);
+        while ($pregunta = mysqli_fetch_array($resultPregunta)) {
+            $Id_pregunta = $pregunta['Id'];
+            $Pregunta = $pregunta['Pregunta'];
+            $Id_Curso = $pregunta['Curso'];
+            $Capitulo = $pregunta['Capitulo'];
+        }
+        ?>
 
     </div>
     <!-- jQuery (requerido por Bootstrap) -->
@@ -154,28 +134,67 @@ $siguiente = mysqli_fetch_assoc($resSiguiente);
     <!-- Bootstrap Bundle (incluye Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- YouTube Iframe API -->
+    <!-- Cargar API -->
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="https://www.youtube.com/iframe_api"></script>
+
     <script>
-        let player;
+  let player;
+  let currentVideoId = videoId; // del echo PHP anterior
 
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                videoId: '<?php echo $videoId; ?>',
-                events: {
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
+  // 1. Cuando la API está lista
+  function onYouTubeIframeAPIReady() {
+    loadPlayer(currentVideoId);
+  }
 
-        function onPlayerStateChange(event) {
-            if (event.data === YT.PlayerState.ENDED) {
-                // Mostrar el modal con la pregunta
-                $('#modalPregunta').modal('show');
-            }
-        }
-    </script>
+  // 2. Cargar o recargar el reproductor
+  function loadPlayer(id) {
+    if (player) {
+      player.destroy(); // destruir instancia vieja si existe
+    }
+
+    player = new YT.Player('player', {
+      videoId: id,
+      width: '100%',
+      height: '360',
+      playerVars: {
+        autoplay: 1,
+        controls: 0,
+        disablekb: 1,
+        rel: 0,
+        modestbranding: 1,
+      },
+      events: {
+        'onReady': onPlayerReady,
+        'onStateChange': onPlayerStateChange
+      }
+    });
+  }
+
+  // 3. Cuando el reproductor está listo
+  function onPlayerReady(event) {
+    event.target.playVideo();
+  }
+
+  // 4. Detectar fin del video
+  function onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.ENDED) {
+      $('#modalPregunta').modal('show');
+    }
+  }
+
+  // 5. Función para cambiar de capítulo (si navegas sin recargar página)
+  function cambiarVideo(nuevoId) {
+    currentVideoId = nuevoId;
+    loadPlayer(currentVideoId);
+  }
+
+  // Extra: prevenir errores si se recarga o navega
+  window.onunload = () => {
+    if (player) player.destroy();
+  };
+</script>
+
+
 </body>
 
 </html>

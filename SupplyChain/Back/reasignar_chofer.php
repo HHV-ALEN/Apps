@@ -5,8 +5,22 @@ session_start();
 
 /// Actualizar el Chofer de la entrega
 print_r($_POST);
+echo "<br>";
+
 $Id_Salida = $_POST['Id_Salida'];
 $nuevo_chofer = $_POST['nuevo_chofer'];
+$Paqueteria = $_POST['Paqueteria'];
+$otroPaqueteria = $_POST['otroPaqueteria'] ?? NULL;
+$Tipo_Flete = $_POST['Tipo_Flete'];
+$Metodo_Pago = $_POST['Metodo_Pago'];
+
+
+echo "<br>DebugShit: ";
+echo "<br> Nuevo_Chofer : " . $nuevo_chofer;
+echo "<br> Paqueteria " . $Paqueteria;
+echo "<br> otroPaqueteria " . $otroPaqueteria;
+echo "<br> Tipo_Flete " . $Tipo_Flete;
+echo "<br> Metodo_Pago " . $Metodo_Pago;
 
 // Consultar nombre del nuevo chofer
 $query = "SELECT Nombre FROM usuarios WHERE Id = $nuevo_chofer";
@@ -21,8 +35,11 @@ if ($response->num_rows > 0) {
 
 echo "<br> Nombre del nuevo chofer: " . $nombre_chofer;
 
-/// Actualizar el chofer en la tabla 
-$update_query = "UPDATE preguia SET Chofer = '$nombre_chofer' WHERE Id_Salida = $Id_Salida";
+
+/// Actualizar La información de la preguia
+
+$update_query = "UPDATE preguia SET Chofer = '$nombre_chofer', Paqueteria = '$Paqueteria', Tipo_Flete = '$Tipo_Flete',
+Metodo_Pago = '$Metodo_Pago' WHERE Id_Salida = $Id_Salida";
 if ($conn->query($update_query) === TRUE) {
       $_SESSION['success_message'] = "El chofer de la salida $Id_Salida ha sido actualizado a: $nombre_chofer";
 } else {

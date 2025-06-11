@@ -3,8 +3,6 @@
 $Nombre = $_SESSION['Name'];
 // Cortar Solo la primera palabra del nombre
 $Nombre = explode(" ", $Nombre)[0];
-
-
 ?>
 <!DOCTYPE html>
 <html lang="en">

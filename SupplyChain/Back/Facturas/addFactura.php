@@ -86,9 +86,6 @@ if ($Parametro == 'Base') {
         echo "<br>No se actualizó correctamente la tabla entrega_factura_refactor";
     }
 
-
-
-
 } elseif ($Parametro == 'Consolidado'){
     echo "<hr><br> Id_Base: $id_salida";
     echo "<br> Id_Relacion: $id_salida_Relacion";
@@ -115,4 +112,4 @@ if ($Parametro == 'Base') {
 }
 
 
-//header("Location: ../../Front/detalles.php?id=".$id_salida);
+header("Location: ../../Front/detalles.php?id=".$id_salida);

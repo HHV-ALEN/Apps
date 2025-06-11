@@ -1,0 +1,8 @@
+🔍 Análisis de Incidentes
+-------------------------------
+📅 Total de registros históricos: 623
+📈 Promedio mensual: 36.65 incidentes
+🔥 Mes con más incidentes: January 2024 con 69 incidentes
+🔮 Tipo más probable de incidente para el próximo mes: Software
+
+La gráfica muestra el comportamiento histórico mensual de los incidentes registrados. Las cruces verdes representan la predicción para los próximos 3 meses basada en una regresión lineal.
