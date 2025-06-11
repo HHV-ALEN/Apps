@@ -1,0 +1,12 @@
+🔍 Prediccion de Categorías Más Frecuentes
+----------------------------------------------
+Se analizaron las categorías de incidentes reportadas en los últimos 6 meses.
+Con base en esta información, se estimaron las categorías con mayor probabilidad de ocurrencia en el próximo mes:
+
+1. Hardware: 6.3 incidentes estimados
+2. Correo Electronico: 2.3 incidentes estimados
+3. Impresión: 2.3 incidentes estimados
+4. Incidente de Usuario: 2.3 incidentes estimados
+5. Internet: 1.6 incidentes estimados
+
+La gráfica generada muestra las 5 categorías más probables de incidentes para el siguiente mes.

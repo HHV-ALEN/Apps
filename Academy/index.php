@@ -2,6 +2,7 @@
 include "../Back/config/config.php";
 session_start();
 $conn = connectMySQLi();
+$Area = $_SESSION['Area'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -17,7 +18,6 @@ $conn = connectMySQLi();
         }
 
         .table thead th {
-            background-color: #007bff;
             color: white;
             text-align: center;
         }
@@ -35,135 +35,51 @@ $conn = connectMySQLi();
 
 <body>
     <?php include "../Front/navbar.php"; ?>
-    <div class="container my-5">
-        <!-- Encabezado -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3">📚 Gestión de Cursos</h1>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoCurso">
-                ➕ Nuevo Curso
-            </button>
-        </div>
 
-        <!-- Tabla de cursos -->
-        <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Título</th>
-                        <th>Área</th>
-                        <th>Capítulos</th>
-                        <th>Status</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    $cursos_query = "SELECT * FROM academy_cursos";
-                    $cursos_response = mysqli_query($conn, $cursos_query);
-                    while ($row = mysqli_fetch_assoc($cursos_response)) {
-                        $idCurso = $row['Id_Curso'];
-                    ?>
-                        <tr>
-                            <td><?= $idCurso ?></td>
-                            <td><?= $row['Titulo'] ?></td>
-                            <td><?= $row['Descripcion'] ?></td>
-                            <td><?= $row['Area'] ?></td>
-                            <td>
-                                <span class="badge <?= $row['Estado'] == 'Activo' ? 'bg-success' : 'bg-danger' ?>">
-                                    <?= $row['Estado'] ?>
-                                </span>
-                            </td>
-                            <td>
-                                <!-- Botón para colapsar info -->
-                                <button class="btn btn-info btn-sm btn-custom" data-bs-toggle="collapse" data-bs-target="#collapseCurso<?= $idCurso ?>" aria-expanded="false" aria-controls="collapseCurso<?= $idCurso ?>">
-                                    👁️ Detalle
-                                </button>
-                                <a class="btn btn-primary" href="vista2.php?id=<?php echo $idCurso; ?>&capitulo=1" role="button">
-                                    ➕ Capítulo
-                                </a>
-                            </td>
-                        </tr>
-
-                        <!-- Fila colapsable (info del curso) -->
-                        <tr class="collapse-row">
-                            <td colspan="6" class="p-0 border-0">
-                                <div class="collapse" id="collapseCurso<?= $idCurso ?>">
-                                    <div class="p-4 bg-light border rounded shadow-sm animate__animated animate__fadeIn">
-                                        <h6>📘 Información del curso:</h6>
-                                        <p><strong>Descripción:</strong> <?= $row['Descripcion'] ?></p>
-                                        <p><strong>Área:</strong> <?= $row['Area'] ?></p>
-                                        <p><strong>Duración estimada:</strong> <?= $row['Duracion'] ?? '2 hrs' ?></p>
-                                        <hr>
-                                        <h6>📂 Capítulos:</h6>
-                                        <ul>
-                                            <?php
-                                            // Consulta de capítulos si tienes tabla relacionada
-                                            $capQuery = "SELECT * FROM academy_capitulos WHERE Id_Curso = $idCurso";
-                                            $capResult = mysqli_query($conn, $capQuery);
-                                            if (mysqli_num_rows($capResult) > 0) {
-                                                while ($cap = mysqli_fetch_assoc($capResult)) {
-                                                    echo "<li><strong>{$cap['Titulo']}</strong> – {$cap['Descripcion']}</li>";
-                                                }
-                                            } else {
-                                                echo "<li><em>Este curso aún no tiene capítulos registrados.</em></li>";
-                                            }
-                                            ?>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php } ?>
-                </tbody>
-
-            </table>
-        </div>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Mis Cursos</h2>
+        <img src="Front/img/Alenitos/AlienChill.png" alt="Alien cool" style="height: 80px;" />
     </div>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover ">
+            <thead class="bg-dark">
+                <tr>
+                    <th>Nombre del Curso</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                    <?php
+                    $stmt = $conn->prepare("
+                        SELECT c.Titulo, c.Descripcion, c.Area, c.Id_Curso,
+                            IFNULL(MAX(p.Capitulo), 0) AS ultimo_completado
+                        FROM academy_cursos c
+                        LEFT JOIN academy_progreso p ON c.Id_Curso = p.Curso AND p.Usuario = ?
+                        WHERE c.Area = ?
+                        GROUP BY c.Id_Curso
+                    ");
+                    $stmt->bind_param("ss", $usuario, $Area); // Asegúrate de tener $usuario definido
+                    $stmt->execute();
+                    $result = $stmt->get_result();
 
-    <!-- Modal de Registro de Nuevo Curso -->
-    <div class="modal fade" id="modalNuevoCurso" tabindex="-1" aria-labelledby="modalNuevoCursoLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form>
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalNuevoCursoLabel">➕ Registrar Nuevo Curso</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="titulo" class="form-label">Título del Curso</label>
-                            <input type="text" class="form-control" id="titulo" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="descripcion" class="form-label">Descripción</label>
-                            <textarea class="form-control" id="descripcion" rows="3" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="area" class="form-label">Área</label>
-                            <select class="form-select" id="area" required>
-                                <option selected disabled>Selecciona un área</option>
-                                <option>Producción</option>
-                                <option>Ventas</option>
-                                <option>Administración</option>
-                                <option>Logística</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="imagen" class="form-label">Imagen para el mapa (opcional)</label>
-                            <input type="file" class="form-control" id="imagen">
-                        </div>
-                        <div class="mb-3 form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="status" checked>
-                            <label class="form-check-label" for="status">Activo</label>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    </div>
-                </form>
-            </div>
+                    if ($result->num_rows > 0) {
+                        while ($row = $result->fetch_assoc()) {
+                            $siguiente_capitulo = $row['ultimo_completado'] + 1; // siguiente capítulo
+                            echo "<tr>";
+                            echo "<td>" . htmlspecialchars($row['Titulo']) . "</td>";
+                            echo "<td>" . htmlspecialchars($row['Descripcion']) . "</td>";
+                            echo "<td><a class='btn btn-dark' href='dashboard.php?id_curso=" . urlencode($row['Id_Curso']) . "&capitulo=" . $siguiente_capitulo . "' class='btn btn-primary btn-custom'>Entrar al curso</a></td>";
+                            echo "</tr>";
+                        }
+                    } else {
+                        echo "<tr><td colspan='4'>No hay cursos disponibles en tu área.</td></tr>";
+                    }
+                    $stmt->close();
+                    ?>
+                </tbody>
+            </table>
         </div>
     </div>
 

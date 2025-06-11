@@ -187,6 +187,7 @@ mysqli_data_seek($Imagen_result, 0);
 //echo "<br> ****************************************************************** <br>";
 
 $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
+$isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSION['User_Id'] == 33 || $_SESSION['User_Id'] == 10);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -199,6 +200,8 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
     <!-- FontAwesome 6 (Última versión estable) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/detalles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
 </head>
 <?php require_once("../../Front/navbar.php"); ?>
 
@@ -375,7 +378,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
             $Fecha_Preguia = $Chofer['Fecha'] ?? 'N/A';
             ?>
 
-            <div class="card-body p-4">
+            <div class="card-body p-4 text-center">
                 <div class="row">
                     <!-- Información Principal -->
                     <div class="col-md-6">
@@ -471,6 +474,49 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                         }
 
                         ?>
+                        <br><br><br>
+
+                        <?php
+
+
+
+                        $CarpetaContenedora = '../Back/Entregas/Files/Docs/';
+                        // Consultar la tabla "entregas" en el Atributo DocumentoDeEntrega, Si existe, mostrar botón para descargar
+                        $DocEntrega_query = "SELECT * FROM entregas WHERE Id_Salida = '$id_salida'";
+                        $DocEntregaResult = mysqli_query($conn, $DocEntrega_query);
+                        if (mysqli_num_rows($DocEntregaResult) > 0) {
+                            $DocEntrega = mysqli_fetch_array($DocEntregaResult);
+                            $DocumentoDeEntrega = $DocEntrega["DocumentoDeEntrega"];
+
+                            if (!empty($DocumentoDeEntrega) && $DocumentoDeEntrega != "N/A") {
+                                // Verificar si el archivo existe en la carpeta contenedora
+                                if (file_exists($CarpetaContenedora . $DocumentoDeEntrega)) {
+                                    echo "<p class='mb-1'><strong>Documento de Entrega:</strong></p>";
+                                    echo "<a href='" . $CarpetaContenedora . $DocumentoDeEntrega . "' download class='btn btn-success btn-sm'>";
+                                    echo "<i class='fas fa-file-download'></i> Descargar Documento";
+                                    echo "</a>";
+                                } else {
+                                    echo "<p class='mb-1'>No se encontró el documento de entrega.</p>";
+                                }
+                            } else {
+                                echo "<p class='mb-1'>No se ha registrado un documento de entrega.</p>";
+
+                                if ($isGerente) {
+                        ?>
+                                    <p class="mb-1"><strong>Documento de Entrega:</strong></p>
+                                    <form action="../Back/Entregas/Files/DocumentoDeEntrega.php?id_salida=<?php echo $id_salida; ?>" method="POST" enctype="multipart/form-data">
+                                        <input type="file" name="DocumentoDeEntrega" class="form-control mb-2" required>
+                                        <input type="hidden" name="Id_Salida" value="<?php echo $id_salida; ?>">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-upload"></i> Subir Documento
+                                        </button>
+                                    </form>
+                        <?php
+                                }
+                            }
+                        }
+                        ?>
+
                     </div>
                     <div class="col-md-6">
                         <h6 class="text-primary"><i class="fas fa-store"></i> Sucursal</h6>
@@ -528,22 +574,12 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                 </div>
                             <?php
                             }
-
-
-
-
                             ?>
-
                         </div>
-
                     </div>
                 </div>
                 <hr>
-
-
-
             </div>
-
         </div>
     </div>
 
@@ -699,7 +735,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
 
                 <?php
                 /// Solo el tipo "Empaque" puede hacer uso de estos botones:
-                if ($Tipo_Usuario == 'Empaque') {
+                if ($Tipo_Usuario == 'Empaque' || $isGerente) {
                 ?>
                     <div class="row justify-content-center">
                         <div class="col-md-6 mb-2 mb-md-0">
@@ -727,6 +763,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
             ?>
             <div class="card-body">
                 <div class="row">
+
                     <!-- Table for Etiqueta Base -->
                     <div class="col-md-12">
                         <h3 class="text-center">Etiqueta Base</h3>
@@ -777,7 +814,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                                 <?php
                                                 if ($Estado_Original_DeSalida == 'Facturación') {
                                                     /// Se muestra boton de agregar Factura solo si esta en el estado de facturación
-                                                    if ($_SESSION['Departamento'] == 'Facturación') {
+                                                    if ($_SESSION['Departamento'] == 'Facturación' || $isGerente) {
                                                         if ($Id_Factura_B == '0' && $Archivo == '0') {
                                                 ?>
                                                             <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
@@ -820,7 +857,8 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                             </td>
                                             <td>
                                                 <?php
-                                                if ($_SESSION['Departamento'] == 'Empaque') {
+                                                // Permitir Edición al area de Entrega Y Surtido, Empaque y A Raque
+                                                if ($isGerente || $_SESSION['Departamento'] == 'Empaque' || $_SESSION['Departamento'] == 'Entrega y Surtido') {
                                                 ?>
                                                     <!-- Botón para abrir modal para editar la información de la etiqueta Base -->
                                                     <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
@@ -904,12 +942,86 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                     ?>
                                 </tbody>
                             </table>
+
+                            <!-- Button trigger modal -->
+                            <div class="mt-6">
+                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarEntrega">
+                                    ➕ Agregar Nueva Entrega
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="modalAgregarEntrega" aria-labelledby="modalAgregarEntregaLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-xl">
+                            <form action="../Back/Entregas/Agregar_Entrega.php" method="POST">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title" id="modalAgregarEntregaLabel">Agregar Nueva Etiqueta</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <!-- Campo oculto para enviar el Id_Salida_Original -->
+                                        <input type="hidden" name="id_salida_original" value="<?php echo $Id_Salida_Original; ?>">
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="id_salida">Id Salida</label>
+                                                    <input type="text" class="form-control" id="id_salida" name="id_salida" value="<?php echo $Id_Salida_Original; ?>" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="id_orden_venta">Id Orden de Venta</label>
+                                                    <input type="text" class="form-control" id="id_orden_venta" name="id_orden_venta" required>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="id_entrega">Id Entrega</label>
+                                                    <input type="text" class="form-control" id="id_entrega" name="id_entrega" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="partida" class="form-label">Partida</label>
+                                                <div class="d-flex align-items-center">
+                                                    <input type="number" class="form-control me-2" id="partida1" name="partida1" min="1"
+                                                        max="99" step="1" style="width: 80px;" value="1" readonly>
+                                                    <span>-</span>
+                                                    <input type="number" class="form-control ms-2" id="partida2" name="partida2" min="1"
+                                                        max="99" step="1" style="width: 80px;" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="cliente">Cliente</label>
+                                            <input type="text" class="form-control" id="cliente" value="<?php echo htmlspecialchars($nombre_cliente); ?>" disabled>
+                                            <input type="hidden" name="cliente" value="<?php echo htmlspecialchars($nombre_cliente); ?>">
+                                            <input type="hidden" name="id_cliente" value="<?php echo htmlspecialchars($id_cliente); ?>">
+                                        </div>
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                                        <button type="submit" class="btn btn-success">Guardar</button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
 
     <!-- Etiquetas Fusionadas -->
     <div class="container mb-3">
@@ -957,7 +1069,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                             <td><?php
 
                                                 if ($Id_Factura_Fusion == '0') {
-                                                    echo " - Sin Factura";
+                                                    echo "Sin Factura";
                                                 } elseif ($Id_Factura_Fusion == '1') {
                                                     echo " Remisión";
                                                 } else {
@@ -998,7 +1110,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                                 }
                                                 ?>
                                                 <?php
-                                                if ($_SESSION['Departamento'] == 'Empaque') {
+                                                if ($isGerente || $_SESSION['Departamento'] == 'Empaque' || $_SESSION['Departamento'] == 'Entrega y Surtido') {
                                                 ?>
                                                     <!-- Botón para abrir modal para editar la información de la etiqueta Fusionada -->
                                                     <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
@@ -1131,7 +1243,6 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
         </div>
     </div>
 
-
     <!-- Etiquetas Consolidadas -->
     <div class="container mb-3">
         <div class="card">
@@ -1143,10 +1254,11 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped">
                                 <thead>
-                                    <tr>
+                                    <tr class="text-center">
                                         <th>Orden de venta</th>
                                         <th>Entrega</th>
                                         <th>Partida</th>
+                                        <th>Destino</th>
                                         <th>Cliente</th>
                                         <th>Factura</th>
                                         <th>Acciones</th>
@@ -1172,10 +1284,11 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                             <td><?php echo $Orden_Venta_Consolidado; ?></td>
                                             <td><?php echo $Entrega_Consolidado; ?></td>
                                             <td><?php echo $Partida_Consolidado; ?></td>
+                                            <td><?php echo $Destino_Consolidado; ?></td>
                                             <td><?php echo $Nombre_Cliente_Consolidado; ?></td>
                                             <td><?php
                                                 if ($Id_Factura_Consolidado == '0') {
-                                                    echo " - Sin Factura";
+                                                    echo "Sin Factura";
                                                 } elseif ($Id_Factura_Consolidado == '1') {
                                                     echo " Remisión";
                                                 } else {
@@ -1213,14 +1326,21 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                                     }
                                                 }
                                                 ?>
-                                                <?php 
-                                                if ($_SESSION['Departamento'] == 'Empaque'){
+                                                <?php
+                                                if ($isGerente || $_SESSION['Departamento'] == 'Empaque' || $_SESSION['Departamento'] == 'Entrega y Surtido') {
                                                 ?>
-                                                <!-- Botón para abrir modal para editar la información de la etiqueta Consolidada -->
-                                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
-                                                    data-bs-target="#modalEditarEtiquetaConsolidada<?php echo $Id_Consolidado; ?>">
-                                                    <i class="fas fa-edit"></i> Editar Etiqueta Consolidada
-                                                </button>
+                                                    <!-- Botón para abrir modal para editar la información de la etiqueta Consolidada -->
+                                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                        data-bs-target="#modalEditarEtiquetaConsolidada<?php echo $Id_Consolidado; ?>">
+                                                        <i class="fas fa-edit"></i> Editar Etiqueta Consolidada
+                                                    </button>
+
+                                                    <!-- Botón para abrir sweet alert para eliminar etiqueta Consolidada -->
+                                                    <button type="button"
+                                                        class="btn btn-danger btn-sm eliminar-etiqueta"
+                                                        data-id="<?php echo $Id_Consolidado; ?>">
+                                                        <i class="fas fa-trash-alt"></i> Eliminar Etiqueta Consolidada
+                                                    </button>
                                                 <?php
                                                 }
                                                 ?>
@@ -1347,7 +1467,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
         </div>
     </div>
 
-    <!-- Información de registros de compra con la misma Orden de Venta -->
+    <!-- Información de registros de compra con la misma Orden de Venta 
 
     <div class="container mt-4">
         <div class="card mb-4 shadow">
@@ -1379,7 +1499,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                                                 <span class="badge bg-info text-dark">🔁 OV: <?= htmlspecialchars($row['OrdenVenta']) ?></span>
                                             </div>
                                             <div class="col-md-6">
-                                                <!--BOTON PARA VER DETALLES LOS DETALLES DEL REGISTRO EN OTRA VENTANA -->
+                                                BOTON PARA VER DETALLES LOS DETALLES DEL REGISTRO EN OTRA VENTANA 
                                                 <a href="detallesCompra.php?id=<?= htmlspecialchars($row['Id']) ?>">Detalles del Articulo</a>
                                             </div>
                                         </div>
@@ -1395,7 +1515,7 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
             </div>
         </div>
     </div>
-
+                -->
 
     <!-- Información del Empaque -->
     <div class="col-md-12">
@@ -1617,8 +1737,6 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
                     <?php } ?>
                 </div>
             <?php } ?>
-
-
             <?php
             function obtenerImagenes($conn, $query)
             {
@@ -2038,6 +2156,8 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <!-- Bootstrap CSS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -2314,6 +2434,33 @@ $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
         });
     });
 </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".eliminar-etiqueta").forEach(function(btn) {
+            btn.addEventListener("click", function() {
+                const id = this.getAttribute("data-id");
+
+                Swal.fire({
+                    title: "¿Estás seguro?",
+                    text: "Esta acción eliminará la etiqueta consolidada.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, eliminar",
+                    cancelButtonText: "Cancelar",
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Redirige al backend
+                        window.location.href = `../Back/Etiquetas/eliminar_consolidado.php?id_consolidado=${id}`;
+                    }
+                });
+            });
+        });
+    });
+</script>
+
 </body>
 
 </html>

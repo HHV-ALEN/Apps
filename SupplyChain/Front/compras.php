@@ -100,11 +100,34 @@ $conn = connectMySQLi();
             <h2 class="mb-4">📦 Líneas Abiertas</h2>
             <p class="lead">Sube tu archivo Excel exportado desde SAP para continuar con el registro.</p>
 
-            <form method="POST" enctype="multipart/form-data" class="mt-4">
+            <form method="POST" enctype="multipart/form-data" class="mt-4" id="miFormulario">
                 <input type="file" name="archivo_excel" class="form-control mb-3" required>
+
+                <div class=" row mb-3 text-center">
+                    <p class="fw-bold">Selecciona al menos un país:</p>
+                    <div class="form-check col-md-3">
+                        <input class="form-check-input" type="checkbox" name="paises[]" value="México" id="mexico" required>
+                        <label class="form-check-label" for="mexico">México</label>
+                    </div>
+                    <div class="form-check col-md-3">
+                        <input class="form-check-input" type="checkbox" name="paises[]" value="Estados Unidos" id="usa">
+                        <label class="form-check-label" for="usa">Estados Unidos</label>
+                    </div>
+                    <div class="form-check col-md-3">
+                        <input class="form-check-input" type="checkbox" name="paises[]" value="Panamá" id="panama">
+                        <label class="form-check-label" for="panama">Panamá</label>
+                    </div>
+                    <div class="form-check col-md-3">
+                        <input class="form-check-input" type="checkbox" name="paises[]" value="Guatemala" id="guatemala">
+                        <label class="form-check-label" for="guatemala">Guatemala</label>
+                    </div>
+                </div>
+
                 <button type="submit" name="procesar" class="btn btn-success">📤 Procesar Archivo</button>
             </form>
         </div>
+
+
     <?php
     }
     ?>
@@ -149,8 +172,9 @@ $conn = connectMySQLi();
         echo '<div class="container mt-5">';
         echo "<h4 class='mb-4'>📄 Vista previa de datos cargados</h4>";
         echo "<div class='table-wrapper'>";
+        
         echo "<table class='table table-bordered table-hover align-middle text-center'>";
-
+        
         // Encabezados fijos
         echo "<thead class='table-primary'><tr>";
         echo "<th>Orden de Compra</th>";
@@ -244,7 +268,7 @@ $conn = connectMySQLi();
         <h3 class="mb-4">📝 Compras Registradas</h3>
         <div class="table-responsive">
 
-            <div class="row g-3 mb-4 text-center">
+            <div class="row  text-center">
                 <div class="col-md-3 ">
                     <input type="text" id="filtroOrden" class="form-control" placeholder="Orden de Compra">
                 </div>
@@ -258,12 +282,25 @@ $conn = connectMySQLi();
                     <input type="text" id="NombreTitular" class="form-control" placeholder="Nombre del Titular">
                 </div>
             </div>
+            <br>
             <div id="tabla-compras"></div>
         </div>
     </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.getElementById('miFormulario').addEventListener('submit', function(e) {
+            const checkboxes = document.querySelectorAll('input[name="paises[]"]:checked');
+            if (checkboxes.length === 0) {
+                e.preventDefault();
+                alert('Por favor selecciona al menos un país');
+            }
+        });
+    </script>
+
+
     <script>
         function cargarTabla(pagina = 1) {
             let orden = $('#filtroOrden').val();

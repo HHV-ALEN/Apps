@@ -211,9 +211,23 @@ $result = $conn->query($query);
                                 <td><?php echo htmlspecialchars($row['Departamento']); ?></td>
                                 <td>
                                     <!-- Botón para abrir modal -->
-                                    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editUserModal<?php echo $row['Id']; ?>">
+                                    <!-- Botón para abrir el modal y pasar datos -->
+                                    <button class="btn btn-warning"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editUserModal"
+                                        data-id="<?php echo $row['Id']; ?>"
+                                        data-nombre="<?php echo htmlspecialchars($row['Nombre']); ?>"
+                                        data-email="<?php echo htmlspecialchars($row['Email']); ?>"
+                                        data-antiguedad="<?php echo htmlspecialchars($row['Fecha_Ingreso']); ?>"
+                                        data-area="<?php echo htmlspecialchars($row['Area']); ?>"
+                                        data-rol="<?php echo htmlspecialchars($row['Rol']); ?>"
+                                        data-sucursal="<?php echo htmlspecialchars($row['Sucursal']); ?>"
+                                        data-departamento="<?php echo htmlspecialchars($row['Departamento']); ?>"
+                                        data-jerarquia="<?php echo htmlspecialchars($row['Jerarquia']); ?>">
+                                        <i class="bi bi-pencil-square"></i>
                                         ✏️ Editar
                                     </button>
+
                                     <!-- Delete Button -->
                                     <a href="Back/delete_user.php?id=<?php echo $row['Id']; ?>"
                                         class="btn btn-danger"
@@ -223,77 +237,6 @@ $result = $conn->query($query);
                                 </td>
                             </tr>
 
-                            <!-- Modal to edit user (for each user) -->
-                            <!-- Fields: Nombre, Username, Email, Fecha_Ingreso, Jerarquia, Rol, Area, Departamento, Sucursal,  -->
-                            <div class="modal fade" id="editUserModal<?php echo $row['Id']; ?>" tabindex="-1" aria-labelledby="editUserLabel<?php echo $row['Id']; ?>" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-warning text-white">
-                                            <h5 class="modal-title" id="editUserLabel<?php echo $row['Id']; ?>">Editar Usuario</h5> &nbsp; <i class="bi bi-people-fill"></i>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                                        </div>
-
-                                        <form action="Back/edit_user.php" method="POST" onsubmit="console.log('Formulario enviado');">
-                                            <div class="modal-body">
-                                                <!-- Campos del formulario -->
-                                                <input type="hidden" name="id_usuario" value="<?php echo $row['Id']; ?>">
-                                                <div class="row">
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="Nombre<?php echo $row['Id']; ?>" class="form-label">Nombre:</label>
-                                                        <input type="text" class="form-control" name="Nombre" id="Nombre<?php echo $row['Id']; ?>" value="<?php echo htmlspecialchars($row['Nombre']); ?>" required>
-                                                    </div>
-
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="Correo<?php echo $row['Id']; ?>" class="form-label">Correo:</label>
-                                                        <input type="email" class="form-control" name="Correo" id="Correo<?php echo $row['Id']; ?>" value="<?php echo htmlspecialchars($row['Email']); ?>" required>
-                                                    </div>
-                                                </div>
-
-                                                <div class="row">
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="Fecha_Ingreso<?php echo $row['Id']; ?>" class="form-label">Fecha de Ingreso:</label>
-                                                        <input type="text" class="form-control" name="Fecha_Ingreso" id="Fecha_Ingreso<?php echo $row['Id']; ?>" value="<?php echo htmlspecialchars($row['Fecha_Ingreso']); ?>" required>
-                                                    </div>
-
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="Jerarquia<?php echo $row['Id']; ?>" class="form-label">Superior Asignado:</label>
-                                                        <input type="text" class="form-control" name="Jerarquia" id="Jerarquia<?php echo $row['Id']; ?>" value="<?php echo htmlspecialchars($row['Jerarquia']); ?>" required>
-                                                    </div>
-                                                </div>
-
-                                                <div class="row">
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="Area<?php echo $row['Id']; ?>" class="form-label">Area:</label>
-                                                        <input type="text" class="form-control" name="Area" id="Area<?php echo $row['Id']; ?>" value="<?php echo htmlspecialchars($row['Area']); ?>" required>
-                                                    </div>
-
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="Rol<?php echo $row['Id']; ?>" class="form-label">Rol:</label>
-                                                        <input type="text" class="form-control" name="Rol" id="Rol<?php echo $row['Id']; ?>" value="<?php echo htmlspecialchars($row['Rol']); ?>" required>
-                                                    </div>
-                                                </div>
-
-                                                <div class="row">
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="Sucursal<?php echo $row['Id']; ?>" class="form-label">Sucursal:</label>
-                                                        <input type="text" class="form-control" name="Sucursal" id="Sucursal<?php echo $row['Id']; ?>" value="<?php echo htmlspecialchars($row['Sucursal']); ?>" required>
-                                                    </div>
-
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="Departamento<?php echo $row['Id']; ?>" class="form-label">Departamento:</label>
-                                                        <input type="text" class="form-control" name="Departamento" id="Departamento<?php echo $row['Id']; ?>" value="<?php echo htmlspecialchars($row['Departamento']); ?>" required>
-                                                    </div>
-                                                </div>
-
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
                         <?php endwhile; ?>
                     </tbody>
                 </table>
@@ -331,15 +274,112 @@ $result = $conn->query($query);
                 </li>
 
     </div>
-
-
     </div>
+
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="Back/edit_user.php" method="POST">
+                    <div class="modal-header bg-warning text-white">
+                        <h5 class="modal-title" id="editUserLabel">Editar Usuario</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id_usuario" id="edit-id">
+                        <div class="mb-3">
+                            <label for="edit-nombre">Nombre:</label>
+                            <input type="text" class="form-control" name="nombre" id="edit-nombre">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-email">Email:</label>
+                            <input type="email" class="form-control" name="email" id="edit-email">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit-antiguedad">Fecha de Ingreso:</label>
+                            <input type="date" class="form-control" name="antiguedad" id="edit-antiguedad">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-area">Área:</label>
+                            <input type="text" class="form-control" name="area" id="edit-area">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-rol">Rol:</label>
+                            <select class="form-control" name="rol" id="edit-rol">
+                                <option value="">Seleccione...</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Gerente">Gerente</option>
+                                <option value="Coordinador">Coordinador</option>
+                                <option value="Empleado">Empleado</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-sucursal">Sucursal:</label>
+                            <select class="form-control" name="sucursal" id="edit-sucursal">
+                                <option value="">Seleccione...</option>
+                                <option value="Guadalajara">Guadalajara</option>
+                                <option value="Tijuana">Tijuana</option>
+                                <option value="Texas">Texas</option>
+                                <option value="Miami">Miami</option>
+                                <option value="CDMX">CDMX</option>
+                                <option value="Veracruz">Veracruz</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-departamento">Departamento:</label>
+                            <input type="text" class="form-control" name="departamento" id="edit-departamento">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-jerarquia">Jerarquía:</label>
+                            <input type="text" class="form-control" name="jerarquia" id="edit-jerarquia">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Bootstrap 5 Bundle con Popper incluido -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Llenar el modal de edición con los datos del usuario:
+        document.addEventListener('DOMContentLoaded', function() {
+            const editUserModal = document.getElementById('editUserModal');
+            editUserModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-id');
+                const nombre = button.getAttribute('data-nombre');
+                const email = button.getAttribute('data-email');
+                const antiguedad = button.getAttribute('data-antiguedad') || ''; // Default to empty if not set
+                const area = button.getAttribute('data-area') || ''; // Default to empty if not set
+                const rol = button.getAttribute('data-rol') || ''; // Default to empty if not set
+                const sucursal = button.getAttribute('data-sucursal') || ''; // Default to empty if not set
+                const departamento = button.getAttribute('data-departamento') || ''; // Default to empty if not set
+                const jerarquia = button.getAttribute('data-jerarquia') || ''; // Default to empty if not set
+
+
+                document.getElementById('edit-id').value = id;
+                document.getElementById('edit-nombre').value = nombre;
+                document.getElementById('edit-email').value = email;
+                document.getElementById('edit-antiguedad').value = antiguedad;
+                document.getElementById('edit-area').value = area;
+                document.getElementById('edit-rol').value = rol;
+                document.getElementById('edit-sucursal').value = sucursal;
+                document.getElementById('edit-departamento').value = departamento;
+                document.getElementById('edit-jerarquia').value = jerarquia;
+
+
+            });
+        });
+
+
+
         /// Animación para evitar que se den muchos clicks en el submit:
         document.addEventListener("DOMContentLoaded", function() {
             const botonesAceptar = document.querySelectorAll(".btn-aceptar");
@@ -355,7 +395,6 @@ $result = $conn->query($query);
                 });
             });
         });
-
 
         // AJAX para buscar usuarios por nombre
         document.addEventListener('DOMContentLoaded', function() {

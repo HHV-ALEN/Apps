@@ -9,6 +9,7 @@ if (isset($_SESSION['alerta_estado'])) {
   unset($_SESSION['alerta_estado']); // Limpiar mensaje para que no se repita
 }
 
+$isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 ||  $_SESSION['User_Id'] == 29  || $_SESSION['User_Id'] == 7);
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -29,11 +30,24 @@ $total_records = mysqli_fetch_assoc($total_records_result)['total'];
 $total_pages = ceil($total_records / $records_per_page);
 
 // Fetch records for current page
-$query_salida = "SELECT salidas.*, entregas.Id_Orden_Venta, entregas.Id_Entrega
-                 FROM salidas
-                 LEFT JOIN entregas ON salidas.Id = entregas.Id_Salida
-                 ORDER BY salidas.Id DESC 
-                 LIMIT $offset, $records_per_page";
+$query_salida = "SELECT 
+    s.*, 
+    e.Id_Orden_Venta, 
+    e.Id_Entrega
+FROM salidas s
+LEFT JOIN (
+    SELECT *
+    FROM entregas e1
+    WHERE e1.Id IN (
+        SELECT MAX(e2.Id)
+        FROM entregas e2
+        GROUP BY e2.Id_Salida
+    )
+) e ON s.Id = e.Id_Salida
+WHERE s.Id_Status != 30
+GROUP BY s.Id
+ORDER BY s.Id DESC
+LIMIT $offset, $records_per_page";
 
 $result_salida = mysqli_query($conn, $query_salida);
 ?>
@@ -45,6 +59,7 @@ $result_salida = mysqli_query($conn, $query_salida);
   console.log("User ID:", currentUserId);
 </script>
 
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -53,6 +68,8 @@ $result_salida = mysqli_query($conn, $query_salida);
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
   <link rel="icon" type="image/png" href="../Front/Img/Icono-A.png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
   <style>
     #listaClientes.show {
       display: block !important;
@@ -104,6 +121,16 @@ $result_salida = mysqli_query($conn, $query_salida);
 
 <body>
   <?php include "../Front/navbar.php"; ?>
+
+  <!--- Mensaje despues de hacer el cambio de urgencia -->
+  <?php if (isset($_SESSION['urgencia_msg'])): ?>
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+      <?= $_SESSION['urgencia_msg']; ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <?php unset($_SESSION['urgencia_msg']); ?>
+  <?php endif; ?>
+
   <?php
   if ($_SESSION['Departamento'] == 'Chofer') {
   ?>
@@ -117,11 +144,23 @@ $result_salida = mysqli_query($conn, $query_salida);
             <?php
             $_SESSION['Name'];
 
-            $query_salida = "SELECT p.Id, p.Id_Salida, p.Cliente, p.Tipo_Doc, p.Paqueteria ,s.Estado 
-                         FROM preguia p
-                         INNER JOIN salidas s ON p.Id_Salida = s.Id
-                         WHERE s.Estado = 'A Ruta' AND p.Chofer = '{$_SESSION['Name']}'
-                         ORDER BY p.Id DESC";
+            $query_salida = "SELECT 
+    p.Id, 
+    p.Id_Salida, 
+    p.Cliente, 
+    p.Tipo_Doc, 
+    p.Paqueteria,
+    s.Estado 
+FROM preguia p
+INNER JOIN salidas s ON p.Id_Salida = s.Id
+WHERE s.Estado = 'A Ruta' 
+  AND p.Chofer = '{$_SESSION['Name']}'
+  AND p.Id = (
+      SELECT MAX(p2.Id)
+      FROM preguia p2
+      WHERE p2.Id_Salida = p.Id_Salida
+  )
+ORDER BY p.Id DESC ";
 
             $result_salida = mysqli_query($conn, $query_salida);
 
@@ -257,6 +296,7 @@ $result_salida = mysqli_query($conn, $query_salida);
   }
   ?>
 
+  <!-- Listado General -->
   <div class="container mt-5 text-center">
     <div class="card shadow-lg border-0">
       <div class="card-header">
@@ -282,12 +322,19 @@ $result_salida = mysqli_query($conn, $query_salida);
             ?>
           </div>
 
+          <!-- Filtros para los querys -->
           <div class="col-md-12">
             <div class="row">
               <div class="col-md-6">
                 <label for="buscar_salida" class="form-label">Número de Salida:</label>
-                <input type="text" class="form-control" id="buscar_salida" placeholder="Presione Enter para buscar...">
+                <div class="input-group">
+                  <input type="text" class="form-control" id="buscar_salida" placeholder="Presiona Enter o la lupa...">
+                  <button class="btn btn-outline-primary" type="button" id="btn_buscar_salida">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
               </div>
+
               <div class="col-md-6">
                 <label for="buscar_cliente" class="form-label">Cliente:</label>
                 <select class="form-select" id="buscar_cliente">
@@ -331,12 +378,14 @@ $result_salida = mysqli_query($conn, $query_salida);
         <br>
       </div>
       <hr>
+
       <div class="card-body">
         <!-- Results Table -->
         <div class="table-responsive">
           <table class="table table-striped table-hover text-center">
             <thead class="table-dark">
               <tr>
+                <th>Urgencia</th>
                 <th>ID</th>
                 <th>Nombre Cliente</th>
                 <th>Orden De Venta</th>
@@ -349,8 +398,18 @@ $result_salida = mysqli_query($conn, $query_salida);
             <tbody id="tabla_resultados">
               <?php while ($fila = mysqli_fetch_assoc($result_salida)):
                 $Id_Orden_Venta = $fila['Id_Orden_Venta'] ?? 'N/A';
+
+                $esUrgente = ($fila['Urgencia'] === 'Urgente');
+                $textoBoton = $esUrgente ? 'Quitar Urgencia' : 'Marcar como Urgente';
+                $colorBoton = $esUrgente ? 'btn-danger' : 'btn-outline-primary';
+                $nuevaUrgencia = $esUrgente ? 'Nada' : 'Urgente';
               ?>
-                <tr class="<?= $fila['Urgencia'] == 'Si' ? 'table-danger' : 'table-success' ?>">
+
+                <tr class="<?= $fila['Urgencia'] == 'Urgente' ? 'table-danger' : 'table-success' ?>">
+                  <td><a href="Back/Etiquetas/changeUrgencia.php?id=<?= $fila['Id'] ?>&urgencia=<?= $nuevaUrgencia ?>"
+                      class="btn <?= $colorBoton ?>">
+                      <?= $textoBoton ?>
+                    </a></td>
                   <td><?= htmlspecialchars($fila['Id']) ?></td>
                   <td><?= htmlspecialchars($fila['Nombre_Cliente']) ?></td>
                   <td><?php echo  $Id_Orden_Venta  ?></td> <!-- Manejo de valores nulos -->
@@ -362,10 +421,15 @@ $result_salida = mysqli_query($conn, $query_salida);
                     <a class='btn btn-primary' href='Front/detalles.php?id=<?= $fila['Id'] ?>'>
                       <i class="bi bi-file-earmark-medical"></i> Detalles
                     </a>
+                    <?php if ($isGerente): ?>
+                      <button type="button"
+                        class="btn btn-danger btn-sm btn-eliminar-folio"
+                        data-id="<?= $fila['Id'] ?>"
+                        data-cliente="<?= htmlspecialchars($fila['Nombre_Cliente']) ?>">
+                        <i class="bi bi-trash3"></i> Eliminar Folio
+                      </button>
+                    <?php endif; ?>
                     <?php
-                    $isGerente = ($_SESSION['User_Id'] == 34);
-                    //print_r($_SESSION);
-
                     // Empaque puede recibir cuando el estado es 'Entrega'
                     if (($isGerente || $_SESSION['Departamento'] == 'Empaque') && $fila['Estado'] == 'Entrega') {
                       echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Empaque' class='btn btn-warning btn-sm'>
@@ -436,30 +500,84 @@ $result_salida = mysqli_query($conn, $query_salida);
             <form method="POST" action="Back/reasignar_chofer.php">
               <div class="modal-content">
                 <div class="modal-header bg-warning text-white">
-                  <h5 class="modal-title" id="RutaModalLabel">Reasignar Chofer</h5>
+                  <h5 class="modal-title" id="RutaModalLabel">Reasignar</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
                 <div class="modal-body">
                   <input type="hidden" name="Id_Salida" id="modalSalidaId">
+                  <div class="row">
+                    <!-- DEBUG: mostrar ID recibido -->
+                    <div class="col-md-6">
+                      <label for="mostrarId" class="form-label">ID de la salida:</label>
+                      <input type="text" class="form-control" id="mostrarId" disabled>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="NuevaPaqueteria" class="form-label">Paqueteria:</label>
+                      <div class="form-floating">
+                        <select class="form-control" name="Paqueteria" id="Paqueteria">
+                          <option value="">Selecciona una Paqueteria</option>
+                          <?php
+                          $query_paqueteria = mysqli_query($conn, "SELECT * FROM paqueteria ORDER BY nombre");
+                          while ($rw = mysqli_fetch_array($query_paqueteria)) {
+                            echo "<option value='{$rw['nombre']}'>{$rw['nombre']}</option>";
+                          }
+                          ?>
+                          <option value="Otro">Otro</option>
+                        </select>
+                        <label for="Paqueteria">Paqueteria</label>
+                        <br>
+                        <!-- Input oculto -->
+                        <div class="form-floating mb-3" id="otroPaqueteriaDiv" style="display: none;">
+                          <input type="text" class="form-control" id="otroPaqueteria" name="otroPaqueteria"
+                            placeholder="Ingrese otra paquetería">
+                          <label for="otroPaqueteria">Especificar otra paquetería</label>
+                        </div>
+                      </div>
 
-                  <!-- DEBUG: mostrar ID recibido -->
-                  <div class="mb-3">
-                    <label for="mostrarId" class="form-label">ID de la salida:</label>
-                    <input type="text" class="form-control" id="mostrarId" disabled>
+                    </div>
                   </div>
 
+                  <div class="row">
+                    <div class="col-md-6">
+                      <label for="choferActual" class="form-label">Chofer actual:</label>
+                      <input type="text" class="form-control" id="choferActual" disabled>
+                    </div>
 
-                  <div class="mb-3">
-                    <label for="choferActual" class="form-label">Chofer actual:</label>
-                    <input type="text" class="form-control" id="choferActual" disabled>
+                    <div class="col-md-6">
+                      <label for="nuevoChofer" class="form-label">Nuevo chofer:</label>
+                      <select class="form-select" name="nuevo_chofer" id="nuevoChofer" required>
+                        <option value="">Selecciona un chofer</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div class="mb-3">
-                    <label for="nuevoChofer" class="form-label">Nuevo chofer:</label>
-                    <select class="form-select" name="nuevo_chofer" id="nuevoChofer" required>
-                      <option value="">Selecciona un chofer</option>
-                    </select>
+                  <br>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-floating mb-3">
+                        <!-- Opciones del Selector: A Domicilio, Ocurre -->
+                        <select class="form-select" name="Tipo_Flete" id="Tipo_Flete" required>
+                          <option value=""> Selecciona una opción </option>
+                          <option value="A Domicilio">A Domicilio</option>
+                          <option value="Ocurre">Ocurre</option>
+                        </select>
+                        <label for="Tipo_Flete">Tipo de Flete</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating mb-3">
+                        <!-- Opciones del Selector: Cob. Reg., Credito, Pagado, X Cobrar -->
+                        <select class="form-select" name="Metodo_Pago" id="Metodo_Pago" required>
+                          <option value="">Selecciona una opción</option>
+                          <option value="Cob. Reg.">Cob. Reg.</option>
+                          <option value="Credito">Credito</option>
+                          <option value="Pagado">Pagado</option>
+                          <option value="X Cobrar">X Cobrar</option>
+                        </select>
+                        <label for="Metodo_Pago">Metodo De Pago:</label>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="modal-footer">
@@ -473,35 +591,46 @@ $result_salida = mysqli_query($conn, $query_salida);
 
         <!-- Pagination Controls -->
         <nav aria-label="Page navigation">
-          <ul class="pagination justify-content-center">
-            <!-- Previous Button -->
+          <ul class="pagination justify-content-center flex-wrap">
+
+            <!-- Previous -->
             <li class="page-item <?= $current_page <= 1 ? 'disabled' : '' ?>">
-              <a class="page-link"
-                href="?page=<?= $current_page - 1 ?>"
-                aria-label="Previous">
+              <a class="page-link" href="?page=<?= max(1, $current_page - 1) ?>" aria-label="Anterior">
                 <span aria-hidden="true">&laquo;</span>
               </a>
             </li>
 
-            <!-- Page Numbers -->
-            <?php for ($page = 1; $page <= $total_pages; $page++): ?>
-              <li class="page-item <?= $page == $current_page ? 'active' : '' ?>">
-                <a class="page-link" href="?page=<?= $page ?>">
-                  <?= $page ?>
-                </a>
-              </li>
-            <?php endfor; ?>
+            <?php
+            // Mostrar siempre la primera página
+            if ($current_page > 3) {
+              echo '<li class="page-item"><a class="page-link" href="?page=1">1</a></li>';
+              echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
 
-            <!-- Next Button -->
+            // Páginas antes y después del actual
+            for ($page = max(1, $current_page - 2); $page <= min($total_pages, $current_page + 2); $page++) {
+              $active = $page == $current_page ? 'active' : '';
+              echo "<li class='page-item $active'><a class='page-link' href='?page=$page'>$page</a></li>";
+            }
+
+            // Mostrar última página
+            if ($current_page < $total_pages - 2) {
+              echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+              echo "<li class='page-item'><a class='page-link' href='?page=$total_pages'>$total_pages</a></li>";
+            }
+            ?>
+
+            <!-- Next -->
             <li class="page-item <?= $current_page >= $total_pages ? 'disabled' : '' ?>">
-              <a class="page-link"
-                href="?page=<?= $current_page + 1 ?>"
-                aria-label="Next">
+              <a class="page-link" href="?page=<?= min($total_pages, $current_page + 1) ?>" aria-label="Siguiente">
                 <span aria-hidden="true">&raquo;</span>
               </a>
             </li>
+
           </ul>
         </nav>
+
+
       </div>
     </div>
   </div>
@@ -677,9 +806,8 @@ $result_salida = mysqli_query($conn, $query_salida);
                   <label for="Comentarios" class="form-label">Prioridad:</label>
                   <div class="form mb-3">
                     <select class="form-select" name="prioridad" id="prioridad" required>
-                      <option value="nada">Sin Prioridad</option>
-                      <option value="Media">Urgente</option>
-                      <option value="Alta">Urgente Cliente Pasa</option>
+                      <option value="Nada">Sin Prioridad</option>
+                      <option value="Urgente">Urgente</option>
                     </select>
                   </div>
                 </div>
@@ -703,152 +831,151 @@ $result_salida = mysqli_query($conn, $query_salida);
         </div>
       </div>
     </div>
+  </div>
 
+  <br><br><br>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <br>
-    <br>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var rutaModal = document.getElementById('RutaModal');
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var rutaModal = document.getElementById('RutaModal');
+      rutaModal.addEventListener('show.bs.modal', function(event) {
+        var button = event.relatedTarget;
+        var salidaId = button.getAttribute('data-pedido-id');
 
-        rutaModal.addEventListener('show.bs.modal', function(event) {
-          var button = event.relatedTarget;
-          var salidaId = button.getAttribute('data-pedido-id');
+        document.getElementById('modalSalidaId').value = salidaId;
+        document.getElementById('mostrarId').value = salidaId;
 
-          document.getElementById('modalSalidaId').value = salidaId;
-          document.getElementById('mostrarId').value = salidaId;
+        // Limpiar antes de cargar
+        document.getElementById('choferActual').value = '';
+        const selectChoferes = document.getElementById('nuevoChofer');
+        selectChoferes.innerHTML = '<option value="">Cargando...</option>';
 
-          // Limpiar antes de cargar
-          document.getElementById('choferActual').value = '';
-          const selectChoferes = document.getElementById('nuevoChofer');
-          selectChoferes.innerHTML = '<option value="">Cargando...</option>';
-
-          // Fetch al backend
-          fetch('Back/obtener_choferes.php', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-              },
-              body: 'Id_Salida=' + encodeURIComponent(salidaId)
-            })
-            .then(res => res.json())
-            .then(data => {
-              console.log("Respuesta del servidor:", data);
-
-              // Mostrar chofer actual
-              document.getElementById('choferActual').value = data.chofer_actual;
-
-              // Llenar select con choferes
-              selectChoferes.innerHTML = '<option value="">Selecciona un chofer</option>';
-              data.choferes.forEach(chofer => {
-                const option = document.createElement('option');
-                option.value = chofer.Id;
-                option.textContent = chofer.Nombre;
-                selectChoferes.appendChild(option);
-              });
-            })
-            .catch(err => {
-              console.error("Error al obtener los choferes:", err);
-            });
-        });
-      });
-    </script>
-
-    <script>
-      /// Animación de salida para el mensaje:
-      window.addEventListener('DOMContentLoaded', () => {
-        const alerta = document.getElementById("alertaBanner");
-        if (alerta) {
-          setTimeout(() => {
-            alerta.style.opacity = '0';
-            setTimeout(() => {
-              alerta.remove();
-            }, 500);
-          }, 4000); // Desaparece después de 4 segundos
-        }
-      });
-
-
-      // Filtros para la tabla:
-      $(document).ready(function() {
-        function buscarSalidas() {
-          let numero_salida = $("#buscar_salida").val();
-          let cliente = $("#buscar_cliente").val();
-          let orden_venta = $("#buscar_orden").val();
-          let estado = $("#buscar_estado").val();
-          let Id_Entrega = $("#buscar_entrega").val();
-          //console.log("Cliente seleccionad", cliente);
-          //console.log("Entrega seleccionada", Id_Entrega);
-          console.log("Salida seleccionada", numero_salida);
-
-          $.ajax({
-            url: "Back/buscar_salidas.php",
-            type: "POST",
-            data: {
-              numero_salida: numero_salida,
-              cliente: cliente,
-              orden_venta: orden_venta,
-              id_entrega: Id_Entrega,
-              estado: estado
+        // Fetch al backend
+        fetch('Back/obtener_choferes.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
             },
-            dataType: "json",
+            body: 'Id_Salida=' + encodeURIComponent(salidaId)
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log("Respuesta del servidor:", data);
 
-            success: function(response) {
-              let tbody = $("#tabla_resultados");
-              tbody.empty(); // Clear table before inserting new data
+            // Mostrar chofer actual
+            document.getElementById('choferActual').value = data.chofer_actual;
 
-              if (response.length > 0) {
-                response.forEach(function(item) {
-                  console.log(item);
-                  // Determine button HTML based on conditions (similar to your PHP logic)
-                  let buttonsHtml = `
+            // Llenar select con choferes
+            selectChoferes.innerHTML = '<option value="">Selecciona un chofer</option>';
+            data.choferes.forEach(chofer => {
+              const option = document.createElement('option');
+              option.value = chofer.Id;
+              option.textContent = chofer.Nombre;
+              selectChoferes.appendChild(option);
+            });
+          })
+          .catch(err => {
+            console.error("Error al obtener los choferes:", err);
+          });
+      });
+    });
+
+    /// Animación de salida para el mensaje:
+    window.addEventListener('DOMContentLoaded', () => {
+      const alerta = document.getElementById("alertaBanner");
+      if (alerta) {
+        setTimeout(() => {
+          alerta.style.opacity = '0';
+          setTimeout(() => {
+            alerta.remove();
+          }, 500);
+        }, 4000); // Desaparece después de 4 segundos
+      }
+    });
+
+
+    // Filtros para la tabla:
+    $(document).ready(function() {
+      function buscarSalidas() {
+        let numero_salida = $("#buscar_salida").val();
+        let cliente = $("#buscar_cliente").val();
+        let orden_venta = $("#buscar_orden").val();
+        let estado = $("#buscar_estado").val();
+        let Id_Entrega = $("#buscar_entrega").val();
+        //console.log("Cliente seleccionad", cliente);
+        //console.log("Entrega seleccionada", Id_Entrega);
+        console.log("Salida seleccionada", numero_salida);
+
+        $.ajax({
+          url: "Back/buscar_salidas.php",
+          type: "POST",
+          data: {
+            numero_salida: numero_salida,
+            cliente: cliente,
+            orden_venta: orden_venta,
+            id_entrega: Id_Entrega,
+            estado: estado
+          },
+          dataType: "json",
+
+          success: function(response) {
+
+            let tbody = $("#tabla_resultados");
+            tbody.empty(); // Clear table before inserting new data
+
+            if (response.length > 0) {
+              response.forEach(function(item) {
+                console.log(item);
+                // Determine button HTML based on conditions (similar to your PHP logic)
+                let buttonsHtml = `
                 <div class="d-flex flex-wrap gap-2 justify-content-center">
                     <a href='Front/detalles.php?id=${item.Id}' class='btn btn-primary btn-sm'>
                         <i class="bi bi-file-earmark-medical"></i> <span class="d-none d-sm-inline">Detalles</span>
                     </a>`;
 
-                  // Entrega button
-                  if (item.Estado == 'Entrega') {
-                    if (currentUserDept == 'Empaque' || currentUserId == 34) {
-                      buttonsHtml += `
+                // Entrega button
+                if (item.Estado == 'Entrega') {
+                  if (currentUserDept == 'Empaque' || currentUserId == 34 || currentUserId == 1) {
+                    buttonsHtml += `
                         <a href='Back/changeState.php?id=${item.Id}&estado=Empaque' class='btn btn-warning btn-sm'>
                             <i class='bi bi-box-seam me-sm-2'></i> 
                             <span class='d-none d-sm-inline'>Recibir Entrega (<strong>Empaque</strong>)</span>
                         </a>`;
-                    }
                   }
+                }
 
-                  // Empaque button logic - js
-                  if (item.Estado == 'Empaque') {
-                    console.log("Registro en estado Empaque");
-                    if (currentUserDept == 'Facturación' || currentUserId == 34) {
-                      console.log("Se Cumple la condicion");
-                      buttonsHtml += `
+                // Empaque button logic - js
+                if (item.Estado == 'Empaque') {
+                  console.log("Registro en estado Empaque");
+                  if (currentUserDept == 'Facturación' || currentUserId == 34 || currentUserId == 1) {
+                    console.log("Se Cumple la condicion");
+                    buttonsHtml += `
                       <a href='Back/changeState.php?id=${item.Id}&estado=Facturación' class='btn btn-warning'>
                       <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Facturación)
                     </a>`;
-                    }
                   }
+                }
 
-                  // Pasar a Logistica cuando tiene archivo asignado 
-                  if (item.Estado === 'Facturación' &&
-                    (currentUserDept === 'Logistica' || currentUserId === 34) &&
-                    parseInt(item.Factura_Registrada) > 0) {
+                // Pasar a Logistica cuando tiene archivo asignado 
+                if (item.Estado === 'Facturación' &&
+                  (currentUserDept === 'Logistica' || currentUserId === 34) &&
+                  parseInt(item.Factura_Registrada) > 0) {
 
-                    buttonsHtml += `
+                  buttonsHtml += `
                     <a href='Back/changeState.php?id=${item.Id}&estado=Logistica' class='btn btn-warning'>
                       <i class='bi bi-truck'></i> Recibir Entrega (Logística)
                     </a>`;
-                  }
+                }
 
-                  // Pre-Guía button
-                  if (item.Estado === 'Logistica' &&
-                    (currentUserDept === 'Logistica' || currentUserId === 34)) {
-                    buttonsHtml += `
+                // Pre-Guía button
+                if (item.Estado === 'Logistica' &&
+                  (currentUserDept === 'Logistica' || currentUserId === 34)) {
+                  buttonsHtml += `
                       <button class='btn btn-info me-2' 
                               data-bs-toggle='modal' 
                               data-bs-target='#preGuiaModal'
@@ -856,13 +983,50 @@ $result_salida = mysqli_query($conn, $query_salida);
                               data-cliente-nombre='${item.Nombre_Cliente}'>
                           <i class='bi bi-truck me-1'></i> Pre-Guía
                       </button>`;
-                  }
-                  // Close buttons div
-                  buttonsHtml += `</div>`;
+                }
 
-                  // Add row to table
-                  tbody.append(`
-                <tr class="${item.Urgencia == 'Si' ? 'table-danger' : 'table-success'}">
+                // Import IsGerente list, from PHp flow
+                const isGerente = <?= json_encode($isGerente); ?>;
+
+                if (isGerente) {
+                  buttonsHtml += `
+                <button type="button"
+                  class="btn btn-danger btn-sm btn-eliminar-folio"
+                  data-id="${item.Id}"
+                  data-cliente="${item.Nombre_Cliente}">
+                  <i class="bi bi-trash3"></i> Eliminar Folio
+                </button>`;
+                }
+
+                if (item.Estado === 'A Ruta' &&
+                  (currentUserDept === 'Logistica' || currentUserId === 34)) {
+                  buttonsHtml += `
+    <button class='btn btn-danger me-2'
+            data-bs-toggle='modal' 
+            data-bs-target='#RutaModal'
+            data-pedido-id='${item.Id}'
+            data-cliente-nombre='${item.Nombre_Cliente}'>
+        <i class='bi bi-arrow-clockwise'></i> Reasignación
+    </button>
+  `;
+                }
+
+
+                // Close buttons div
+                buttonsHtml += `</div>`;
+
+                // Add row to table
+                tbody.append(`
+                <tr class="${item.Urgencia == 'Urgente' ? 'table-danger' : 'table-success'}">
+                
+                    <td>
+                        <a href="Back/Etiquetas/changeUrgencia.php?id=${item.Id}&urgencia=${item.Urgencia == 'Urgente' ? 'Nada' : 'Urgente'}" 
+                          class="btn ${item.Urgencia == 'Urgente' ? 'btn-danger' : 'btn-outline-primary'}">
+                          ${item.Urgencia == 'Si' ? 'Quitar Urgencia' : 'Marcar Urgencia'}
+
+                          Aqui
+                        </a>
+                    </td>
                     <td>${item.Id}</td>
                     <td>${item.Nombre_Cliente}</td>
                     <td>${item.Id_Orden_Venta ? item.Id_Orden_Venta : 'N/A'}</td>
@@ -872,67 +1036,74 @@ $result_salida = mysqli_query($conn, $query_salida);
                     <td>${buttonsHtml}</td>
                 </tr>
             `);
-                });
-              } else {
-                tbody.append('<tr><td colspan="6" class="text-center text-danger py-3">No se encontraron resultados</td></tr>');
-              }
+              });
+            } else {
+              tbody.append('<tr><td colspan="6" class="text-center text-danger py-3">No se encontraron resultados</td></tr>');
             }
-          });
-        }
-
-        $("#buscar_btn").on("click", function() {
-          buscarSalidas();
-        });
-
-        $("#buscar_salida").on("keyup", function(e) {
-          if (e.key === "Enter") {
-            console.log("Enter key pressed");
-            buscarSalidas();
           }
         });
+      }
 
-        // Para que se actualice al escribir en los inputs sin dar clic en el botón
-        $("#buscar_entrega, #buscar_cliente, #buscar_orden, #buscar_estado").on("keyup change", function() {
+      $("#buscar_btn").on("click", function() {
+        buscarSalidas();
+      });
+
+      $("#buscar_salida").on("keyup", function(e) {
+        if (e.key === "Enter") {
+          console.log("Enter key pressed");
           buscarSalidas();
-        });
+        }
       });
 
-      $(document).on("click", ".detalles-btn", function(event) {
-        event.preventDefault(); // Detiene cualquier otra acción que esté interfiriendo
-        let url = $(this).attr("href");
-        window.location.assign(url); // Redirige inmediatamente
+      // Ejecutar búsqueda con el botón de lupa
+      $("#btn_buscar_salida").on("click", function() {
+        buscarSalidas();
       });
 
-      /// Codigo para extender el tiempo de la sesion activa :
-      setInterval(function() {
-        fetch('extender_sesion.php'); // Llama al script cada 5 minutos
-      }, 900000); // 300,000 ms = 5 minutos
-
-
-      document.addEventListener('DOMContentLoaded', function() {
-        var preGuiaModal = document.getElementById('preGuiaModal');
-        preGuiaModal.addEventListener('show.bs.modal', function(event) {
-          var button = event.relatedTarget;
-          var pedidoId = button.getAttribute('data-pedido-id');
-          var clienteNombre = button.getAttribute('data-cliente-nombre');
-
-          document.getElementById('modalPedidoId').value = pedidoId;
-          document.getElementById('clienteNombre').value = clienteNombre;
-          document.getElementById('clienteNombreHidden').value = clienteNombre;
-        });
+      // Para que se actualice al escribir en los inputs sin dar clic en el botón
+      $("#buscar_entrega, #buscar_cliente, #buscar_orden, #buscar_estado").on("keyup change", function() {
+        buscarSalidas();
       });
+    });
 
-      // ----------------------------------------------- Funciones para el modal de Preguia -----------------------------------------------
-      document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById("Tipo_Doc").addEventListener("change", function() {
-          let tipo = this.value;
-          console.log(tipo);
-          const extraFields = document.getElementById("extraFields");
+    $(document).on("click", ".detalles-btn", function(event) {
+      event.preventDefault(); // Detiene cualquier otra acción que esté interfiriendo
+      let url = $(this).attr("href");
+      window.location.assign(url); // Redirige inmediatamente
+    });
 
-          // Limpiar contenido previo
-          extraFields.innerHTML = "";
 
-          let commonFields = `
+
+    /// Codigo para extender el tiempo de la sesion activa :
+    setInterval(function() {
+      fetch('extender_sesion.php'); // Llama al script cada 5 minutos
+    }, 900000); // 300,000 ms = 5 minutos
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var preGuiaModal = document.getElementById('preGuiaModal');
+      preGuiaModal.addEventListener('show.bs.modal', function(event) {
+        var button = event.relatedTarget;
+        var pedidoId = button.getAttribute('data-pedido-id');
+        var clienteNombre = button.getAttribute('data-cliente-nombre');
+
+        document.getElementById('modalPedidoId').value = pedidoId;
+        document.getElementById('clienteNombre').value = clienteNombre;
+        document.getElementById('clienteNombreHidden').value = clienteNombre;
+      });
+    });
+
+    // ----------------------------------------------- Funciones para el modal de Preguia -----------------------------------------------
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("Tipo_Doc").addEventListener("change", function() {
+        let tipo = this.value;
+        console.log(tipo);
+        const extraFields = document.getElementById("extraFields");
+
+        // Limpiar contenido previo
+        extraFields.innerHTML = "";
+
+        let commonFields = `
         <div class="row">
             <div class="col-md-6">
                             <div class="form-floating mb-3">
@@ -963,12 +1134,15 @@ $result_salida = mysqli_query($conn, $query_salida);
                             <div class="form-floating mb-3">
                                 <select class='form-control' name='Chofer_Asignado' id='Chofer_Asignado' required>
                                     <option value="">Selecciona un chofer</option>
+                                    
+
                                     <option value="Manuel Lopez Romero">Manuel Lopez Romero</option>
                                     <option value="Jose de Jesus Torres Aguilar">Jose de Jesus Torres Aguilar</option>
                                     <option value="Brandon Alexis Hernandez Robles">Brandon Alexis Hernandez Robles</option>
                                     <option value="Daniel Soto Mayor">Daniel Soto Mayor</option>
                                     <option value="Jonathan Islas Hernandez">Jonathan Islas Hernandez</option>
                                     <option value="Rene Canche Couoh">Rene Canche Couoh</option>
+                                    <option value="Leonardo Daniel Urzua Pulido">Leonardo Daniel Urzua Pulido</option>
                                     <option value="">---------------------------</option>
                                     <option value="Cliente Pasa">Cliente Pasa</option>
                                     <option value="Entregado por Vendedor">Entregado por Vendedor</option>
@@ -1008,7 +1182,7 @@ $result_salida = mysqli_query($conn, $query_salida);
         </div>
     `;
 
-          let clienteIntermedioField = `
+        let clienteIntermedioField = `
         <div class="col-md-12">
                             <div class="form-floating mb-3">
                                 <select class='form-control' name='cliente_intermedio' id='cliente_intermedio'>
@@ -1030,7 +1204,7 @@ $result_salida = mysqli_query($conn, $query_salida);
 
     `;
 
-          let choferField = `
+        let choferField = `
         <div class="col-md-12">
                             <div class="form-floating mb-3">
                                 <select class='form-control' name='Chofer_Asignado' id='Chofer_Asignado' required>
@@ -1053,210 +1227,279 @@ $result_salida = mysqli_query($conn, $query_salida);
 
     `;
 
-          // Agregar los campos según la selección
-          if (tipo == "Directo" || tipo == "Reembarque") {
-            extraFields.innerHTML += commonFields;
-          }
-          if (tipo === "Reembarque") {
-            extraFields.innerHTML += `<div class="row">${clienteIntermedioField}</div>`;
-          }
-          if (tipo === "Ruta") {
-            extraFields.innerHTML += choferField;
-          }
+        // Agregar los campos según la selección
+        if (tipo == "Directo" || tipo == "Reembarque") {
+          extraFields.innerHTML += commonFields;
+        }
+        if (tipo === "Reembarque") {
+          extraFields.innerHTML += `<div class="row">${clienteIntermedioField}</div>`;
+        }
+        if (tipo === "Ruta") {
+          extraFields.innerHTML += choferField;
+        }
 
-          if (!extraFields) {
-            console.error("Element with ID 'extraFields' not found!");
-            return;
-          }
-        });
+        if (!extraFields) {
+          console.error("Element with ID 'extraFields' not found!");
+          return;
+        }
+      });
+    });
+
+    // Re
+    document.addEventListener('change', function(event) {
+      if (event.target.id === 'Paqueteria') {
+        const otroDiv = document.getElementById('otroPaqueteriaDiv');
+        otroDiv.style.display = (event.target.value === 'Otro') ? 'block' : 'none';
+      }
+    });
+
+    // JavaScript para sincronizar los selects 
+    document.getElementById('id_cliente').addEventListener('change', function() {
+      let selectedValue = this.value;
+      document.getElementById('Cliente2').value = selectedValue; // Sincroniza el select
+      document.getElementById('Cliente2_hidden').value = selectedValue; // Envía el valor al backend
+    });
+
+    // Agregar Dinamismo al formulario del registro de salidas en el campo de cliente
+    document.addEventListener("DOMContentLoaded", function() {
+      const inputCliente = document.getElementById("cliente_nombre");
+      const idCliente = document.getElementById("id_cliente");
+      const listaClientes = document.getElementById("listaClientes");
+
+      const nombreNuevo = document.getElementById("nuevo_nombre");
+      const claveNuevo = document.getElementById("nuevo_clave");
+      const rfcNuevo = document.getElementById("nuevo_rfc");
+      const contenedorNuevos = document.getElementById("contenedor_nuevos");
+
+      inputCliente.addEventListener("input", function() {
+        const query = this.value;
+        if (query.length === 0) {
+          listaClientes.classList.remove("show");
+          return;
+        }
+
+        fetch("Back/Clientes/buscar_clientes.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: "query=" + encodeURIComponent(query)
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log("Respuesta del servidor:", data); // <-- DEBUG
+            listaClientes.innerHTML = "";
+
+            if (data.length > 0) {
+              data.forEach(cliente => {
+                const item = document.createElement("button");
+                item.type = "button";
+                item.className = "dropdown-item";
+                item.textContent = cliente.nombre;
+                item.dataset.id = cliente.id;
+                listaClientes.appendChild(item);
+              });
+            } else {
+              const item = document.createElement("button");
+              item.type = "button";
+              item.className = "dropdown-item text-success";
+              item.textContent = "➕ Agregar nuevo cliente";
+              item.dataset.id = "nuevo"; // Para que dispare el bloque correspondiente
+              listaClientes.appendChild(item);
+            }
+
+            listaClientes.classList.add("show");
+          });
       });
 
-      // Replace your existing event listener with this:
-      document.addEventListener('change', function(event) {
-        if (event.target.id === 'Paqueteria') {
-          const otroDiv = document.getElementById('otroPaqueteriaDiv');
-          otroDiv.style.display = (event.target.value === 'Otro') ? 'block' : 'none';
+      listaClientes.addEventListener("click", function(e) {
+        if (e.target.classList.contains("dropdown-item")) {
+          const id = e.target.dataset.id;
+          const nombre = e.target.textContent;
+
+          inputCliente.value = nombre;
+          idCliente.value = id;
+          listaClientes.classList.remove("show");
+
+          if (id === "nuevo") {
+            contenedorNuevos.style.display = "block";
+          } else {
+            contenedorNuevos.style.display = "none";
+            nombreNuevo.value = "";
+            claveNuevo.value = "";
+            rfcNuevo.value = "";
+          }
         }
       });
 
-      // JavaScript para sincronizar los selects 
-      document.getElementById('id_cliente').addEventListener('change', function() {
-        let selectedValue = this.value;
-        document.getElementById('Cliente2').value = selectedValue; // Sincroniza el select
-        document.getElementById('Cliente2_hidden').value = selectedValue; // Envía el valor al backend
+      // Seleccionar un cliente de la lista
+      $(document).on("click", ".dropdown-item", function() {
+        $("#cliente_nombre").val($(this).text());
+        $("#id_cliente").val($(this).data("id")); // Guarda el ID real
+        $("#listaClientes").hide();
       });
 
-      // Agregar Dinamismo al formulario del registro de salidas en el campo de cliente
-      document.addEventListener("DOMContentLoaded", function() {
-        const inputCliente = document.getElementById("cliente_nombre");
-        const idCliente = document.getElementById("id_cliente");
-        const listaClientes = document.getElementById("listaClientes");
-
-        const nombreNuevo = document.getElementById("nuevo_nombre");
-        const claveNuevo = document.getElementById("nuevo_clave");
-        const rfcNuevo = document.getElementById("nuevo_rfc");
-        const contenedorNuevos = document.getElementById("contenedor_nuevos");
-
-        inputCliente.addEventListener("input", function() {
-          const query = this.value;
-          if (query.length === 0) {
-            listaClientes.classList.remove("show");
-            return;
-          }
-
-          fetch("Back/Clientes/buscar_clientes.php", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-              },
-              body: "query=" + encodeURIComponent(query)
-            })
-            .then(response => response.json())
-            .then(data => {
-              console.log("Respuesta del servidor:", data); // <-- DEBUG
-              listaClientes.innerHTML = "";
-
-              if (data.length > 0) {
-                data.forEach(cliente => {
-                  const item = document.createElement("button");
-                  item.type = "button";
-                  item.className = "dropdown-item";
-                  item.textContent = cliente.nombre;
-                  item.dataset.id = cliente.id;
-                  listaClientes.appendChild(item);
-                });
-              } else {
-                const item = document.createElement("button");
-                item.type = "button";
-                item.className = "dropdown-item text-success";
-                item.textContent = "➕ Agregar nuevo cliente";
-                item.dataset.id = "nuevo"; // Para que dispare el bloque correspondiente
-                listaClientes.appendChild(item);
-              }
-
-              listaClientes.classList.add("show");
-            });
-        });
-
-        listaClientes.addEventListener("click", function(e) {
-          if (e.target.classList.contains("dropdown-item")) {
-            const id = e.target.dataset.id;
-            const nombre = e.target.textContent;
-
-            inputCliente.value = nombre;
-            idCliente.value = id;
-            listaClientes.classList.remove("show");
-
-            if (id === "nuevo") {
-              contenedorNuevos.style.display = "block";
-            } else {
-              contenedorNuevos.style.display = "none";
-              nombreNuevo.value = "";
-              claveNuevo.value = "";
-              rfcNuevo.value = "";
-            }
-          }
-        });
-
-        // Seleccionar un cliente de la lista
-        $(document).on("click", ".dropdown-item", function() {
-          $("#cliente_nombre").val($(this).text());
-          $("#id_cliente").val($(this).data("id")); // Guarda el ID real
+      // Ocultar lista si se hace clic fuera
+      $(document).click(function(e) {
+        if (!$(e.target).closest("#cliente_nombre, #listaClientes").length) {
           $("#listaClientes").hide();
-        });
-
-        // Ocultar lista si se hace clic fuera
-        $(document).click(function(e) {
-          if (!$(e.target).closest("#cliente_nombre, #listaClientes").length) {
-            $("#listaClientes").hide();
-          }
-        });
+        }
       });
-    </script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var preGuiaModal = document.getElementById('preGuiaModal');
+    });
+  </script>
 
-        preGuiaModal.addEventListener('show.bs.modal', function(event) {
-          var button = event.relatedTarget;
-          var pedidoId = button.getAttribute('data-pedido-id');
-          var clienteNombre = button.getAttribute('data-cliente-nombre');
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var preGuiaModal = document.getElementById('preGuiaModal');
 
-          document.getElementById('modalPedidoId').value = pedidoId;
-          document.getElementById('clienteNombre').value = clienteNombre;
-          document.getElementById('clienteNombreHidden').value = clienteNombre;
+      preGuiaModal.addEventListener('show.bs.modal', function(event) {
+        var button = event.relatedTarget;
+        var pedidoId = button.getAttribute('data-pedido-id');
+        var clienteNombre = button.getAttribute('data-cliente-nombre');
 
-          // Consulta al backend para saber si tiene los datos completos
-          fetch('Back/Clientes/get_info_cliente.php', {
+        document.getElementById('modalPedidoId').value = pedidoId;
+        document.getElementById('clienteNombre').value = clienteNombre;
+        document.getElementById('clienteNombreHidden').value = clienteNombre;
+
+        // Consulta al backend para saber si tiene los datos completos
+        fetch('Back/Clientes/get_info_cliente.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'nombre=' + encodeURIComponent(clienteNombre)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (!data || Object.values(data).some(val => val === null || val === '')) {
+              // Mostrar campos para completar info
+              document.getElementById('camposExtraCliente').style.display = 'block';
+            } else {
+              document.getElementById('camposExtraCliente').style.display = 'none';
+            }
+
+            // Si quieres precargar lo que sí tenga:
+            document.getElementById('inputCalle').value = data.Calle ?? '';
+            document.getElementById('inputColonia').value = data.Colonia ?? '';
+            document.getElementById('inputCiudad').value = data.Ciudad ?? '';
+            document.getElementById('inputEstado').value = data.Estado ?? '';
+            document.getElementById('inputCP').value = data.CP ?? '';
+          });
+      });
+    });
+  </script>
+
+  <script>
+    /// Revisar si el folio de entrega ya existe:
+    document.addEventListener('DOMContentLoaded', function() {
+      const inputFolio = document.getElementById('folio_entrega');
+      const btnGuardar = document.getElementById('btnGuardar');
+      const mensajeFolio = document.createElement('small');
+
+      mensajeFolio.classList.add('text-danger', 'mt-1');
+      inputFolio.parentNode.appendChild(mensajeFolio);
+
+      inputFolio.addEventListener('input', function() {
+        const folio = this.value.trim();
+
+        if (folio.length > 0) {
+          fetch('Back/Entregas/validar_entregas.php', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
               },
-              body: 'nombre=' + encodeURIComponent(clienteNombre)
+              body: 'folio_entrega=' + encodeURIComponent(folio)
             })
             .then(res => res.json())
             .then(data => {
-              if (!data || Object.values(data).some(val => val === null || val === '')) {
-                // Mostrar campos para completar info
-                document.getElementById('camposExtraCliente').style.display = 'block';
+              if (data.existe) {
+                mensajeFolio.textContent = `⚠️ El folio ya se encuentra registrado en la salida ${data.id_salida}`;
+                btnGuardar.disabled = true;
               } else {
-                document.getElementById('camposExtraCliente').style.display = 'none';
-              }
-
-              // Si quieres precargar lo que sí tenga:
-              document.getElementById('inputCalle').value = data.Calle ?? '';
-              document.getElementById('inputColonia').value = data.Colonia ?? '';
-              document.getElementById('inputCiudad').value = data.Ciudad ?? '';
-              document.getElementById('inputEstado').value = data.Estado ?? '';
-              document.getElementById('inputCP').value = data.CP ?? '';
-            });
-        });
-      });
-    </script>
-
-    <script>
-      /// Revisar si el folio de entrega ya existe:
-      document.addEventListener('DOMContentLoaded', function() {
-        const inputFolio = document.getElementById('folio_entrega');
-        const btnGuardar = document.getElementById('btnGuardar');
-        const mensajeFolio = document.createElement('small');
-
-        mensajeFolio.classList.add('text-danger', 'mt-1');
-        inputFolio.parentNode.appendChild(mensajeFolio);
-
-        inputFolio.addEventListener('input', function() {
-          const folio = this.value.trim();
-
-          if (folio.length > 0) {
-            fetch('Back/Entregas/validar_entregas.php', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: 'folio_entrega=' + encodeURIComponent(folio)
-              })
-              .then(res => res.json())
-              .then(data => {
-                if (data.existe) {
-                  mensajeFolio.textContent = `⚠️ El folio ya se encuentra registrado en la salida ${data.id_salida}`;
-                  btnGuardar.disabled = true;
-                } else {
-                  mensajeFolio.textContent = '';
-                  btnGuardar.disabled = false;
-                }
-              })
-              .catch(err => {
-                console.error('Error al validar el folio:', err);
                 mensajeFolio.textContent = '';
                 btnGuardar.disabled = false;
-              });
-          } else {
-            mensajeFolio.textContent = '';
-            btnGuardar.disabled = false;
-          }
-        });
+              }
+            })
+            .catch(err => {
+              console.error('Error al validar el folio:', err);
+              mensajeFolio.textContent = '';
+              btnGuardar.disabled = false;
+            });
+        } else {
+          mensajeFolio.textContent = '';
+          btnGuardar.disabled = false;
+        }
       });
-    </script>
+    });
+  </script>
+
+  <!-- Eliminar Folio de salida -->
+  <script>
+    $(document).on('click', '.btn-eliminar-folio', function() {
+      const id = $(this).data('id');
+      const cliente = $(this).data('cliente');
+
+      if (!id) {
+        console.error('No se ha encontrado Id');
+        return;
+      }
+
+      Swal.fire({
+        title: 'Estas Seguro?',
+        html: `Estas apunto de eliminar el folio para <strong>${cliente}</strong>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Si, Eliminar!',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({
+            title: 'Eliminando...',
+            didOpen: () => Swal.showLoading()
+          });
+
+          $.ajax({
+            url: 'Back/Etiquetas/eliminar_folio.php',
+            type: 'POST',
+            dataType: 'json', // ✅ Parse JSON automatically
+            data: {
+              id: id
+            },
+            success: function(json) {
+              console.log('Parsed JSON from server:', json);
+              if (json.success) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Eliminado!',
+                  text: json.message || 'Se ha eliminado el folio.',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+
+                // Optional: Remove the row or reload
+                $('#row-' + id).fadeOut(300, function() {
+                  $(this).remove();
+                });
+                location.reload();
+              } else {
+                Swal.fire('Error', json.message || 'Algo Salio mal.', 'error');
+              }
+            },
+            error: function(xhr, status, error) {
+              Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
+              console.error('AJAX error:', status, error);
+              console.error('Response text:', xhr.responseText);
+            }
+          });
+
+
+
+        }
+      });
+    });
+  </script>
 
 </body>
 

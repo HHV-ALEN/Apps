@@ -98,8 +98,6 @@ $result = mysqli_fetch_array($query);
 $max_id_salida = $result['max_id_salida'];
 $max_id_salida += 1;
 
-
-
 $max_final = max(
   intval($max_id), 
   intval($max_id_consolidado), 
@@ -135,7 +133,7 @@ echo "<br> ----> Cliente 2: $Cliente2";
 echo "<br>";
 
 
-if ($id_cliente == 'nuevo ') {
+if ($id_cliente === 'nuevo') {
   // Registrar cliente y obtener el nuevo nombre y el Id
   echo "<br> <strong>Nuevo Nombre: </strong>" . $NuevoNombre;
   echo "<br> <strong>Nueva Clave: </strong>" . $NuevaClave;
@@ -159,7 +157,7 @@ if ($id_cliente == 'nuevo ') {
 } else {
 
   /// Obtener Información del Cliente
-  $sql_cliente = "SELECT * FROM clientes WHERE Id = '$id_cliente'";
+  $sql_cliente = "SELECT * FROM clientes WHERE Id = $id_cliente";
   $query_cliente = mysqli_query($conn, $sql_cliente);
   $info_cliente = mysqli_fetch_array($query_cliente);
   $nombre_cliente = $info_cliente['Nombre'];
@@ -172,16 +170,17 @@ if ($id_cliente == 'nuevo ') {
 }
 
 
-echo "**************************************";
+echo "<br>**************************************";
 echo "<h1>Información de la sucursal</h1>";
 echo "<p>Nombre de la sucursal: $Sucursal</p>";
 echo "**************************************";
 
 echo "<h1>Registros</h1>";
 
+
 // Registrar Salida
-$sql_salida = "INSERT INTO salidas (Id, Id_Cliente, Nombre_Cliente, Id_Status, Estado, Id_Sucursal, Sucursal)
-VALUES ('$max_final', '$id_cliente','$nombre_cliente','21','Entrega','$Id_Sucursal','$Sucursal');";
+$sql_salida = "INSERT INTO salidas (Id, Id_Cliente, Nombre_Cliente, Id_Status, Estado, Id_Sucursal, Sucursal, Urgencia)
+VALUES ('$max_final', '$id_cliente','$nombre_cliente','21','Entrega','$Id_Sucursal','$Sucursal', '$prioridad');";
 $query_salida = mysqli_query($conn, $sql_salida);
 if ($query_salida) {
   echo "<br>-> Salida Registrada Correctamente<br>";
@@ -194,6 +193,7 @@ if ($query_salida) {
   } else {
     echo "<h1>Error al registrar la bitacora</h1>";
   }
+  
 } else {
   echo "<h1>Error al registrar la salida</h1>";
   echo "**************************************";
@@ -231,6 +231,5 @@ if ($Comentario != "") {
 /// http://www.alenturno.com/Vinculacion/detalles.php?id_salida=33887
 //echo "<br> Id a enviar: " . $Numero_Etiqueta ;
 header("Location: ../../Front/detalles.php?id=" . $Numero_Etiqueta);
-
 
 ?>
