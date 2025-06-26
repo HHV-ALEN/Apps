@@ -9,10 +9,11 @@ echo "<br>";
 
 $Id_Salida = $_POST['Id_Salida'];
 $nuevo_chofer = $_POST['nuevo_chofer'];
-$Paqueteria = $_POST['Paqueteria'];
+$paqueteria = $_POST['Paqueteria'] === '0' ? null : $_POST['Paqueteria'];
+$metodoPago = $_POST['Metodo_Pago'] === '0' ? null : $_POST['Metodo_Pago'];
+
 $otroPaqueteria = $_POST['otroPaqueteria'] ?? NULL;
 $Tipo_Flete = $_POST['Tipo_Flete'];
-$Metodo_Pago = $_POST['Metodo_Pago'];
 
 
 echo "<br>DebugShit: ";
@@ -35,9 +36,16 @@ if ($response->num_rows > 0) {
 
 echo "<br> Nombre del nuevo chofer: " . $nombre_chofer;
 
-
-/// Actualizar La información de la preguia
-
+if($Tipo_Flete == 'Ruta'){
+    echo "<br> Bienvenido a la ruta: ";
+    /// Actualizar registro en tabla preguia
+    $Update_Preguia = "UPDATE preguia SET Paqueteria = '', Chofer = '$nombre_chofer', Tipo_Flete = '$Tipo_Flete', Metodo_Pago = '', Tipo_Doc = '' WHERE Id_Salida =  $Id_Salida";
+    if ($conn->query($Update_Preguia) === TRUE) {
+         $_SESSION['success_message'] = "Se ha actualizado la salida: " . $Id_Salida;
+    } else {
+           $_SESSION['error_message'] = "❌ Error al actualizar: " . $conn->error;
+    }
+} else {
 $update_query = "UPDATE preguia SET Chofer = '$nombre_chofer', Paqueteria = '$Paqueteria', Tipo_Flete = '$Tipo_Flete',
 Metodo_Pago = '$Metodo_Pago' WHERE Id_Salida = $Id_Salida";
 if ($conn->query($update_query) === TRUE) {
@@ -45,6 +53,11 @@ if ($conn->query($update_query) === TRUE) {
 } else {
     $_SESSION['error_message'] = "❌ Error al actualizar el chofer: " . $conn->error;
 }
+
+}
+
+/// Actualizar La información de la preguia
+
 
 // Redirigir al index
 header("Location: ../index.php");
