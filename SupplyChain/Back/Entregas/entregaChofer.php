@@ -10,10 +10,18 @@ $id_salida = $_POST['Folio'];
 $EstadoEntrega = $_POST['EstadoEntrega'];
 $Comentario = $_POST['Comentario'];
 $Fecha = date('Y-m-d H:i:s');
+
+if (!empty($_FILES['fotoEntrega']['name'])) {
+  $tmp  = $_FILES['fotoEntrega']['tmp_name'];
+  $name = basename($_FILES['fotoEntrega']['name']);
+  move_uploaded_file($tmp, "Files/img/$name");
+  // Guarda la ruta en BD si lo necesitas
+}
+
 echo "Folio: $id_salida <br>";
 echo "Estado Entrega: $EstadoEntrega <br>";
 echo "Comentario: $Comentario <br>";
-
+echo "<br> Imagen Agregada: " . $name;
 
 /// Insertar en la tabla 
 $sql = "INSERT INTO entrega_chofer (Id_Salida, Estado, Fecha, Responsable)
@@ -55,7 +63,21 @@ if (!$query) {
 } else {
     echo "<br> - Registro insertado en la tabla 'actualizaciones_bitacora_nueva' correctamente";
 }
+
+$sql_image = "INSERT INTO imagen (id_salida, nombre, status, Responsable)
+VALUES ('$id_salida', '$name', 'Activo', '$Nombre_Usuario')";
+$query_result = mysqli_query($conn, $sql_image);
+if (!$query_result) {
+    echo "Error: " . $sql_image . "<br>" . mysqli_error($conn);
+} else {
+    echo "<br> - Registro insertado en la tabla 'imagen' correctamente";
+}
+
+
+
 echo "<br>- Id_Salida: $id_salida <br>";
 
+
 header("Location: ../../Front/detalles.php?id=$id_salida");
+
 ?>

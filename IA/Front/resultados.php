@@ -42,6 +42,7 @@ $conn = connectMySQLi();
 <body>
     <?php include "../../Front/navbar.php"; ?>
     <div class="container mt-5">
+        <a href="../index.php" class="btn btn-outline-dark">Regresar al Indice</a>
         <!-- Prediction Execution Button -->
         <form method="post" class="text-center mb-5">
             <button type="submit" name="ejecutar_prediccion" class="btn btn-success btn-lg">

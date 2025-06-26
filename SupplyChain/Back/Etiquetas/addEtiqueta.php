@@ -99,8 +99,8 @@ $max_id_salida = $result['max_id_salida'];
 $max_id_salida += 1;
 
 $max_final = max(
-  intval($max_id), 
-  intval($max_id_consolidado), 
+  intval($max_id),
+  intval($max_id_consolidado),
   intval($max_id_salida)
 );
 
@@ -115,7 +115,6 @@ $query = mysqli_query($conn, $sql);
 if (mysqli_num_rows($query) > 0) {
   echo "<h1>El número de etiqueta ya existe</h1>";
   $max_final += 1;
-  
 } else {
   echo "<h1>El número: $max_id de etiqueta no existe</h1>";
 }
@@ -139,21 +138,25 @@ if ($id_cliente === 'nuevo') {
   echo "<br> <strong>Nueva Clave: </strong>" . $NuevaClave;
   echo "<br> <strong>Nueva RFC: </strong>" . $NuevaRFC;
 
-  // Registrar la base del nuevo cliente
-  $insert_cliente = "INSERT INTO clientes (Nombre, RFC, Clave_Sap) VALUES 
-  ('$NuevoNombre', '$NuevaClave', '$NuevaRFC')";
+  // 1. Obtener el último Id existente
+  $result_last_id = mysqli_query($conn, "SELECT MAX(Id) AS ultimo_id FROM clientes");
+  $row_last_id = mysqli_fetch_assoc($result_last_id);
+  $siguiente_id = $row_last_id['ultimo_id'] + 1;
+
+  // 2. Registrar la base del nuevo cliente con el Id calculado
+  $insert_cliente = "INSERT INTO clientes (Id, Nombre, RFC, Clave_Sap) 
+                   VALUES ('$siguiente_id', '$NuevoNombre', '$NuevaRFC', '$NuevaClave')";
   $query_cliente = mysqli_query($conn, $insert_cliente);
 
-  if($query_cliente){
-    echo "<br> Nuevo CLiente registrado";
+  // 3. Verificar si se insertó correctamente
+  if ($query_cliente) {
+    echo "<br>✅ Nuevo cliente registrado con Id: $siguiente_id";
   } else {
-    echo "<br> Error en el registro del cliente";
+    echo "<br>❌ Error en el registro del cliente: " . mysqli_error($conn);
   }
-
   // Obtener el último ID insertado
   $id_cliente = mysqli_insert_id($conn);
   $nombre_cliente = $NuevoNombre;
-
 } else {
 
   /// Obtener Información del Cliente
@@ -193,7 +196,6 @@ if ($query_salida) {
   } else {
     echo "<h1>Error al registrar la bitacora</h1>";
   }
-  
 } else {
   echo "<h1>Error al registrar la salida</h1>";
   echo "**************************************";
@@ -231,5 +233,3 @@ if ($Comentario != "") {
 /// http://www.alenturno.com/Vinculacion/detalles.php?id_salida=33887
 //echo "<br> Id a enviar: " . $Numero_Etiqueta ;
 header("Location: ../../Front/detalles.php?id=" . $Numero_Etiqueta);
-
-?>

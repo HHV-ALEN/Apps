@@ -376,6 +376,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
             $Metodo_Pago = $Chofer['Metodo_Pago'] ?? 'N/A';
             $Tipo_Doc = $Chofer['Tipo_Doc'] ?? 'N/A';
             $Fecha_Preguia = $Chofer['Fecha'] ?? 'N/A';
+            $Fecha_Entregado = $Chofer['Fecha_Entregado'] ?? 'N/A';
             ?>
 
             <div class="card-body p-4 text-center">
@@ -399,6 +400,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                         if (in_array($ChoferNombre, $OtrasOpciones)) {
                         ?>
                             <p class="mb-1"><strong>Envio:</strong> <?php echo $ChoferNombre; ?></p>
+                            <p class="mb-1"><strong>Fecha Entregado:</strong> <?php echo $Fecha_Entregado; ?></p>
                         <?php
                         } else {
                         ?>
@@ -811,49 +813,56 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                                 }
                                                 ?></td>
                                             <td>
+
                                                 <?php
-                                                if ($Estado_Original_DeSalida == 'Facturación') {
-                                                    /// Se muestra boton de agregar Factura solo si esta en el estado de facturación
-                                                    if ($_SESSION['Departamento'] == 'Facturación' || $isGerente) {
-                                                        if ($Id_Factura_B == '0' && $Archivo == '0') {
+                                                if ($Archivo != '0') {
                                                 ?>
-                                                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                                                data-bs-target="#modalFacturacion_BASE<?php echo $Id_Salida_B; ?>">
-                                                                <i class="fas fa-file-pdf"></i> Asignar Factura
-                                                            </button>
-                                                            <a href="../Back/Facturas/addRemision.php?Id_Salida=<?php echo $Id_Salida_B; ?>&Parametro=Base" class="btn btn-outline-primary btn-sm">Agregar Remisión</a>
-
-                                                        <?php
-                                                        } elseif ($Id_Factura_B == '1' && $Archivo == 'REMISION') {
-                                                        ?>
-                                                            <a href="../Back/Facturas/deleteRemision.php?Id_Salida=<?php echo $Id_Salida_B; ?>&Parametro=Base"
-                                                                class="btn btn-danger btn-sm">
-                                                                <i class="bi bi-file-earmark-x"></i> Eliminar Remisión
+                                                    <div class="row">
+                                                        <div class="col-xs-6 text-left">
+                                                            <a href="../Back/Files/Facturas/<?php echo $Archivo; ?>"
+                                                                class="btn btn-success btn-sm"
+                                                                download>
+                                                                <i class="bi bi-cloud-arrow-down"></i> Descargar Factura
                                                             </a>
+                                                        </div>
                                                         <?php
-                                                        } else {
-                                                        ?>
+                                                    }
 
-                                                            <div class="row">
-                                                                <div class="col-md-6">
-                                                                    <a href="../Back/Files/Facturas/<?php echo $Archivo; ?>"
-                                                                        class="btn btn-success btn-sm" download>
-                                                                        <i class="bi bi-cloud-arrow-down"></i> Descargar Factura
-                                                                    </a>
-                                                                </div>
+                                                    if ($Estado_Original_DeSalida == 'Facturación') {
+                                                        /// Se muestra boton de agregar Factura solo si esta en el estado de facturación
+                                                        if ($_SESSION['Departamento'] == 'Facturación' || $isGerente) {
+                                                            if ($Id_Factura_B == '0' && $Archivo == '0') {
+                                                        ?>
+                                                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                                                    data-bs-target="#modalFacturacion_BASE<?php echo $Id_Salida_B; ?>">
+                                                                    <i class="fas fa-file-pdf"></i> Asignar Factura
+                                                                </button>
+                                                                <a href="../Back/Facturas/addRemision.php?Id_Salida=<?php echo $Id_Salida_B; ?>&Parametro=Base" class="btn btn-outline-primary btn-sm">Agregar Remisión</a>
+
+                                                            <?php
+                                                            } elseif ($Id_Factura_B == '1' && $Archivo == 'REMISION') {
+                                                            ?>
+                                                                <a href="../Back/Facturas/deleteRemision.php?Id_Salida=<?php echo $Id_Salida_B; ?>&Parametro=Base"
+                                                                    class="btn btn-danger btn-sm">
+                                                                    <i class="bi bi-file-earmark-x"></i> Eliminar Remisión
+                                                                </a>
+                                                            <?php
+                                                            } else {
+                                                            ?>
                                                                 <!-- Eliminar Factura -->
-                                                                <div class="col-md-6">
+                                                                <div class="col-xs-6 text-right">
                                                                     <a href="../Back/Facturas/deleteFactura.php?Id_Salida=<?php echo $Id_Salida_B; ?>&Id_Factura=<?php echo $Id_Factura_B; ?>&Archivo=<?php echo $Archivo; ?>&Parametro=Base"
                                                                         class="btn btn-danger btn-sm">
                                                                         <i class="bi bi-file-earmark-x"></i> Eliminar Factura
                                                                     </a>
                                                                 </div>
-                                                            </div>
-                                                <?php
+                                                    <?php
+                                                            }
                                                         }
                                                     }
-                                                }
-                                                ?>
+                                                    ?>
+
+
                                             </td>
                                             <td>
                                                 <?php
@@ -864,6 +873,12 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                                     <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
                                                         data-bs-target="#modalEditarEtiquetaBase<?php echo $Id_Contenido; ?>">
                                                         <i class="fas fa-edit"></i> Editar Etiqueta Base
+                                                    </button>
+
+                                                    <!-- Botón para eliminar con SweetAlert -->
+                                                    <button class="btn btn-danger btn-sm eliminar-etiqueta-base"
+                                                        data-id="<?php echo $Id_Contenido; ?>">
+                                                        <i class="fas fa-trash-alt"></i> Eliminar
                                                     </button>
                                                 <?php
                                                 }
@@ -1117,6 +1132,12 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                                         data-bs-target="#modalEditarEtiquetaFusionada<?php echo $Id_Relacion; ?>">
                                                         <i class="fas fa-edit"></i> Editar Etiqueta Fusionada
                                                     </button>
+                                                    <!-- Botón para un sweetalert para eliminar la etiqueta Fusionada -->
+                                                    <!-- Botón para eliminar con SweetAlert -->
+                                                    <button class="btn btn-danger btn-sm eliminar-etiqueta-fusionada"
+                                                        data-id="<?php echo $Id_Relacion; ?>">
+                                                        <i class="fas fa-trash-alt"></i> Eliminar Fusionada
+                                                    </button>
                                                 <?php
                                                 }
                                                 ?>
@@ -1337,7 +1358,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
 
                                                     <!-- Botón para abrir sweet alert para eliminar etiqueta Consolidada -->
                                                     <button type="button"
-                                                        class="btn btn-danger btn-sm eliminar-etiqueta"
+                                                        class="btn btn-danger btn-sm eliminar-etiqueta-consolidada"
                                                         data-id="<?php echo $Id_Consolidado; ?>">
                                                         <i class="fas fa-trash-alt"></i> Eliminar Etiqueta Consolidada
                                                     </button>
@@ -2157,12 +2178,94 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- Bootstrap CSS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <!-- Bootstrap Bundle JS (incluye Popper) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Eliminar Etiqueta base con sweet alert -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.eliminar-etiqueta-base').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idContenido = this.getAttribute('data-id');
+                const idSalida = <?= $id_salida ?>
+                console.log("iD Salida: ", idSalida);
+
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `Se eliminará la etiqueta base con ID ${idContenido}`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Redirigir al archivo del back con el ID
+                        window.location.href = `../Back/Etiquetas/eliminar_etiqueta.php?id=${idContenido}&id_salida=${idSalida}&Tipo=Base`;
+                    }
+                });
+            });
+        });
+    });
+</script>
+
+<!-- Eliminar Etiqueta Fusionada -->
+<script>
+    $(document).on('click', '.eliminar-etiqueta-fusionada', function(e) {
+        e.preventDefault(); // evita submit accidental
+        const idRelacion = $(this).data('id');
+        const idSalida = <?= $id_salida ?>
+
+        console.log("iD Salida: ", idSalida);
+        console.log("Id Relacionada:", idRelacion);
+
+        Swal.fire({
+            title: '¿Eliminar etiqueta?',
+            text: 'Esta acción no se puede deshacer.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `../Back/Etiquetas/eliminar_etiqueta.php?idfusionada=${idRelacion}&id_salida=${idSalida}&Tipo=Fusionada`;
+            }
+        });
+    });
+
+    $(document).on('click', '.eliminar-etiqueta-consolidada', function(e) {
+        e.preventDefault(); // evita submit accidental
+        const idConsolidado = $(this).data('id');
+        const idSalida = <?= $id_salida ?>
+
+        console.log("Id Consolidado: ", idConsolidado);
+        console.log("Id Salida: ", idSalida);
+
+        Swal.fire({
+            title: '¿Eliminar etiqueta?',
+            text: 'Eliminar Id: ' + idConsolidado + ' (Salida Base: ' + idSalida + ')',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `../Back/Etiquetas/eliminar_etiqueta.php?idfusionada=${idConsolidado}&id_salida=${idSalida}&Tipo=Consolidada`;
+            }
+        });
+
+    });
+</script>
+
 
 <script>
     /// Animación de salida para el mensaje:
@@ -2440,6 +2543,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
         document.querySelectorAll(".eliminar-etiqueta").forEach(function(btn) {
             btn.addEventListener("click", function() {
                 const id = this.getAttribute("data-id");
+                const id_salida = <? ?>
 
                 Swal.fire({
                     title: "¿Estás seguro?",

@@ -114,7 +114,7 @@ if ($row_total['inicio'] && $row_total['fin']) {
 <body>
     <?php include "../Front/navbar.php"; ?>
     <br>
-    <div class="container min-vh-100 d-flex flex-column justify-content-center align-items-center">
+    <div class="container min-vh-75 d-flex flex-column justify-content-center align-items-center">
         <div class="card final-card p-4 w-100">
             <div class="text-center mb-3">
 
@@ -122,53 +122,15 @@ if ($row_total['inicio'] && $row_total['fin']) {
                     <img src="Front/img/Alenitos/AlienCorazon.png" alt="Alien celebración" style="height: 100px; max-width: 100%;" />
                 </div>
 
-                <h2 class="mt-3 mb-1">¡Enhorabuena!</h2>
-                <p class="text-muted mb-0">Has completado el curso</p>
+                <h2 class="mt-3 mb-1">Intentar De nuevo!</h2>
+                <p class="text-muted mb-0">Has completado la evaluación con una califiacación Insuficiente</p>
                 <h4 class="fw-bold text-dark mt-2"><?php echo htmlspecialchars($nombre_curso); ?></h4>
             </div>
-            
             <hr>
 
 
-            <div class="mb-3">
-                <h5 class="mb-3 text-center">Capítulos completados</h5>
-                <ul class="list-group">
-                    <?php foreach ($capitulos as $capitulo):
-                        $id = $capitulo['id'];
-                        $titulo = htmlspecialchars($capitulo['titulo']);
-                        $correctas = $estadisticas[$id]['correctas'];
-                        $incorrectas = $estadisticas[$id]['incorrectas'];
-                        $tiempo = isset($tiempos_capitulos[$id]) ? $tiempos_capitulos[$id] : '00:00:00';
-                    ?>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong><?php echo $titulo; ?></strong> <br>
-                                <small class="text-muted">
-                                    <?php echo "$correctas Correcta(s) / $incorrectas Incorrecta(s)"; ?><br>
-                                    ⏱ Tiempo: <?php echo $tiempo; ?>
-                                </small>
-                            </div>
-                            <?php if ($correctas > 0): ?>
-                                <span class="badge bg-dark text-white rounded-pill">✔</span>
-                            <?php else: ?>
-                                <span class="badge bg-dark text-white rounded-pill">✘</span>
-                            <?php endif; ?>
-                        </li>
-
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-
-            <!-- Tiempo total del curso -->
-            <div class="mt-4 text-center">
-                <h5 class="mb-2">⏳ Tiempo total invertido en el curso</h5>
-                <p><strong><?php echo $tiempo_total; ?></strong></p>
-            </div>
-
-
             <div class="d-grid gap-2 mt-4">
-                <a href="index.php?id_curso=<?php echo $id_curso; ?>" class="btn btn-dark">Volver al Listado</a>
-                <a href="evaluacion.php?id_curso=<?php echo $id_curso; ?>" class="btn btn-outline-dark">Comenzar Evaluación</a>
+                <a href="evaluacion.php?id_curso=<?php echo $id_curso; ?>" class="btn btn-outline-dark">Reintentar Evaluación</a>
             </div>
         </div>
     </div>

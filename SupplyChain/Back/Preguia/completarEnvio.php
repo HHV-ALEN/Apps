@@ -27,7 +27,7 @@ if ($Tipo_Doc == "Directo") {
     if ($result_update_preguia) {
         echo "<br>Actualización de doc_preguia exitosa";
         // Actualizar a Completado
-        $sql_update_salida = "UPDATE salidas SET Estado = 'Completado', Id_Status = '27' WHERE Id = $id_salida";
+        $sql_update_salida = "UPDATE salidas SET Estado = 'Completado', Id_Status = '27', Urgencia = 'Nada' WHERE Id = $id_salida";
         $result_update_salida = mysqli_query($conn, $sql_update_salida);
         if ($result_update_salida) {
             echo "<br>Actualización de salida exitosa";
@@ -97,7 +97,7 @@ elseif ($Tipo_Doc == "Ruta"){
     }
     // Actualiza la Salida
 
-    $sql_update_salida = "UPDATE salidas SET Estado = 'Completado', Id_Status = '27' WHERE Id = $id_salida";
+    $sql_update_salida = "UPDATE salidas SET Estado = 'Completado', Id_Status = '27', Urgencia = 'Nada' WHERE Id = $id_salida";
     $result_update_salida = mysqli_query($conn, $sql_update_salida);
 
     if ($result_update_salida) {

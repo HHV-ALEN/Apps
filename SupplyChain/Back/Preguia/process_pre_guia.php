@@ -23,6 +23,7 @@ $Chofer_Asignado = $_POST['Chofer_Asignado'];
 $Tipo_Flete = $_POST['Tipo_Flete'] ?? "No Asignado";
 $Metodo_Pago = $_POST['Metodo_Pago'] ?? "No Asignado";
 $cliente_intermedio = $_POST['Cliente_Intermedio'] ?? "No Asignado";
+$Fecha_Entregado = $_POST['fecha_entregado'] ?? "N/A";
 $Fecha_Actual = date("Y-m-d H:i:s");
 
 echo "<br><strong>Información de la preguía:</strong>";
@@ -35,6 +36,7 @@ echo "<br><strong> Tipo de Flete: </strong>" . $Tipo_Flete;
 echo "<br><strong> Metodo de Pago: </strong>" . $Metodo_Pago;
 echo "<br><strong> Cliente Intermedio: </strong>" . $cliente_intermedio;
 echo "<br><strong> Fecha Actual: </strong>" . $Fecha_Actual;
+echo "<br><strong> Fecha de Entregado: </strong>" . $Fecha_Entregado;
 
 /// -> Cliente Pasa, Entregado por Vendedor, Proveedor Recolecta
 $OtrasOpciones = [
@@ -42,6 +44,7 @@ $OtrasOpciones = [
     "Entregado por Vendedor",
     "Proveedor Recolecta"
 ];
+
 
 // Si se envió información de dirección, actualizamos el cliente
 if (!empty($_POST['Calle'])) {
@@ -59,9 +62,10 @@ if (!empty($_POST['Calle'])) {
     echo "<br><strong> Estado:</strong> " . $estado;
     echo "<br><strong> CP:</strong> " . $cp;
 
+
     $query_update_cliente = "UPDATE clientes SET Calle = '$calle', Colonia = '$colonia', Ciudad = '$ciudad', Estado = '$estado', CP = '$cp' WHERE Nombre = '$nombre'";
     if ($conn->query($query_update_cliente) === TRUE) {
-        echo "<br><strong>Actualización de cliente exitosa</strong>";
+        echo "<br><strong>Actualización de cliente exitosa</strong><br>";
     } else {
         echo "<br><strong>Error al actualizar el cliente: </strong>" . $conn->error;
     }
@@ -70,9 +74,9 @@ if (!empty($_POST['Calle'])) {
 
 /// Si $Chofer_Asignado esta en las opciones de $OtrasOpciones:
 if (in_array($Chofer_Asignado, $OtrasOpciones)) {
-    echo "<strong>El chofer asignado no es una de las opciones de Otras Opciones</strong>";
+    echo "<strong><br>El chofer asignado no es una de las opciones de Otras Opciones</strong>";
     /// 4.- Actualizar el estatus de la salida
-    $updateSalida = "UPDATE salidas SET Estado = 'Completado', Id_Status = 27  WHERE Id = '$id_salida'";
+    $updateSalida = "UPDATE salidas SET Estado = 'Envios', Id_Status = 26, Urgencia = 'Nada'  WHERE Id = '$id_salida'";
     if ($conn->query($updateSalida) === TRUE) {
         echo "<br><strong>Actualización de salida exitosa</strong>";
     } else {
@@ -81,8 +85,8 @@ if (in_array($Chofer_Asignado, $OtrasOpciones)) {
 
     // Registro en Preguia
     $insertPreGuia = "INSERT INTO preguia
-    (Id_Salida, Chofer, Fecha) VALUES 
-    ('$id_salida', '$Chofer_Asignado', '$Fecha_Actual')";
+    (Id_Salida, Chofer, Fecha, Fecha_Entregado) VALUES 
+    ('$id_salida', '$Chofer_Asignado', '$Fecha_Actual', '$Fecha_Entregado')";
     if ($conn->query($insertPreGuia) === TRUE) {
         echo "<br><strong>Registro de preguía exitoso</strong>";
     } else {
@@ -112,9 +116,9 @@ if (in_array($Chofer_Asignado, $OtrasOpciones)) {
 
     /// 1.- Registro de Preguia 
     $insertPreGuia = "INSERT INTO preguia 
-    (Id_Salida, Cliente, Cliente_Intermedio, Paqueteria, Chofer, Tipo_Flete, Metodo_Pago, Tipo_Doc, Fecha)
+    (Id_Salida, Cliente, Cliente_Intermedio, Paqueteria, Chofer, Tipo_Flete, Metodo_Pago, Tipo_Doc, Fecha, Fecha_Entregado)
     VALUES 
-    ('$id_salida', '$clienteNombre', '$cliente_intermedio', '$Paqueteria', '$Chofer_Asignado', '$Tipo_Flete', '$Metodo_Pago', '$Tipo_Doc', '$Fecha_Actual')";
+    ('$id_salida', '$clienteNombre', '$cliente_intermedio', '$Paqueteria', '$Chofer_Asignado', '$Tipo_Flete', '$Metodo_Pago', '$Tipo_Doc', '$Fecha_Actual', '$Fecha_Entregado')";
 
     if ($conn->query($insertPreGuia) === TRUE) {
         echo "<br><strong>Registro de preguía exitoso</strong>";

@@ -3,11 +3,13 @@ require_once("../../Back/config/config.php"); //Contiene las variables de config
 $conn = connectMySQLi();
 session_start();
 
-$filtro_salida = isset($_POST['numero_salida']) ? $_POST['numero_salida'] : '';
-$filtro_cliente = isset($_POST['cliente']) ? $_POST['cliente'] : '';
-$filtro_orden = isset($_POST['orden_venta']) ? $_POST['orden_venta'] : '';
-$filtro_estado = isset($_POST['estado']) ? $_POST['estado'] : '';
-$filtro_entrega = isset($_POST['id_entrega']) ? $_POST['id_entrega'] : '';
+$filtro_salida = $_POST['numero_salida'] ?? '';
+$filtro_cliente = $_POST['cliente'] ?? '';
+$filtro_orden = $_POST['orden_venta'] ?? '';
+$filtro_estado = $_POST['estado'] ?? '';
+$filtro_entrega = $_POST['id_entrega'] ?? '';
+
+$filtro_factura = $_POST['id_factura'] ?? '';
 
 $query = "SELECT 
             salidas.*, 
@@ -17,73 +19,90 @@ $query = "SELECT
               SELECT COUNT(*) 
               FROM entregas e 
               WHERE e.Id_Salida = salidas.Id AND e.Archivo != '0'
-            ) AS Factura_Registrada
+            ) AS Factura_Registrada,
+            (
+              SELECT COUNT(*) 
+              FROM imagen i 
+              WHERE i.id_salida = salidas.Id
+            ) AS Imagenes_Registradas
           FROM salidas
           LEFT JOIN entregas ON salidas.Id = entregas.Id_Salida
           WHERE 1";
 
+
+// ----------------------------- Filtros -----------------------------
 if (!empty($filtro_salida)) {
   $query .= " AND salidas.Id = " . intval($filtro_salida);
 }
+
 if (!empty($filtro_cliente)) {
-    $query .= " AND salidas.Nombre_Cliente LIKE '%$filtro_cliente%'";
+  $query .= " AND salidas.Nombre_Cliente LIKE '%" . mysqli_real_escape_string($conn, $filtro_cliente) . "%'";
 }
+
 if (!empty($filtro_orden)) {
-
-  // Escape para seguridad
   $orden = mysqli_real_escape_string($conn, $filtro_orden);
-
   $subqueries = [];
 
-  // Buscar en entregas
   $subqueries[] = "salidas.Id IN (
-    SELECT Id_Salida FROM entregas WHERE Id_Orden_Venta LIKE '%$orden%'
-  )";
+    SELECT Id_Salida FROM entregas WHERE Id_Orden_Venta LIKE '%$orden%')";
 
-  // Buscar en etiquetas_fusionadas
   $subqueries[] = "salidas.Id IN (
-    SELECT Salida_Base FROM etiquetas_fusionadas WHERE Orden_Venta LIKE '%$orden%'
-  )";
+    SELECT Salida_Base FROM etiquetas_fusionadas WHERE Orden_Venta LIKE '%$orden%')";
 
-  // Buscar en consolidados
   $subqueries[] = "salidas.Id IN (
-    SELECT Id_Base FROM consolidados WHERE Orden_Venta LIKE '%$orden%'
-  )";
+    SELECT Id_Base FROM consolidados WHERE Orden_Venta LIKE '%$orden%')";
 
   $query .= " AND (" . implode(" OR ", $subqueries) . ")";
 }
 
 if (!empty($filtro_estado)) {
-    $query .= " AND salidas.Estado LIKE '%$filtro_estado%'";
+  $query .= " AND salidas.Estado LIKE '%" . mysqli_real_escape_string($conn, $filtro_estado) . "%'";
 }
+
 if (!empty($filtro_entrega)) {
-
-  // Preparar escape para seguridad
   $entrega = mysqli_real_escape_string($conn, $filtro_entrega);
-
-  // Buscar en entregas normales
   $subqueries = [];
 
   $subqueries[] = "salidas.Id IN (
-      SELECT Id_Salida FROM entregas WHERE Id_Entrega = '$entrega'
-  )";
-
-  // Buscar en etiquetas_fusionadas
+    SELECT Id_Salida FROM entregas WHERE Id_Entrega = '$entrega')";
   $subqueries[] = "salidas.Id IN (
-      SELECT Salida_Base FROM etiquetas_fusionadas WHERE Entrega = '$entrega'
-  )";
-
-  // Buscar en consolidados
+    SELECT Salida_Base FROM etiquetas_fusionadas WHERE Entrega = '$entrega')";
   $subqueries[] = "salidas.Id IN (
-      SELECT Id_Base FROM consolidados WHERE Id_Entrega = '$entrega'
-  )";
+    SELECT Id_Base FROM consolidados WHERE Id_Entrega = '$entrega')";
 
-  // Unir todas las condiciones con OR
   $query .= " AND (" . implode(" OR ", $subqueries) . ")";
 }
 
+if (!empty($filtro_factura)) {
+    $factura   = mysqli_real_escape_string($conn, $filtro_factura);
+    $sub       = [];
 
-$query .= " ORDER BY Id DESC LIMIT 50"; // Solo muestra los 50 primeros resultados
+    // ▸ Entrega “normal”
+    $sub[] = "salidas.Id IN (
+                SELECT Id_Salida
+                FROM entregas
+                WHERE Id_Factura LIKE '%$factura%'
+              )";
+
+    // ▸ Fusionada (si guardas Id_Factura ahí)
+    $sub[] = "salidas.Id IN (
+                SELECT Salida_Base
+                FROM etiquetas_fusionadas
+                WHERE Id_Factura LIKE '%$factura%'
+              )";
+
+    // ▸ Consolidado (si también lo guardas)
+    $sub[] = "salidas.Id IN (
+                SELECT Id_Base
+                FROM consolidados
+                WHERE Id_Factura LIKE '%$factura%'
+              )";
+
+    $query .= " AND (" . implode(' OR ', $sub) . ")";
+}
+
+
+$query .= " ORDER BY salidas.Id DESC LIMIT 50";
 
 $result = mysqli_query($conn, $query);
 $data = [];
@@ -97,10 +116,12 @@ while ($row = mysqli_fetch_assoc($result)) {
     'Urgencia' => $row['Urgencia'],
     'Id_Orden_Venta' => $row['Id_Orden_Venta'],
     'Id_Entrega' => $row['Id_Entrega'],
-    'Factura_Registrada' => $row['Factura_Registrada'], // 👈 ¡aquí llega!
-    // ... otros campos
+    'Factura_Registrada' => $row['Factura_Registrada'],
+    'Imagenes_Registradas' => $row['Imagenes_Registradas'],
+    // otros campos si los necesitas
   ];
 }
 
 echo json_encode($data);
+
 ?>

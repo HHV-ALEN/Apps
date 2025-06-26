@@ -217,7 +217,7 @@ ORDER BY p.Id DESC ";
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <!-- FORMULARIO EN EL LUGAR CORRECTO -->
-          <form action="Back/Entregas/entregaChofer.php" method="POST" id="form_agregar_empaque">
+          <form action="Back/Entregas/entregaChofer.php" method="POST" id="form_agregar_empaque" enctype="multipart/form-data">
             <div class="modal-body">
 
               <div class="row">
@@ -244,7 +244,18 @@ ORDER BY p.Id DESC ";
                   <label for="Comentario" class="form-label">Comentario:</label>
                   <input type="text" class="form-control" id="Comentario" name="Comentario" placeholder="Agrega un comentario...">
                 </div>
+                <div class="col-md-12 mb-3">
+                  <label for="fotoEntrega" class="form-label">Foto de evidencia:</label>
+                  <input
+                    type="file"
+                    id="fotoEntrega"
+                    name="fotoEntrega"
+                    accept="image/*"
+                    capture="environment"
+                    class="form-control">
+                </div>
               </div>
+              <img id="previewImg" class="img-fluid my-2 d-none">
             </div>
             <div class="modal-footer">
               <button type="submit" class="btn btn-primary">Guardar</button>
@@ -257,6 +268,14 @@ ORDER BY p.Id DESC ";
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+      document.getElementById('fotoEntrega').addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+
+        const imgPrev = document.getElementById('previewImg');
+        imgPrev.src = URL.createObjectURL(file);
+        imgPrev.classList.remove('d-none');
+      });
       document.addEventListener("DOMContentLoaded", function() {
         // Capturar el modal cuando se abre
         var etiquetaModal = document.getElementById("etiquetaModal");
@@ -325,7 +344,7 @@ ORDER BY p.Id DESC ";
           <!-- Filtros para los querys -->
           <div class="col-md-12">
             <div class="row">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label for="buscar_salida" class="form-label">Número de Salida:</label>
                 <div class="input-group">
                   <input type="text" class="form-control" id="buscar_salida" placeholder="Presiona Enter o la lupa...">
@@ -335,17 +354,25 @@ ORDER BY p.Id DESC ";
                 </div>
               </div>
 
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label for="buscar_cliente" class="form-label">Cliente:</label>
                 <select class="form-select" id="buscar_cliente">
                   <option value="">Todos</option>
                   <?php
-                  $query_cliente = mysqli_query($conn, "SELECT DISTINCT Nombre_Cliente FROM salidas ORDER BY Nombre_Cliente");
-                  while ($row = mysqli_fetch_assoc($query_cliente)) {
-                    echo "<option value='{$row['Nombre_Cliente']}'>{$row['Nombre_Cliente']}</option>";
+                  $q = mysqli_query($conn, "SELECT DISTINCT Nombre_Cliente FROM salidas ORDER BY Nombre_Cliente");
+                  while ($r = mysqli_fetch_assoc($q)) {
+                    echo '<option value="' . htmlspecialchars($r['Nombre_Cliente']) . '">' .
+                      htmlspecialchars($r['Nombre_Cliente']) .
+                      '</option>';
                   }
                   ?>
                 </select>
+              </div>
+              <div class="col-md-4">
+                <label for="buscar_factura" class="form-label">Folio de Factura:</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="buscar_factura" placeholder="Buscar...">
+                </div>
               </div>
             </div>
 
@@ -441,11 +468,26 @@ ORDER BY p.Id DESC ";
                     /// Para recibir de estado Empaque a Facturación:
                     /// Permitir a Raquel Cabrales recibir de Empaque a Facturación, pero que se muestre solo cuando el estado esta en Empaque, pero no en otros estados
                     /// Para recibir de estado Empaque a Facturación:
+
                     if (($isGerente || $_SESSION['Departamento'] == 'Facturación') && $fila['Estado'] == 'Empaque') {
-                      echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Facturación' class='btn btn-warning'>
-                      <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Facturación)
-                    </a>";
+
+                      // Consultar si hay imágenes asociadas al folio
+                      $id_salida = $fila['Id'];
+                      $query_img = "SELECT COUNT(*) AS total FROM imagen WHERE id_salida = $id_salida";
+                      $result_img = mysqli_query($conn, $query_img);
+                      $row_img = mysqli_fetch_assoc($result_img);
+
+                      // Si hay imágenes, mostrar el botón de cambio de estado
+                      if ($row_img['total'] > 0) {
+                        echo "<a href='Back/changeState.php?id=" . $id_salida . "&estado=Facturación' class='btn btn-warning'>
+                <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Facturación)
+              </a>";
+                      } else {
+                        // Mostrar aviso de que no hay evidencias
+                        echo "<small class='text-danger'><i class='bi bi-exclamation-circle'></i> Sin Evidencias</small>";
+                      }
                     }
+
 
                     if (($isGerente || $_SESSION['Departamento'] == 'Logistica') && $fila['Estado'] == 'Facturación') {
                       /// Para recibir de estado Facturación a Logistica:
@@ -512,32 +554,22 @@ ORDER BY p.Id DESC ";
                       <label for="mostrarId" class="form-label">ID de la salida:</label>
                       <input type="text" class="form-control" id="mostrarId" disabled>
                     </div>
+
                     <div class="col-md-6">
-                      <label for="NuevaPaqueteria" class="form-label">Paqueteria:</label>
-                      <div class="form-floating">
-                        <select class="form-control" name="Paqueteria" id="Paqueteria">
-                          <option value="">Selecciona una Paqueteria</option>
-                          <?php
-                          $query_paqueteria = mysqli_query($conn, "SELECT * FROM paqueteria ORDER BY nombre");
-                          while ($rw = mysqli_fetch_array($query_paqueteria)) {
-                            echo "<option value='{$rw['nombre']}'>{$rw['nombre']}</option>";
-                          }
-                          ?>
-                          <option value="Otro">Otro</option>
+                      <label for="tipoFlete" class="form-label">Tipo de Flete</label>
+                      <div class="form-floating mb-3">
+                        <!-- Opciones del Selector: A Domicilio, Ocurre -->
+                        <select class="form-select" name="Tipo_Flete" id="Tipo_Flete" required>
+                          <option value=""> Selecciona una opción </option>
+                          <option value="A Domicilio">A Domicilio</option>
+                          <option value="Ocurre">Ocurre</option>
+                          <option value="Ruta">Ruta</option>
                         </select>
-                        <label for="Paqueteria">Paqueteria</label>
-                        <br>
-                        <!-- Input oculto -->
-                        <div class="form-floating mb-3" id="otroPaqueteriaDiv" style="display: none;">
-                          <input type="text" class="form-control" id="otroPaqueteria" name="otroPaqueteria"
-                            placeholder="Ingrese otra paquetería">
-                          <label for="otroPaqueteria">Especificar otra paquetería</label>
-                        </div>
+                        <label for="Tipo_Flete">Tipo de Flete</label>
                       </div>
-
                     </div>
-                  </div>
 
+                  </div>
                   <div class="row">
                     <div class="col-md-6">
                       <label for="choferActual" class="form-label">Chofer actual:</label>
@@ -553,32 +585,50 @@ ORDER BY p.Id DESC ";
                   </div>
 
                   <br>
-                  <div class="row">
-                    <div class="col-md-6">
-                      <div class="form-floating mb-3">
-                        <!-- Opciones del Selector: A Domicilio, Ocurre -->
-                        <select class="form-select" name="Tipo_Flete" id="Tipo_Flete" required>
-                          <option value=""> Selecciona una opción </option>
-                          <option value="A Domicilio">A Domicilio</option>
-                          <option value="Ocurre">Ocurre</option>
-                        </select>
-                        <label for="Tipo_Flete">Tipo de Flete</label>
+
+                  <!-- Agrupar Paquetería y Método de Pago -->
+                  <div id="opcionesEnvio">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <label for="NuevaPaqueteria" class="form-label">Paqueteria:</label>
+                        <div class="form-floating">
+                          <select class="form-control" name="Paqueteria" id="Paqueteria">
+                            <option value="">Selecciona una Paqueteria</option>
+                            <?php
+                            $query_paqueteria = mysqli_query($conn, "SELECT * FROM paqueteria ORDER BY nombre");
+                            while ($rw = mysqli_fetch_array($query_paqueteria)) {
+                              echo "<option value='{$rw['nombre']}'>{$rw['nombre']}</option>";
+                            }
+                            ?>
+                            <option value="Otro">Otro</option>
+                          </select>
+                          <label for="Paqueteria">Paqueteria</label>
+                          <br>
+                          <!-- Input oculto -->
+                          <div class="form-floating mb-3" id="otroPaqueteriaDiv" style="display: none;">
+                            <input type="text" class="form-control" id="otroPaqueteria" name="otroPaqueteria"
+                              placeholder="Ingrese otra paquetería">
+                            <label for="otroPaqueteria">Especificar otra paquetería</label>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="form-floating mb-3">
-                        <!-- Opciones del Selector: Cob. Reg., Credito, Pagado, X Cobrar -->
-                        <select class="form-select" name="Metodo_Pago" id="Metodo_Pago" required>
-                          <option value="">Selecciona una opción</option>
-                          <option value="Cob. Reg.">Cob. Reg.</option>
-                          <option value="Credito">Credito</option>
-                          <option value="Pagado">Pagado</option>
-                          <option value="X Cobrar">X Cobrar</option>
-                        </select>
-                        <label for="Metodo_Pago">Metodo De Pago:</label>
+                      <div class="col-md-6">
+                        <label for="Metodo" class="form-label">Método de Pago</label>
+                        <div class="form-floating mb-3">
+                          <select class="form-select" name="Metodo_Pago" id="Metodo_Pago" required>
+                            <option value="">Selecciona una opción</option>
+                            <option value="Cob. Reg.">Cob. Reg.</option>
+                            <option value="Credito">Credito</option>
+                            <option value="Pagado">Pagado</option>
+                            <option value="X Cobrar">X Cobrar</option>
+                          </select>
+                          <label for="Metodo_Pago">Metodo De Pago:</label>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+
                 </div>
                 <div class="modal-footer">
                   <button type="submit" class="btn btn-success">Guardar</button>
@@ -834,10 +884,60 @@ ORDER BY p.Id DESC ";
   </div>
 
   <br><br><br>
+  <!-- CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <!-- Si usas Bootstrap 5, agrega el theme opcional -->
+  <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Script para hidden las opciones cuando solo es a ruta -->
+  <script>
+    $(document).ready(function() {
+      $('#buscar_cliente').select2({
+        theme: 'bootstrap4', // o 'bootstrap-5' si usas ese theme
+        width: '100%',
+        placeholder: 'Todos',
+        allowClear: true // muestra una “x” para limpiar
+      });
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const tipoFlete = document.getElementById('Tipo_Flete');
+      const opcionesEnvio = document.getElementById('opcionesEnvio');
+
+      tipoFlete.addEventListener('change', function() {
+        const metodoPago = document.getElementById('Metodo_Pago');
+        const paqueteria = document.getElementById('Paqueteria');
+
+        if (this.value === 'Ruta') {
+          opcionesEnvio.style.display = 'none';
+
+          // Quitar required
+          metodoPago.required = false;
+          paqueteria.required = false;
+
+          // Asignar valores default opcionalmente
+          metodoPago.value = '';
+          paqueteria.value = '';
+        } else {
+          opcionesEnvio.style.display = 'block';
+
+          // Reestablecer required
+          metodoPago.required = true;
+          paqueteria.required = true;
+        }
+      });
+
+    });
+  </script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -907,6 +1007,7 @@ ORDER BY p.Id DESC ";
         let orden_venta = $("#buscar_orden").val();
         let estado = $("#buscar_estado").val();
         let Id_Entrega = $("#buscar_entrega").val();
+        let Id_Factura = $("#buscar_factura").val();
         //console.log("Cliente seleccionad", cliente);
         //console.log("Entrega seleccionada", Id_Entrega);
         console.log("Salida seleccionada", numero_salida);
@@ -919,6 +1020,7 @@ ORDER BY p.Id DESC ";
             cliente: cliente,
             orden_venta: orden_venta,
             id_entrega: Id_Entrega,
+            id_factura: Id_Factura,
             estado: estado
           },
           dataType: "json",
@@ -951,15 +1053,20 @@ ORDER BY p.Id DESC ";
 
                 // Empaque button logic - js
                 if (item.Estado == 'Empaque') {
-                  console.log("Registro en estado Empaque");
                   if (currentUserDept == 'Facturación' || currentUserId == 34 || currentUserId == 1) {
-                    console.log("Se Cumple la condicion");
-                    buttonsHtml += `
-                      <a href='Back/changeState.php?id=${item.Id}&estado=Facturación' class='btn btn-warning'>
-                      <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Facturación)
-                    </a>`;
+                    if (item.Imagenes_Registradas > 0) {
+                      buttonsHtml += `
+        <a href='Back/changeState.php?id=${item.Id}&estado=Facturación' class='btn btn-warning'>
+          <i class='bi bi-file-earmark-fill'></i> Recibir Entrega (Facturación)
+        </a>`;
+                    } else {
+                      buttonsHtml += `<small class='text-danger d-block mt-2'>
+        <i class='bi bi-camera-off'></i> Sin Evidencias
+      </small>`;
+                    }
                   }
                 }
+
 
                 // Pasar a Logistica cuando tiene archivo asignado 
                 if (item.Estado === 'Facturación' &&
@@ -1010,8 +1117,6 @@ ORDER BY p.Id DESC ";
     </button>
   `;
                 }
-
-
                 // Close buttons div
                 buttonsHtml += `</div>`;
 
@@ -1061,7 +1166,7 @@ ORDER BY p.Id DESC ";
       });
 
       // Para que se actualice al escribir en los inputs sin dar clic en el botón
-      $("#buscar_entrega, #buscar_cliente, #buscar_orden, #buscar_estado").on("keyup change", function() {
+      $("#buscar_factura, #buscar_entrega, #buscar_cliente, #buscar_orden, #buscar_estado").on("keyup change", function() {
         buscarSalidas();
       });
     });
@@ -1215,26 +1320,28 @@ ORDER BY p.Id DESC ";
                                     <option value="Daniel Soto Mayor">Daniel Soto Mayor</option>
                                     <option value="Jonathan Islas Hernandez">Jonathan Islas Hernandez</option>
                                     <option value="Rene Canche Couoh">Rene Canche Couoh</option>
+                                    <option value="Leonardo Daniel Urzua Pulido">Leonardo Daniel Urzua Pulido</option>
                                     <option value="">---------------------------</option>
                                     <option value="Cliente Pasa">Cliente Pasa</option>
                                     <option value="Entregado por Vendedor">Entregado por Vendedor</option>
                                     <option value="Proveedor Recolecta">Proveedor Recolecta</option>
                                 </select>
-                                </select>
                                 <label for="Chofer">Chofer:</label>
                             </div>
                         </div>
-
+                        <div class="col-md-12">
+                        <label for="FechaEntregado">Fecha Entregado:</label>
+                        <input type="date" class="form-control" name="fecha_entregado" id='fecha_entregado' required>
+                        </div>
+                        <br>
     `;
 
         // Agregar los campos según la selección
         if (tipo == "Directo" || tipo == "Reembarque") {
           extraFields.innerHTML += commonFields;
-        }
-        if (tipo === "Reembarque") {
+        } else if (tipo === "Reembarque") {
           extraFields.innerHTML += `<div class="row">${clienteIntermedioField}</div>`;
-        }
-        if (tipo === "Ruta") {
+        } else if (tipo === "Ruta") {
           extraFields.innerHTML += choferField;
         }
 
