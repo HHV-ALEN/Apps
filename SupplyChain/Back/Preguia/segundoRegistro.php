@@ -12,6 +12,7 @@ $costo = $_POST['costo'];
 $Fecha_Actual = date("Y-m-d H:i:s");
 $FechaFinal = $_POST['FechaFinal'];
 $GuiaReembarque = $_POST['GuiaReembarque'] ?? "No Asignado";
+$CostoEnvio = $_POST['CostoEnvio'] ?? 0;
 
 
 echo "<br><strong>Información del form: </strong>";
@@ -41,7 +42,7 @@ echo "<br><strong>Información de la preguía:</strong>";
 if ($Tipo_doc == "Directo") {
     $updateDocPreGuia = "UPDATE doc_preguia SET Folio_Doc='$folio_doc', Costo_Directo='$costo', Guia_Directo='$folio_doc', Fecha_Final='$FechaFinal' WHERE Id_Salida='$id_salida'";
 } elseif ($Tipo_doc == "Reembarque") {
-    $updateDocPreGuia = "UPDATE doc_preguia SET Folio_Doc='$folio_doc', Costo_Reembarque='$costo', Guia_Reembarque='$GuiaReembarque', Fecha_Final='$FechaFinal' WHERE Id_Salida='$id_salida'";
+    $updateDocPreGuia = "UPDATE doc_preguia SET Folio_Doc='$folio_doc', Costo_Reembarque='$costo', Costo_Directo='$CostoEnvio',Guia_Reembarque='$GuiaReembarque', Fecha_Final='$FechaFinal' WHERE Id_Salida='$id_salida'";
 } elseif($Tipo_doc == "Ruta"){
     $updateDocPreGuia = "UPDATE doc_preguia SET Fecha='$Fecha_Actual' WHERE Id_Salida='$id_salida'";
 }
@@ -76,7 +77,7 @@ if ($conn->query($insertBitacora) === TRUE) {
 }
 
 
-header("Location: ../../Front/detalles.php?id=$id_salida");
+// header("Location: ../../Front/detalles.php?id=$id_salida");
 
 
 

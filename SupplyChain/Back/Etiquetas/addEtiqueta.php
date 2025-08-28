@@ -77,6 +77,17 @@ $NuevoNombre = $_POST['nuevo_nombre'];
 $NuevaClave = $_POST['nuevo_clave'];
 $NuevaRFC = $_POST['nuevo_rfc'];
 
+echo "<br>------------------------------- <strong>Información del Formulario</strong>";
+echo "<br> ----> Numero de etiqueta: $max_final";
+echo "<br> ----> Orden de venta: $orden_venta";
+echo "<br> ----> Folio de entrega: $folio_entrega";
+echo "<br> ----> Id_Cliente: $id_cliente";
+echo "<br> ----> Partida: $partida1 - $partida2";
+echo "<br> ----> Prioridad: $prioridad";
+echo "<br> ----> Comentarios: $Comentario";
+echo "<br> ----> Cliente 2: $Cliente2";
+echo "<br>";
+
 // Verificar cual fue el Id mas alto del atributo Id_Salida de la tabla entregas
 $sql = "SELECT MAX(Id_Salida) AS max_id FROM entregas";
 $query = mysqli_query($conn, $sql);
@@ -120,16 +131,7 @@ if (mysqli_num_rows($query) > 0) {
 }
 
 $Numero_Etiqueta = $max_final;
-echo "<br>------------------------------- <strong>Información del Formulario</strong>";
-echo "<br> ----> Numero de etiqueta: $max_final";
-echo "<br> ----> Orden de venta: $orden_venta";
-echo "<br> ----> Folio de entrega: $folio_entrega";
-echo "<br> ----> Id_Cliente: $id_cliente";
-echo "<br> ----> Partida: $partida1 - $partida2";
-echo "<br> ----> Prioridad: $prioridad";
-echo "<br> ----> Comentarios: $Comentario";
-echo "<br> ----> Cliente 2: $Cliente2";
-echo "<br>";
+
 
 
 if ($id_cliente === 'nuevo') {
@@ -141,6 +143,7 @@ if ($id_cliente === 'nuevo') {
   // 1. Obtener el último Id existente
   $result_last_id = mysqli_query($conn, "SELECT MAX(Id) AS ultimo_id FROM clientes");
   $row_last_id = mysqli_fetch_assoc($result_last_id);
+
   $siguiente_id = $row_last_id['ultimo_id'] + 1;
 
   // 2. Registrar la base del nuevo cliente con el Id calculado
@@ -159,8 +162,10 @@ if ($id_cliente === 'nuevo') {
   $nombre_cliente = $NuevoNombre;
 } else {
 
+  echo "<br><strong> Id Cliente:</strong>" . $id_cliente;
+
   /// Obtener Información del Cliente
-  $sql_cliente = "SELECT * FROM clientes WHERE Id = $id_cliente";
+  $sql_cliente = "SELECT * FROM clientes WHERE Id_Original = $id_cliente";
   $query_cliente = mysqli_query($conn, $sql_cliente);
   $info_cliente = mysqli_fetch_array($query_cliente);
   $nombre_cliente = $info_cliente['Nombre'];

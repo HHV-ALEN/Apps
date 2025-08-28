@@ -124,7 +124,7 @@ if ($capitulo_info) {
     </div>
 
     <!-- Modal de Pregunta -->
-    <div class="modal fade" id="modalPregunta" tabindex="-1">
+    <div class="modal fade" id="modalPregunta" tabindex="-1" data-bs-backdrop="static"  data-bs-keyboard="false">
         <div class="modal-dialog">
             <form id="formPregunta">
                 <div id="feedback" class="mt-2"></div>
@@ -141,6 +141,9 @@ if ($capitulo_info) {
                                 if ($result_pregunta && $pregunta = $result_pregunta->fetch_assoc()) {
                                     $pregunta_id = $pregunta['Id'];
                                     echo "<p><strong>" . htmlspecialchars($pregunta['Pregunta']) . "</strong></p>";
+
+                                    //echo "<br> Pregunta(Capitulo): " . $capitulo;
+                                    //echo "<)br> Curso: " . $id_curso;
 
                                     // Consultar respuestas
                                     $query_respuestas = "SELECT * FROM academy_respuestas WHERE Pregunta = $capitulo AND Curso = $id_curso";

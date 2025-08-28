@@ -59,6 +59,7 @@ $sql = "SELECT * FROM salidas WHERE Id = $Id_Salida";
 $query = mysqli_query($conn, $sql);
 $row = mysqli_fetch_array($query);
 $Id_Cliente = $row['Id_Cliente'];
+//echo "<br> Id Cliente: " . $Id_Cliente;
 
 /// consulta a la tabla preguia_refactor
 $sql = "SELECT * FROM preguia WHERE Id_Salida = $Id_Salida";
@@ -69,7 +70,7 @@ $Paqueteria = $row['Paqueteria'];
 $Metodo_Pago = $row['Metodo_Pago'];
 
 /// Consulta a la tabla "cliente"
-$sql = "SELECT * FROM clientes WHERE Id = $Id_Cliente";
+$sql = "SELECT * FROM clientes WHERE Id_Original = $Id_Cliente";
 $query = mysqli_query($conn, $sql);
 $row = mysqli_fetch_array($query);
 $nombre = $row['Nombre'];
@@ -80,6 +81,8 @@ $cd_destino = $row['Ciudad'] ?? '';
 $estado_destino = $row['Estado'];
 $cp = $row['Cp'];
 $telefono = $row['Telefono'];
+
+//echo "<br> Nombre del CLiente: " . $nombre;
 
 
 
@@ -172,7 +175,7 @@ foreach ($Arreglo_de_ContenidoEmpaque as $item) {
         default:
             $Otro_Total += $quantity;
             $Nombre_Contenedor = $type;
-            echo "<br>Total Otro: " . $Otro_Total;
+            //echo "<br>Total Otro: " . $Otro_Total;
     }
 
     //echo "<br>-------------------------------";

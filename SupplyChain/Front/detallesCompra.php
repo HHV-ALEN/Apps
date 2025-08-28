@@ -7,7 +7,7 @@ $conn = connectMySQLi();
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-$query = "SELECT * FROM supply_compras WHERE Id = $id";
+$query = "SELECT * FROM compras_lineasabiertas WHERE Id = $id";
 $resultado = $conn->query($query);
 $datos = $resultado->fetch_assoc();
 

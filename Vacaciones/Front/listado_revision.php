@@ -23,95 +23,139 @@ session_start();
     $claseAlerta = '';
 
     if ($_SESSION['accion'] == 'Aprobada') {
-        $claseAlerta = 'success'; // verde
+      $claseAlerta = 'success'; // verde
     } elseif ($_SESSION['accion'] == 'Rechazada') {
-        $claseAlerta = 'danger'; // rojo
+      $claseAlerta = 'danger'; // rojo
     } else {
-        $claseAlerta = 'info'; // por si es otro tipo
+      $claseAlerta = 'info'; // por si es otro tipo
     }
 
     echo "<div class='alert alert-{$claseAlerta} alert-dismissible fade show' role='alert'>
     {$_SESSION['mensaje_alerta']}
     <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>
   </div>";
-
-
     unset($_SESSION['mensaje_alerta']);
     unset($_SESSION['accion']);
   }
   ?>
+  <?php
+  $NombreGerente = $_SESSION['Name'];
 
-  <div class="container mt-5 text-center">
+  // Consulta
+  $query = "SELECT 
+    u.Nombre AS Empleado,
+    u.Jerarquia,
+    v.Dias_Solicitados,
+    v.Fecha_Inicio,
+    v.Fecha_Fin,
+    v.Fecha_Solicitud,
+    v.Tipo_Permiso,
+    v.Estado,
+    v.Id,
+    vg.Dias_Restantes,
+    vg.Dias_Solicitados AS Dias_Usados,
+    vg.Antiguedad
+  FROM 
+    usuarios u
+  INNER JOIN 
+    vacaciones_solicitudes v ON u.Nombre = v.Usuario
+  LEFT JOIN 
+    vacaciones_general vg ON u.Nombre = vg.Usuario
+  WHERE 
+    u.Jerarquia = ?
+    AND u.Estado = 'Activo'
+    AND v.Estado = 'Proceso'";
+
+  $stmt = $conn->prepare($query);
+  $stmt->bind_param("s", $NombreGerente);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  // Guarda los resultados en un array
+  $datos = [];
+  while ($row = $result->fetch_assoc()) {
+    $datos[] = $row;
+  }
+  ?>
+  <div class="container mt-5">
     <h2 class="text-center">Listado de Solicitudes de Vacaciones</h2>
-    <div class="table-responsive">
-      <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-          <tr>
-            <th>Responsable</th>
-            <th>Días Solicitados</th>
-            <th>Fecha Inicio</th>
-            <th>Fecha Fin</th>
-            <th>Fecha de Solicitud</th>
-            <th>Tipo de Permiso</th>
-            <th>Estado</th>
-            <th colspan="2">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php $NombreGerente = $_SESSION['Name'];
+    <hr>
 
-          // Conexión a la base de datos (asumimos que ya está hecha)
-
-          // Consulta para obtener solicitudes del personal a cargo del gerente actual
-          $query = "
-    SELECT 
-        u.Nombre AS Empleado,
-        u.Jerarquia,
-        v.Dias_Solicitados,
-        v.Fecha_Inicio,
-        v.Fecha_Fin,
-        v.Fecha_Solicitud,
-        v.Tipo_Permiso,
-        v.Estado,
-        v.Id
-    FROM 
-        usuarios u
-    INNER JOIN 
-        vacaciones_solicitudes v ON u.Nombre = v.Usuario
-    WHERE 
-        u.Jerarquia = ?
-        AND u.Estado = 'Activo'
-        AND v.Estado = 'Proceso'
-";
-
-          $stmt = $conn->prepare($query);
-          $stmt->bind_param("s", $NombreGerente);
-          $stmt->execute();
-          $result = $stmt->get_result();
-          if ($result->num_rows > 0) {
-            // Mostrar resultados
-            while ($row = $result->fetch_assoc()) {
-              echo "<tr class=text-center>";
-              echo "<td>" . htmlspecialchars($row['Empleado']) . "</td>";
-              echo "<td>" . htmlspecialchars($row['Dias_Solicitados']) . "</td>";
-              echo "<td>" . htmlspecialchars($row['Fecha_Inicio']) . "</td>";
-              echo "<td>" . htmlspecialchars($row['Fecha_Fin']) . "</td>";
-              echo "<td>" . htmlspecialchars($row['Fecha_Solicitud']) . "</td>";
-              echo "<td>" . htmlspecialchars($row['Tipo_Permiso']) . "</td>";
-              echo "<td><span class='badge bg-warning'>" . htmlspecialchars($row['Estado']) . "</span></td>";
-              echo "<td><a href='../Back/changeState.php?Id=" . htmlspecialchars($row['Id']) . "&Response=Aprobada&Fecha_Inicio=" . htmlspecialchars($row['Fecha_Inicio']) . "&Fecha_Fin=" . htmlspecialchars($row['Fecha_Fin']) . "&Nombre=" . htmlspecialchars($row['Empleado']) . "'' class='btn btn-success'><i class='bi bi-check-lg'></i> Aprobar</a></td>";
-              echo "<td><a href='../Back/changeState.php?Id=" .  htmlspecialchars($row['Id']) . "&Response=Rechazado&Fecha_Inicio=" . htmlspecialchars($row['Fecha_Inicio']) . "&Fecha_Fin=" . htmlspecialchars($row['Fecha_Fin']) . "&Nombre=" . htmlspecialchars($row['Empleado']) . "'' class='btn btn-danger'><i class='bi bi-x'></i> Rechazar</a></td>";
-              echo "</tr>";
-            }
-          } else {
-            echo "<tr><td colspan='8' class='text-center'>No hay solicitudes pendientes</td></tr>";
-          }
-
-          ?>
-        </tbody>
-      </table>
-    </div>
+    <?php if (count($datos) > 0): ?>
+      <div class="row">
+        <?php foreach ($datos as $row): ?>
+          <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+              <div class="card-header bg-primary text-white fw-bold">
+                <?= htmlspecialchars($row['Empleado']) ?>
+              </div>
+              <div class="card-body">
+                <div class="row mb-2">
+                  <div class="col-6">
+                    <small class="text-muted">Días solicitados</small><br>
+                    <strong><?= $row['Dias_Solicitados'] ?></strong>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted">Tipo de permiso</small><br>
+                    <strong><?= $row['Tipo_Permiso'] ?></strong>
+                  </div>
+                </div>
+                <div class="row mb-2">
+                  <div class="col-6">
+                    <small class="text-muted">Fecha inicio</small><br>
+                    <strong><?= $row['Fecha_Inicio'] ?></strong>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted">Fecha fin</small><br>
+                    <strong><?= $row['Fecha_Fin'] ?></strong>
+                  </div>
+                </div>
+                <div class="row mb-2">
+                  <div class="col-6">
+                    <small class="text-muted">Fecha solicitud</small><br>
+                    <strong><?= $row['Fecha_Solicitud'] ?></strong>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted">Estado</small><br>
+                    <span class="badge bg-warning"><?= $row['Estado'] ?></span>
+                  </div>
+                </div>
+                <hr>
+                <div class="row text-muted mb-2">
+                  <div class="col-6">
+                    <small>Días Restantes:</small><br>
+                    <strong><?= $row['Dias_Restantes'] ?? '—' ?></strong>
+                  </div>
+                  <div class="col-6">
+                    <small>Días Usados:</small><br>
+                    <strong><?= $row['Dias_Usados'] ?? '—' ?></strong>
+                  </div>
+                </div>
+                <div class="row text-muted mb-2">
+                  <div class="col-12">
+                    <small>Antigüedad:</small><br>
+                    <strong><?= $row['Antiguedad'] ?? '—' ?></strong>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer bg-light d-flex justify-content-between">
+                <a href="../Back/changeState.php?Id=<?= $row['Id'] ?>&Response=Aprobada&Fecha_Inicio=<?= $row['Fecha_Inicio'] ?>&Fecha_Fin=<?= $row['Fecha_Fin'] ?>&Nombre=<?= $row['Empleado'] ?>" class="btn btn-success btn-sm w-48">
+                  <i class="bi bi-check-lg"></i> Aprobar
+                </a>
+                <a href="../Back/changeState.php?Id=<?= $row['Id'] ?>&Response=Rechazado&Fecha_Inicio=<?= $row['Fecha_Inicio'] ?>&Fecha_Fin=<?= $row['Fecha_Fin'] ?>&Nombre=<?= $row['Empleado'] ?>" class="btn btn-danger btn-sm w-48">
+                  <i class="bi bi-x"></i> Rechazar
+                </a>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php else: ?>
+      <div class="alert alert-info text-center mt-4">No hay registros por mostrar.</div>
+    <?php endif; ?>
   </div>
+
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

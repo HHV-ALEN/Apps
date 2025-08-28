@@ -6,7 +6,7 @@ session_start();
 if (isset($_POST['query'])) {
     $search = mysqli_real_escape_string($conn, $_POST['query']);
 
-$query = "SELECT MIN(Id) as Id, Nombre, MIN(Clave_Sap) as Clave_Sap 
+$query = "SELECT MIN(Id) as Id, Id_Original,Nombre, MIN(Clave_Sap) as Clave_Sap 
           FROM clientes 
           WHERE Nombre LIKE '%$search%' OR Clave_Sap LIKE '%$search%' 
           GROUP BY Nombre
@@ -19,6 +19,7 @@ $query = "SELECT MIN(Id) as Id, Nombre, MIN(Clave_Sap) as Clave_Sap
     while ($row = mysqli_fetch_assoc($result)) {
         $data[] = [
             'id' => $row['Id'],
+            'Id_Original' => $row['Id_Original'],
             'nombre' => "{$row['Nombre']} ({$row['Clave_Sap']})"
         ];
     }

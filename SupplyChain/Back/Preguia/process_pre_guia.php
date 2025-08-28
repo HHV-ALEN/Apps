@@ -1,4 +1,8 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 date_default_timezone_set('America/Mexico_City');
 require_once("../../../Back/config/config.php");
 $conn = connectMySQLi();
@@ -8,12 +12,14 @@ session_start();
 
 $firstname = $_SESSION['Name'];
 $id_salida = $_POST['pedido_id'];
+/*
 echo "<h1>Información general: </h1>";
 echo "<br><strong> Nombre:</strong> " . $firstname;
 echo "<br><strong>Información del Envio: </strong>";
 print_r($_POST);
 echo "<br><strong> ID Salida: </strong> " . $id_salida;
 echo "<hr>";
+*/
 
 $Tipo_Doc = $_POST['Tipo_Doc'];
 $clienteNombre = $_POST['clienteNombre'];
@@ -26,6 +32,7 @@ $cliente_intermedio = $_POST['Cliente_Intermedio'] ?? "No Asignado";
 $Fecha_Entregado = $_POST['fecha_entregado'] ?? "N/A";
 $Fecha_Actual = date("Y-m-d H:i:s");
 
+/*
 echo "<br><strong>Información de la preguía:</strong>";
 echo "<br><strong> Id Seleccionado:</strong> " . $id_salida;
 echo "<br><strong> Cliente:</strong> " . $clienteNombre;
@@ -37,7 +44,7 @@ echo "<br><strong> Metodo de Pago: </strong>" . $Metodo_Pago;
 echo "<br><strong> Cliente Intermedio: </strong>" . $cliente_intermedio;
 echo "<br><strong> Fecha Actual: </strong>" . $Fecha_Actual;
 echo "<br><strong> Fecha de Entregado: </strong>" . $Fecha_Entregado;
-
+*/
 /// -> Cliente Pasa, Entregado por Vendedor, Proveedor Recolecta
 $OtrasOpciones = [
     "Cliente Pasa",
@@ -55,14 +62,14 @@ if (!empty($_POST['Calle'])) {
     $estado = $_POST['Estado'];
     $cp = $_POST['CP'];
 
+    /*
     echo "<hr><br><strong>Información de la dirección:</strong>";
     echo "<br><strong> Calle:</strong> " . $calle;
     echo "<br><strong> Colonia:</strong> " . $colonia;
     echo "<br><strong> Ciudad:</strong> " . $ciudad;
     echo "<br><strong> Estado:</strong> " . $estado;
     echo "<br><strong> CP:</strong> " . $cp;
-
-
+    */
     $query_update_cliente = "UPDATE clientes SET Calle = '$calle', Colonia = '$colonia', Ciudad = '$ciudad', Estado = '$estado', CP = '$cp' WHERE Nombre = '$nombre'";
     if ($conn->query($query_update_cliente) === TRUE) {
         echo "<br><strong>Actualización de cliente exitosa</strong><br>";
@@ -71,37 +78,112 @@ if (!empty($_POST['Calle'])) {
     }
 }
 
+/*
+echo "<br> <strong>Otras Opciones fuera de los choferes: </strong>";
+print_r($OtrasOpciones);
+echo "<br>";
+*/
+
+echo "<br> Chofer Asignado: " . $Chofer_Asignado;
+
+
 
 /// Si $Chofer_Asignado esta en las opciones de $OtrasOpciones:
 if (in_array($Chofer_Asignado, $OtrasOpciones)) {
-    echo "<strong><br>El chofer asignado no es una de las opciones de Otras Opciones</strong>";
-    /// 4.- Actualizar el estatus de la salida
-    $updateSalida = "UPDATE salidas SET Estado = 'Envios', Id_Status = 26, Urgencia = 'Nada'  WHERE Id = '$id_salida'";
-    if ($conn->query($updateSalida) === TRUE) {
-        echo "<br><strong>Actualización de salida exitosa</strong>";
-    } else {
-        echo "<br><strong>Error al actualizar la salida: </strong>" . $conn->error;
-    }
+    echo "<strong><br>El chofer asignado es una de las opciones de Otras Opciones</strong>";
 
-    // Registro en Preguia
-    $insertPreGuia = "INSERT INTO preguia
-    (Id_Salida, Chofer, Fecha, Fecha_Entregado) VALUES 
-    ('$id_salida', '$Chofer_Asignado', '$Fecha_Actual', '$Fecha_Entregado')";
-    if ($conn->query($insertPreGuia) === TRUE) {
-        echo "<br><strong>Registro de preguía exitoso</strong>";
-    } else {
-        echo "<br><strong>Error al registrar la preguía: </strong>" . $conn->error;
-    }
+    // Si $Chofer_Asignado == Directo o Reembarque
+    if ($Tipo_Doc == 'Directo' || $Tipo_Doc == 'Reembarque') {
+        echo "<br> Se muestra Información de la Preguia ";
 
-    $insertBitacora = "INSERT INTO bitacora (Id_Salida, Responsable, Fecha, Accion)
+
+        /// 4.- Actualizar el estatus de la salida
+        echo "<br> Actualización en Tabla Salidas: ";
+        $updateSalida = "UPDATE salidas SET Estado = 'Envios', Id_Status = 26, Urgencia = 'Nada'  WHERE Id = '$id_salida'";
+        if ($conn->query($updateSalida) === TRUE) {
+            echo "<br><strong>Actualización de salida exitosa</strong>";
+        } else {
+            echo "<br><strong>Error al actualizar la salida: </strong>" . $conn->error;
+        }
+
+        /* Registro en Preguia
+        echo "<br> Inserción en Tabla Preguia: ";
+        echo "<br> Variables para la inserción: ";
+        echo "<br> Id Salida: " . $id_salida;
+        echo "<br> Chofer Asignado: " . $Chofer_Asignado;
+        echo "<br> Fecha Actual: " . $Fecha_Actual;
+        echo "<br> Fecha Entregado: " . $Fecha_Entregado;
+        */
+
+        $insertPreGuia = "INSERT INTO preguia
+        (Id_Salida, Chofer, Fecha) VALUES 
+        ('$id_salida', '$Chofer_Asignado', '$Fecha_Actual')";
+
+        if ($conn->query($insertPreGuia) === TRUE) {
+            echo "<br><strong>Registro de preguía exitoso</strong>";
+        } else {
+            echo "<br><strong>Error al registrar la preguía: </strong>" . $conn->error;
+        }
+        /// 2.- rEGISTRO DE Doc_preguia
+        /// Obtener el Ultimo Id 
+        echo "<br> Obtener el Ultimo Id de la tabla Preguia: ";
+        $SQL_Last_Id_Preguia = "SELECT MAX(Id) AS Ultimo_Id FROM preguia";
+        $result = mysqli_query($conn, $SQL_Last_Id_Preguia);
+
+        if ($result && mysqli_num_rows($result) > 0) {
+            $row = mysqli_fetch_assoc($result);
+            $ultimo_id = $row['Ultimo_Id'];
+            echo "<br><strong>Último Id: </strong>" . $ultimo_id;
+        } else {
+            echo "<br>No se encontraron registros en la tabla preguia";
+        }
+
+        echo "<br> Insertar En la tabla doc_preguia: ";
+        $insertDocPreGuia = "INSERT INTO doc_preguia (Tipo_Doc, Id_Preguia, Id_Salida, Responsable, Fecha)
+    VALUES ('$Tipo_Doc', $ultimo_id, '$id_salida', '$firstname', '$Fecha_Actual')";
+        if ($conn->query($insertDocPreGuia) === TRUE) {
+            echo "<br><strong>Registro de doc_preguia exitoso</strong>";
+        } else {
+            echo "<br><strong>Error al registrar la doc_preguia: </strong>" . $conn->error;
+        }
+
+
+        echo "<br> Insertar En la tabla bitacora: ";
+        $insertBitacora = "INSERT INTO bitacora (Id_Salida, Responsable, Accion, Fecha)
     VALUES ('$id_salida', '$firstname', 'Registro de preguía ( $Chofer_Asignado )', '$Fecha_Actual')";
-    if ($conn->query($insertBitacora) === TRUE) {
-        echo "<br><strong>Registro de bitacora exitoso</strong>";
-    } else {
-        echo "<br><strong>Error al registrar la bitacora: </strong>" . $conn->error;
+        if ($conn->query($insertBitacora) === TRUE) {
+            echo "<br><strong>Registro de bitacora exitoso</strong>";
+        } else {
+            echo "<br><strong>Error al registrar la bitacora: </strong>" . $conn->error;
+        }
+    } elseif ($Tipo_Doc == 'Ruta') {
+        echo "<br> Se Envia a estado COMPLETADO";
+
+        $updateSalida = "UPDATE salidas SET Estado = 'Completado', Id_Status = 27, Urgencia = 'Nada'  WHERE Id = '$id_salida'";
+        if ($conn->query($updateSalida) === TRUE) {
+            echo "<br><strong>Actualización de salida exitosa</strong>";
+        } else {
+            echo "<br><strong>Error al actualizar la salida: </strong>" . $conn->error;
+        }
+
+        $insertPreGuia = "INSERT INTO preguia
+        (Id_Salida, Chofer, Tipo_Doc, Fecha) VALUES 
+        ('$id_salida', '$Chofer_Asignado', '$Tipo_Doc' ,'$Fecha_Actual')";
+
+        if ($conn->query($insertPreGuia) === TRUE) {
+            echo "<br><strong>Registro de preguía exitoso</strong>";
+        } else {
+            echo "<br><strong>Error al registrar la preguía: </strong>" . $conn->error;
+        }
+
+        $insertBitacora = "INSERT INTO bitacora (Id_Salida, Responsable,Accion, Fecha)
+    VALUES ('$id_salida', '$firstname', 'Registro de preguía ( $Chofer_Asignado )', '$Fecha_Actual')";
+        if ($conn->query($insertBitacora) === TRUE) {
+            echo "<br><strong>Registro de bitacora exitoso</strong>";
+        } else {
+            echo "<br><strong>Error al registrar la bitacora: </strong>" . $conn->error;
+        }
     }
-
-
 } else {
     echo "<strong>El chofer asignado no es una de las opciones de Otras Opciones</strong>";
     /// 4.- Actualizar el estatus de la salida
@@ -125,10 +207,24 @@ if (in_array($Chofer_Asignado, $OtrasOpciones)) {
     } else {
         echo "<br><strong>Error al registrar la preguía: </strong>" . $conn->error;
     }
+
     /// 2.- rEGISTRO DE Doc_preguia
-    $ultimo_Id_preguia = $conn->insert_id;
+    /// Obtener el Ultimo Id 
+    echo "<br> ----------------------------------------------------------------------------------------- <br>";
+    $SQL_Last_Id_Preguia = "SELECT MAX(Id) AS Ultimo_Id FROM preguia";
+    $result = mysqli_query($conn, $SQL_Last_Id_Preguia);
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_assoc($result);
+        $ultimo_id = $row['Ultimo_Id'];
+        echo "<br><strong>Último Id: </strong>" . $ultimo_id;
+    } else {
+        echo "<br>No se encontraron registros en la tabla preguia";
+    }
+
+
     $insertDocPreGuia = "INSERT INTO doc_preguia (Tipo_Doc, Id_Preguia, Id_Salida, Responsable, Fecha)
-    VALUES ('$Tipo_Doc', '$ultimo_Id_preguia', '$id_salida', '$firstname', '$Fecha_Actual')";
+    VALUES ('$Tipo_Doc', $ultimo_id, '$id_salida', '$firstname', '$Fecha_Actual')";
     if ($conn->query($insertDocPreGuia) === TRUE) {
         echo "<br><strong>Registro de doc_preguia exitoso</strong>";
     } else {

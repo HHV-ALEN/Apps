@@ -3,11 +3,11 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-
+session_start();
 
 require_once("../../../Back/config/config.php"); //Contiene las variables de configuracion para conectar a la base de datos
 $conn = connectMySQLi();
-session_start();
+$Nombre = $_SESSION['Name'];
 date_default_timezone_set('America/Mexico_City');
 $respuestas = $_POST['respuestas'];       // [ pregunta_id => respuesta_id ]
 $id_curso   = $_POST['id_curso'];
@@ -17,6 +17,26 @@ $fecha   = date('Y-m-d H:i:s');
 
 $correctas   = 0;
 $total_pregs = count($respuestas);
+
+$sql = "
+  SELECT COALESCE(MAX(Intento), 0) + 1 AS siguiente_intento
+  FROM   academy_test_responses
+  WHERE  Nombre   = ?
+    AND  Curso = ?
+";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('si', $Nombre, $id_curso); // ajusta $capitulo si lo necesitas
+$stmt->execute();
+$stmt->bind_result($siguienteIntento);
+$stmt->fetch();
+$stmt->close();
+
+/* 2) $siguienteIntento ya contiene:
+      ▸ 1  si nunca ha respondido
+      ▸ n+1 si n era el último intento */
+echo "Próximo intento: " . $siguienteIntento;
+
 
 // ▸ GUARDA cada respuesta y cuenta aciertos
 foreach ($respuestas as $pregunta_id => $respuesta_id) {
@@ -37,21 +57,24 @@ foreach ($respuestas as $pregunta_id => $respuesta_id) {
     $texto_respuesta = $row['Respuesta'];
     $estado          = $es_correcta ? 'Correcto' : 'Incorrecto';
 
+
     // Insertar en tabla de respuestas
     $ins = $conn->prepare(
       "INSERT INTO academy_test_responses
-       (Nombre, Pregunta, Respuesta, Estado, Fecha, Curso, Capitulo)
-       VALUES (?,?,?,?,?,?,?)"
+       (Intento, Nombre, Pregunta, Respuesta, Estado, Fecha, Curso, Capitulo, Responsable)
+       VALUES (?,?,?,?,?,?,?,?,?)"
     );
     $ins->bind_param(
-      "sisssii",
+      "isisssiis",
+      $siguienteIntento,
       $usuario,
       $pregunta_id,
       $texto_respuesta,
       $estado,
       $fecha,
       $id_curso,
-      $capitulo
+      $capitulo, 
+      $Nombre
     );
     $ins->execute();
 
@@ -61,20 +84,16 @@ foreach ($respuestas as $pregunta_id => $respuesta_id) {
 // ▸ Calcular porcentaje
 $porcentaje = ($correctas / $total_pregs) * 100;
 
-// ▸ Guardar resultado global si quieres
-$saveRes = $conn->prepare(
-  "INSERT INTO academy_test_responses
-   (Nombre, Curso, Estado, Fecha)
-   VALUES (?,?,?,?)"
-);
-$saveRes->bind_param(
-  "siii",
-  $usuario, $id_curso, $correctas, $fecha
-);
-$saveRes->execute();
-
 /* ---------- LOGICA DE APROBACIÓN ---------- */
 if ($porcentaje >= 80) {
+$completado = 1;
+  // Registrar la completación del examen - correctamente
+  $sql_completado = "INSERT INTO academy_completado (Usuario, Curso, Completado, Fecha, Calificacion)
+                    VALUES (?, ?, ?, ?, ?)";
+  $stmt_completado = $conn->prepare($sql_completado);
+  $stmt_completado->bind_param('siisi', $usuario, $id_curso, $completado, $fecha, $porcentaje);
+  $stmt_completado->execute();
+
     // Éxito: redirige a página de certificado
     $_SESSION['examen_msg'] = "🎉 ¡Felicidades! Aprobaste con $porcentaje % de aciertos.";
     header("Location: ../../certificado.php?id_curso=$id_curso");
