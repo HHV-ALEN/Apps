@@ -59,12 +59,14 @@ $Sucursal = $Salida['Sucursal'];
 
 // Consulta en la tabla "cliente"
 //echo "<br> Id Cliente: " . $id_cliente;
-$Cliente_query = "SELECT * FROM clientes WHERE Id = $id_cliente";
+$Cliente_query = "SELECT * FROM clientes WHERE Id_Original = $id_cliente";
 $Cliente_result = mysqli_query($conn, $Cliente_query);
 $Cliente = mysqli_fetch_array($Cliente_result);
 $nombre_cliente = $Cliente['Nombre'] ?? 'N/A';
 $rfc = $Cliente['RFC'] ?? 'N/A';
 $clave_sap = $Cliente['Clave_Sap'] ?? 'N/A';
+
+//echo "<br> Nombre Cliente: " . $nombre_cliente;
 
 //echo "<br> en minusculas: nombre_cliente: " . $nombre_cliente;
 
@@ -187,7 +189,18 @@ mysqli_data_seek($Imagen_result, 0);
 //echo "<br> ****************************************************************** <br>";
 
 $target_dir = "../Back/Files/img/"; // Carpeta donde se guardará la imagen
-$isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSION['User_Id'] == 33 || $_SESSION['User_Id'] == 10);
+$isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSION['User_Id'] == 33 || $_SESSION['User_Id'] == 10 || $_SESSION['User_Id'] == 117);
+
+$canAddSalidas = ($_SESSION['User_Id'] == 118 ||
+    $_SESSION['User_Id'] == 113 || $_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 117 ||
+    $_SESSION['User_Id'] == 58 || $_SESSION['User_Id'] ==  83 || $_SESSION['User_Id'] == 843);
+
+$CanFacture = ($_SESSION['User_Id'] == 118 ||
+    $_SESSION['User_Id'] == 113 || $_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 117 ||
+    $_SESSION['User_Id'] == 58);
+
+// echo "<br> User Id: " . $_SESSION['User_Id'];
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -335,18 +348,24 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                 </div>
 
                 <!-- Botón a la derecha, que se muestra solo en el estado Envíos -->
-                <?php if ($Estado == 'Envios' && $_SESSION['Departamento'] == 'Logistica' || $Estado == 'Envíos' && $_SESSION['Departamento'] == 'Logistica') { ?>
+
+                <?php
+                if ($Estado == 'Envios' && $_SESSION['Departamento'] == 'Logistica' || $Estado == 'Envios' && $_SESSION['Departamento'] == 'Logística') { ?>
                     <div>
                         <?php
                         // Botón para registrar Ruta de envio [1]
                         /// Verificar la tabla doc_preguia
+                        //echo "<br> Id_Salida: " . $id_salida;
 
-                        $DocPreguia_query = "SELECT * FROM doc_preguia WHERE Id_Salida = '$id_salida'";
+                        $DocPreguia_query = "SELECT * FROM doc_preguia WHERE Id_Salida = $id_salida";
                         $DocPreguia_result = mysqli_query($conn, $DocPreguia_query);
                         if (mysqli_num_rows($DocPreguia_result) > 0) {
                             $DocPreguia = mysqli_fetch_array($DocPreguia_result);
                             $Folio_Doc = $DocPreguia['Folio_Doc'] ?? 'N/A';
                             $Id_Preguia = $DocPreguia['Id_Preguia'] ?? 'N/A';
+
+                            //echo "<br> Folio Doc: " . $Folio_Doc;
+                            //echo "<br> Id_Preguia: " . $Id_Preguia;
                         ?>
                             <!-- Boton para abrir modal de registrar ruta de envio -->
                             <button class="btn btn-light btn-sm me-3" data-bs-toggle="modal" data-bs-target="#modalEnvios2">
@@ -376,7 +395,6 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
             $Metodo_Pago = $Chofer['Metodo_Pago'] ?? 'N/A';
             $Tipo_Doc = $Chofer['Tipo_Doc'] ?? 'N/A';
             $Fecha_Preguia = $Chofer['Fecha'] ?? 'N/A';
-            $Fecha_Entregado = $Chofer['Fecha_Entregado'] ?? 'N/A';
             ?>
 
             <div class="card-body p-4 text-center">
@@ -400,7 +418,6 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                         if (in_array($ChoferNombre, $OtrasOpciones)) {
                         ?>
                             <p class="mb-1"><strong>Envio:</strong> <?php echo $ChoferNombre; ?></p>
-                            <p class="mb-1"><strong>Fecha Entregado:</strong> <?php echo $Fecha_Entregado; ?></p>
                         <?php
                         } else {
                         ?>
@@ -456,8 +473,10 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                 $Guia_Reembarque = $DocPreguia['Guia_Reembarque'] ?? 'N/A';
                                 $Costo_Reembarque = $DocPreguia['Costo_Reembarque'] ?? 'N/A';
 
+
                                 if ($Tipo_Doc == 'Reembarque') {
                                     echo "<p class='mb-1'><strong>Folio de Guía:</strong> $Folio_Doc_Guia</p>";
+                                    echo "<p class='mb-1'><strong>Costo de la Guía:</strong> $Costo</p>";
                                     echo "<p class='mb-1'><strong>Id Preguia:</strong> $Id_Preguia</p>";
                                     echo "<p class='mb-1'><strong>Fecha de Envío:</strong> $Fecha_Envio</p>";
                                     echo "<p class='mb-1'><strong>Folio de Guía Reembarque:</strong> $Guia_Reembarque</p>";
@@ -598,7 +617,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
 
                         <!-- Hidden Inputs -->
                         <?php
-                        echo "<br><strong>Tipo de documento: </strong>" . $Tipo_Doc;
+                        //echo "<br><strong>Tipo de documento: </strong>" . $Tipo_Doc;
                         ?>
                         <input type="hidden" name="Id_Salida" value="<?php echo $id_salida; ?>">
                         <input type="hidden" name="Tipo_Doc" value="<?php echo $Tipo_Doc; ?>">
@@ -636,9 +655,16 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                     <label for="Tipo_doc" class="form-label">Tipo de Documento: </label>
                                     <input type="text" class="form-control" id="Tipo_doc" name="Tipo_doc" value="<?php echo $Tipo_Doc; ?>" readonly>
                                 </div>
+
+                            </div>
+                            <div class="row">
                                 <div class="mb-3 col-md-6">
                                     <label for="folio_doc" class="form-label">Folio de la Guia: </label>
                                     <input type="text" class="form-control" id="folio_doc" name="folio_doc">
+                                </div>
+                                <div class="mb-3 col-md-6">
+                                    <label for="folio_doc" class="form-label">Costo del Envio: </label>
+                                    <input type="text" class="form-control" id="CostoEnvio" name="CostoEnvio">
                                 </div>
                             </div>
                             <div class="row">
@@ -737,7 +763,10 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
 
                 <?php
                 /// Solo el tipo "Empaque" puede hacer uso de estos botones:
-                if ($Tipo_Usuario == 'Empaque' || $isGerente) {
+                if ($Tipo_Usuario == 'Empaque' || $isGerente || $canAddSalidas) {
+                    //echo "<br> Tipo Usuario: " . $Tipo_Usuario;
+                    //echo "<br> isGerente: " . $isGerente;
+                    //echo "<br> canAddSalidas: " . $canAddSalidas;  
                 ?>
                     <div class="row justify-content-center">
                         <div class="col-md-6 mb-2 mb-md-0">
@@ -804,12 +833,13 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                             <td><?php echo $Partida_B; ?></td>
                                             <td><?php echo $Cliente_Nombre_B; ?></td>
                                             <td><?php
+
                                                 if ($Archivo == '0') {
-                                                    echo " - Sin Factura";
-                                                } elseif ($Id_Factura == '1') {
+                                                    echo "Sin Factura";
+                                                } elseif ($Archivo == 'REMISION' || $Archivo == 'REMISION 2025.pdf') {
                                                     echo "<strong>Remisión</strong>";
                                                 } else {
-                                                    echo $Id_Factura;
+                                                    echo $Id_Factura_B;
                                                 }
                                                 ?></td>
                                             <td>
@@ -830,13 +860,16 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
 
                                                     if ($Estado_Original_DeSalida == 'Facturación') {
                                                         /// Se muestra boton de agregar Factura solo si esta en el estado de facturación
-                                                        if ($_SESSION['Departamento'] == 'Facturación' || $isGerente) {
+                                                        if ($_SESSION['Departamento'] == 'Facturación' || $CanFacture) {
                                                             if ($Id_Factura_B == '0' && $Archivo == '0') {
                                                         ?>
+                                                                <!-- Boton para Agregar Factura en Las entregas Base -->
                                                                 <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                                                    data-bs-target="#modalFacturacion_BASE<?php echo $Id_Salida_B; ?>">
-                                                                    <i class="fas fa-file-pdf"></i> Asignar Factura
+                                                                    data-bs-target="#modalFacturacion_BASE<?php echo $Id_Salida_B; ?>"
+                                                                    data-entrega="<?php echo $Id_Entrega_B; ?>">
+                                                                    <i class="fas fa-file-pdf"></i> Asignar Factura (<?php echo $Id_Entrega_B; ?>)
                                                                 </button>
+
                                                                 <a href="../Back/Facturas/addRemision.php?Id_Salida=<?php echo $Id_Salida_B; ?>&Parametro=Base" class="btn btn-outline-primary btn-sm">Agregar Remisión</a>
 
                                                             <?php
@@ -867,7 +900,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                             <td>
                                                 <?php
                                                 // Permitir Edición al area de Entrega Y Surtido, Empaque y A Raque
-                                                if ($isGerente || $_SESSION['Departamento'] == 'Empaque' || $_SESSION['Departamento'] == 'Entrega y Surtido') {
+                                                if ($isGerente || $_SESSION['Departamento'] == 'Empaque' || $_SESSION['Departamento'] == 'Entrega y Surtido' || $canAddSalidas) {
                                                 ?>
                                                     <!-- Botón para abrir modal para editar la información de la etiqueta Base -->
                                                     <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
@@ -876,7 +909,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                                     </button>
 
                                                     <!-- Botón para eliminar con SweetAlert -->
-                                                    <button class="btn btn-danger btn-sm eliminar-etiqueta-base"
+                                                    <button type="button" class="btn btn-danger btn-sm eliminar-etiqueta-base"
                                                         data-id="<?php echo $Id_Contenido; ?>">
                                                         <i class="fas fa-trash-alt"></i> Eliminar
                                                     </button>
@@ -959,11 +992,17 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                             </table>
 
                             <!-- Button trigger modal -->
-                            <div class="mt-6">
-                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarEntrega">
-                                    ➕ Agregar Nueva Entrega
-                                </button>
-                            </div>
+                            <?php
+                            if ($isGerente || $canAddSalidas) {
+                            ?>
+                                <div class="mt-6">
+                                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarEntrega">
+                                        ➕ Agregar Nueva Entrega
+                                    </button>
+                                </div>
+                            <?php
+
+                            } ?>
 
                         </div>
                     </div>
@@ -1037,7 +1076,6 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
         </div>
     </div>
 
-
     <!-- Etiquetas Fusionadas -->
     <div class="container mb-3">
         <div class="card">
@@ -1085,7 +1123,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
 
                                                 if ($Id_Factura_Fusion == '0') {
                                                     echo "Sin Factura";
-                                                } elseif ($Id_Factura_Fusion == '1') {
+                                                } elseif ($Archivo_Fusion != '0' && $Id_Factura_Fusion == '0') {
                                                     echo " Remisión";
                                                 } else {
                                                     echo $Id_Factura_Fusion;
@@ -1093,12 +1131,19 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                                 ?></td>
                                             <td>
                                                 <?php
-                                                if ($Estado_Original_DeSalida == 'Facturación' && $_SESSION['Departamento'] == 'Facturación') {
+                                                //Dejar entrar si $_SESSION['User_Id'] = 34 o 1
+                                                if (
+                                                    $Estado_Original_DeSalida == 'Facturación' &&
+                                                    (
+                                                        $_SESSION['Departamento'] == 'Facturación' || $CanFacture
+
+                                                    )
+                                                ) {
                                                     if ($Id_Factura_Fusion == '0' && $Archivo_Fusion == '0') {
                                                 ?>
                                                         <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
                                                             data-bs-target="#modalFacturacion<?php echo $Id_Relacion; ?>">
-                                                            <i class="fas fa-file-pdf"></i> Asignar Factura
+                                                            <i class="fas fa-file-pdf"></i> Asignar Factura (Fusionada)
                                                         </button>
                                                         <a href="../Back/Facturas/addRemision.php?Id_Salida_Relacion=<?php echo $Id_Relacion; ?>&Parametro=Fusion&Id_Salida=<?php echo $id_salida; ?>"
                                                             class="btn btn-outline-primary btn-sm">Agregar Remisión</a>
@@ -1208,9 +1253,9 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                                     </div>
                                                 </div>
                                             </td>
-
                                         </tr>
-                                        <!-- Modal para esta fila -->
+
+                                        <!-- Modal Para asignar factura a la etiqueta Fusionada: s-->
                                         <div class="modal fade" id="modalFacturacion<?php echo $Id_Relacion; ?>" tabindex="-1" aria-labelledby="modalFacturacion<?php echo $Id_Relacion; ?>Label" aria-hidden="true">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
@@ -1308,9 +1353,9 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                             <td><?php echo $Destino_Consolidado; ?></td>
                                             <td><?php echo $Nombre_Cliente_Consolidado; ?></td>
                                             <td><?php
-                                                if ($Id_Factura_Consolidado == '0') {
+                                                if ($Id_Factura_Consolidado == '0' && $Archivo_Consolidado == '0') {
                                                     echo "Sin Factura";
-                                                } elseif ($Id_Factura_Consolidado == '1') {
+                                                } elseif ( $Archivo_Consolidado != '0') {
                                                     echo " Remisión";
                                                 } else {
                                                     echo $Id_Factura_Consolidado;
@@ -1545,7 +1590,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                 <h5>Información del Empaque</h5>
                 <?php
                 /// Solo el tipo "Empaque" puede hacer uso de estos botones:
-                if ($Tipo_Usuario == 'Empaque') {
+                if ($Tipo_Usuario == 'Empaque' || $Tipo_Usuario == 'Logistica' || $canAddSalidas) {
                 ?>
                     <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregarEmpaque">
                         <i class="fas fa-plus"></i> Agregar Empaque
@@ -1578,6 +1623,16 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                                     <div class="text-center">
                                         <a href="../Back/Empaque/deleteEmpaqueAnidado.php?Id_Salida=<?php echo $id_salida; ?>&Id_Contenido=<?php echo $Id_Contenido; ?>"
                                             class="btn btn-danger btn-sm">Eliminar</a>
+
+                                        <!-- Botón para abrir modal -->
+                                        <button class="btn btn-warning btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editEmpaqueModal"
+                                            data-id-contenedor="<?php echo $Id_Contenido; ?>"
+                                            data-contenedor="<?php echo $Contenedor; ?>"
+                                            data-cantidad="<?php echo $Cantidad; ?>">
+                                            Editar
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1805,6 +1860,61 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
     </div>
 </div>
 
+
+<!-- Modal Editar Empaque -->
+<div class="modal fade" id="editEmpaqueModal" tabindex="-1" aria-labelledby="editEmpaqueLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="../Back/Empaque/editEmpaque.php" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEmpaqueLabel">Editar Empaque</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Id (solo lectura) -->
+                <div class="mb-3">
+                    <label for="Id" class="form-label">ID</label>
+                    <input type="text" class="form-control" id="Id" name="Id_Contenido" readonly>
+                </div>
+                <!-- Select de contenedor -->
+                <div class="col-md-5 mb-3">
+                    <label for="id_contenedor" class="form-label">Contenedor</label>
+                    <select class="form-select contenedor-select" name="contenedor" required>
+                        <option value="">Selecciona un Contenedor</option>
+                        <option value="Caja">Caja</option>
+                        <option value="Paquete">Paquete</option>
+                        <option value="Rollo">Rollo</option>
+                        <option value="Carrete">Carrete</option>
+                        <option value="Tarima">Tarima</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+                <!-- Campo oculto para "Otro" -->
+                <div class="col-md-5 mb-3 contenedor-otro" style="display: none;">
+                    <label for="otro_contenedor" class="form-label">Especificar otro
+                        contenedor</label>
+                    <input type="text" class="form-control" name="otro_contenedor">
+                </div>
+
+                <!-- Input cantidad -->
+                <div class="mb-3">
+                    <label for="Cantidad" class="form-label">Cantidad</label>
+                    <input type="number" class="form-control" id="Cantidad" name="Cantidad" required>
+                </div>
+
+                <!-- Id_Salida oculto -->
+                <input type="hidden" name="Id_Salida" value="<?php echo $id_salida; ?>">
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 <!--- Zona de Modales -->
 <!-- Modal para Asignar Factura a la Etiqueta Base -->
 <div class="modal fade" id="modalFacturacion_BASE<?php echo $Id_Salida_B; ?>" tabindex="-1"
@@ -1823,13 +1933,16 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="Folio_Orden" class="form-label">Folio Orden:</label>
+
+                            <!-- Input Folio Entrega: -->
                             <input type="text" class="form-control" id="Folio_Orden" name="Folio_Orden"
                                 placeholder="Folio de la Orden" value="<?php echo $Id_Orden_Venta_B; ?>" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="Folio_Entrega" class="form-label">Folio Entrega:</label>
-                            <input type="text" class="form-control" id="Folio_Entrega" name="Folio_Entrega"
-                                placeholder="Folio de la Entrega" value="<?php echo $Id_Entrega_B; ?>" required>
+                            <label for="Folio_Entrega_<?php echo $Id_Salida_B; ?>" class="form-label">Folio Entrega:</label>
+                            <input type="text" class="form-control folio-entrega-input"
+                                id="Folio_Entrega_<?php echo $Id_Salida_B; ?>"
+                                name="Folio_Entrega" placeholder="Folio de la Entrega" required>
                         </div>
                     </div>
                     <div class="row">
@@ -1853,6 +1966,32 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Selecciona todos los botones que abren modales
+    const buttons = document.querySelectorAll('[data-bs-toggle="modal"][data-entrega]');
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Obtiene el valor del data-entrega
+            const entregaValue = this.getAttribute('data-entrega');
+            
+            // Espera a que el modal se muestre completamente
+            const targetModal = document.querySelector(this.getAttribute('data-bs-target'));
+            
+            // Cuando el modal se muestra, actualiza el input
+            targetModal.addEventListener('shown.bs.modal', function() {
+                // Busca el input dentro de este modal específico
+                const input = this.querySelector('.folio-entrega-input');
+                if (input) {
+                    input.value = entregaValue;
+                }
+            }, { once: true }); // { once: true } asegura que el evento solo se ejecute una vez
+        });
+    });
+});
+</script>
+
 <!-- Modal para mostrar imagen expandida -->
 <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -1863,6 +2002,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
         </div>
     </div>
 </div>
+
 
 <!-- Modal para fusionar etiquetas -->
 <div class="modal fade" id="modalFusionEtiquetas" tabindex="-1" aria-labelledby="modalFusionEtiquetasLabel"
@@ -2063,8 +2203,7 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
 </div>
 
 <!-- Modal para Agregar Información del Empaque -->
-<div class="modal fade " id="modalAgregarEmpaque" tabindex="-1" aria-labelledby="modalAgregarEmpaqueLabel"
-    aria-hidden="true">
+<div class="modal fade" id="modalAgregarEmpaque" tabindex="-1" aria-labelledby="modalAgregarEmpaqueLabel" aria-hidden="true">
     <form action="../Back/Empaque/addEmpaque.php?id_salida=<?php echo $id_salida; ?>" method="POST" id="form_agregar_empaque">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -2131,8 +2270,12 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     <button type="submit" class="btn btn-primary">Guardar</button>
                 </div>
+            </div>
+        </div>
     </form>
+
 </div>
+
 
 
 <!-- Modal para la Ruta -->
@@ -2185,13 +2328,61 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
 <!-- Bootstrap Bundle JS (incluye Popper) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+
+<!-- Modal para editar empaque -->
+<script>
+    const editEmpaqueModal = document.getElementById('editEmpaqueModal');
+    editEmpaqueModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+
+        // Tomar valores de data-attributes
+        const id = button.getAttribute('data-id-contenedor');
+        const contenedor = button.getAttribute('data-contenedor');
+        const cantidad = button.getAttribute('data-cantidad');
+
+        // Pasarlos al modal
+        editEmpaqueModal.querySelector('#Id').value = id;
+        editEmpaqueModal.querySelector('#Cantidad').value = cantidad;
+
+        // Seleccionar opción correcta en el select
+        const select = editEmpaqueModal.querySelector('#Contenedor');
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === contenedor) {
+                select.selectedIndex = i;
+                break;
+            }
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const selectContenedor = document.querySelector(".contenedor-select");
+        const otroDiv = document.querySelector(".contenedor-otro");
+        const otroInput = otroDiv.querySelector("input");
+
+        selectContenedor.addEventListener("change", function() {
+            if (this.value === "Otro") {
+                otroDiv.style.display = "block";
+                otroInput.required = true; // Lo hacemos obligatorio si selecciona "Otro"
+            } else {
+                otroDiv.style.display = "none";
+                otroInput.value = ""; // Limpiamos el campo
+                otroInput.required = false;
+            }
+        });
+    });
+</script>
+
+
+
 <!-- Eliminar Etiqueta base con sweet alert -->
 <script>
+    const idSalida = <?= isset($id_salida) ? (int)$id_salida : 0 ?>;
+    console.log("ID Salida:", idSalida);
+
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.eliminar-etiqueta-base').forEach(btn => {
             btn.addEventListener('click', function() {
                 const idContenido = this.getAttribute('data-id');
-                const idSalida = <?= $id_salida ?>
                 console.log("iD Salida: ", idSalida);
 
                 Swal.fire({
@@ -2363,8 +2554,6 @@ $isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 || $_SESSI
     const estadoActual = <?php echo $estadoActual; ?>; // Current state from PHP
     const id_salida = "<?php echo $id_salida; ?>"; // Current shipment ID from PHP
     const usuario = "<?php echo $Nombre_Completo; ?>"; // Current user from PHP
-
-
 
     // Initialize timeline
     actualizarTimeline(estadoActual);

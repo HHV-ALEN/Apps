@@ -33,7 +33,7 @@ if (isset($_SESSION['error'])) {
     <!-- Error Message Display -->
     <!-- Error Message Display -->
     <?php if (!empty($errorMessage)): ?>
-      class="error-label" id="errorLabel">
+      <div class="error-label" id="errorLabel">
       <?php echo htmlspecialchars($errorMessage); ?>
   </div>
 <?php endif; ?>

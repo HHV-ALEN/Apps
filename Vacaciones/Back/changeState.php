@@ -16,6 +16,8 @@ if ($Response == "Aprobada") {
     $sql_update_vacaciones = "UPDATE vacaciones_solicitudes SET Estado = 'Aprobada' WHERE Id = '$Id'";
     $accion = "Aprobada";
     /// Enviar notificación de Aceptación al solicitante y a R.H.
+    header('Location: mail/AprobarSolicitud.php?Id='.$Id);
+
 
 
 } elseif ($Response == "Rechazado") {

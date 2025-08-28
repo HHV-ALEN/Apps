@@ -41,6 +41,39 @@ $result = $conn->query($query);
         .page-link {
             color: #0d6efd;
         }
+
+        .autocomplete {
+            position: relative;
+        }
+
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #d4d4d4;
+            border-bottom: none;
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .autocomplete-items div {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #fff;
+            border-bottom: 1px solid #d4d4d4;
+        }
+
+        .autocomplete-items div:hover {
+            background-color: #e9e9e9;
+        }
+
+        .autocomplete-active {
+            background-color: #0d6efd !important;
+            color: #ffffff;
+        }
     </style>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11">
@@ -272,9 +305,11 @@ $result = $conn->query($query);
                         <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>
+            </ul>
+        </nav>
 
     </div>
-    </div>
+
 
     <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -329,9 +364,11 @@ $result = $conn->query($query);
                             <label for="edit-departamento">Departamento:</label>
                             <input type="text" class="form-control" name="departamento" id="edit-departamento">
                         </div>
-                        <div class="mb-3">
+
+                        <div class="mb-3 autocomplete">
                             <label for="edit-jerarquia">Jerarquía:</label>
-                            <input type="text" class="form-control" name="jerarquia" id="edit-jerarquia">
+                            <input type="text" class="form-control" id="edit-jerarquia" placeholder="Escribe para buscar usuarios..." autocomplete="off">
+                            <input type="hidden" name="jerarquia" id="jerarquia-id">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -347,6 +384,111 @@ $result = $conn->query($query);
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Bootstrap 5 Bundle con Popper incluido -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Función autocompletar
+        function autocomplete(inp, arr) {
+            var currentFocus;
+
+            inp.addEventListener("input", function(e) {
+                var a, b, i, val = this.value;
+                closeAllLists();
+
+                if (!val) {
+                    return false;
+                }
+                currentFocus = -1;
+
+                a = document.createElement("DIV");
+                a.setAttribute("id", this.id + "autocomplete-list");
+                a.setAttribute("class", "autocomplete-items");
+
+                this.parentNode.appendChild(a);
+
+                for (i = 0; i < arr.length; i++) {
+                    if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+                        b = document.createElement("DIV");
+                        b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                        b.innerHTML += arr[i].substr(val.length);
+                        b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+
+                        b.addEventListener("click", function(e) {
+                            inp.value = this.getElementsByTagName("input")[0].value;
+                            document.getElementById("jerarquia-id").value = inp.value;
+                            closeAllLists();
+                        });
+
+                        a.appendChild(b);
+                    }
+                }
+            });
+
+            inp.addEventListener("keydown", function(e) {
+                var x = document.getElementById(this.id + "autocomplete-list");
+                if (x) x = x.getElementsByTagName("div");
+
+                if (e.keyCode == 40) { // Flecha abajo
+                    currentFocus++;
+                    addActive(x);
+                } else if (e.keyCode == 38) { // Flecha arriba
+                    currentFocus--;
+                    addActive(x);
+                } else if (e.keyCode == 13) { // Enter
+                    e.preventDefault();
+                    if (currentFocus > -1) {
+                        if (x) x[currentFocus].click();
+                    }
+                }
+            });
+
+            function addActive(x) {
+                if (!x) return false;
+                removeActive(x);
+
+                if (currentFocus >= x.length) currentFocus = 0;
+                if (currentFocus < 0) currentFocus = (x.length - 1);
+
+                x[currentFocus].classList.add("autocomplete-active");
+            }
+
+            function removeActive(x) {
+                for (var i = 0; i < x.length; i++) {
+                    x[i].classList.remove("autocomplete-active");
+                }
+            }
+
+            function closeAllLists(elmnt) {
+                var x = document.getElementsByClassName("autocomplete-items");
+                for (var i = 0; i < x.length; i++) {
+                    if (elmnt != x[i] && elmnt != inp) {
+                        x[i].parentNode.removeChild(x[i]);
+                    }
+                }
+            }
+
+            document.addEventListener("click", function(e) {
+                closeAllLists(e.target);
+            });
+        }
+
+        console.log("Antes de la funcion cargarUsuarios");
+
+        // Obtener usuarios desde el servidor
+        function cargarUsuarios() {
+            fetch('obtener_usuarios.php')
+                .then(response => response.json())
+                .then(data => {
+                    //console.log('Usuarios obtenidos:', data);
+                    // Inicializar autocompletado
+                    autocomplete(document.getElementById("edit-jerarquia"), data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Cargar usuarios cuando el documento esté listo
+        document.addEventListener("DOMContentLoaded", cargarUsuarios);
+    </script>
+
     <script>
         // Llenar el modal de edición con los datos del usuario:
         document.addEventListener('DOMContentLoaded', function() {

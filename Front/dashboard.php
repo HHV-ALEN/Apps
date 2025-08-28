@@ -51,10 +51,12 @@ $conn = connectMySQLi();
             if ($_SESSION['Role'] == 'Control') {
             ?>
               <a href="../Academy/index.php" class="btn btn-primary">Index - Academy</a>
-              <a href="../SupplyChain/Front/compras.php" class="btn btn-primary">Compras</a>
+              <a href="../Compras/compras.php" class="btn btn-primary">Compras</a>
               <a href="../RIO/index.php" class="btn btn-primary">RIO</a>
               <a href="../IA/index.php" class="btn btn-primary">IA</a>
               <a href="../SupplyChain/index.php" class="btn btn-primary">SupplyChain</a>
+              <a href="match_clientes.php" class="btn btn-primary">Match Clientes</a>
+              <a href="../SupplyChain/listadoAsignado.php" class="btn btn-primary">SupplyChain - Asignado</a>
             <?php
             }
             ?>
@@ -293,7 +295,7 @@ $conn = connectMySQLi();
             <?php endif; ?>
             <?php if ($_SESSION['Role'] != 'Empleado') { ?>
               <a href="../Vacaciones/Front/listado_revision.php" class="btn btn-warning flex-grow-1">
-                <i class="bi bi-clock-history me-2"></i>Pendientes
+                <i class="bi bi-clock-history me-2"></i>Solicitudes Pendientes
               </a>
             <?php } ?>
           </div>
@@ -344,73 +346,55 @@ $conn = connectMySQLi();
         <h4 class="mb-4">Funciones Disponibles</h4>
         <hr>
         <?php
-        // Define the user's role and area
-        print_r($_SESSION);
-        $role = $_SESSION['Role'];
-        $Area_Del_Personal = $_SESSION['Area'];
-
-        echo "<br> Area del Personal: " . $Area_Del_Personal;
-        
-        if($Area_Del_Personal = 'Entrega y Surtido'){
-          $Area_Del_Personal == 'Almacen';
-        }
-        $Departamento_Del_Personal = $_SESSION['Departamento'];
-        // echo "Rol: " . $role;
-        // echo "<br>";
-
-        // Determine the permisos based on the role
-        if ($role == 'Gerente' || $role == 'Admin' || $role == 'Coordinador' || $role == 'Control') {
-          // Gerente, Admin, and Coordinador can see both "Basicos" and "Superiores"
-          $permisos = ['Basicos', 'Superiores'];
-        } elseif ($role == 'Empleado') {
-          // For other roles (e.g., Empleado), only show "Basicos"
-          $permisos = ['Basicos'];
+        $area     = $_SESSION['Area'];
+        $rol      = $_SESSION['Role'];
+        $depto    = $_SESSION['Departamento'] ?? '';  // Opcional
+        $permisos = 'Basicos';
+        //echo "<br> Area: " . $area;
+        //echo "<br> Rol: " . $rol;
+        if ($rol != 'Empleado') {
+          $permisos = 'Superiores';
         }
 
-        // print_r($permisos);
-        // Initialize the array to store available functions
-        $Arreglo_De_Funciones_Disponibles = array();
+        //echo "<br> Departamento: " . $depto;
+        //echo "<br> Permisos: " . $permisos;
+        //echo "<br>---------------------------------------------------------------";
+        /// Consultar la tabla funciones donde Area
 
-        $DepartamentosAlmacen = ['Entrega', 'Empaque', 'Facturación', 'Logistica', 'Chofer'];
+        $query_funciones = "SELECT * FROM funciones WHERE Departamento = '$depto' OR Departamento = 'General'";
+        $query_mysqli = mysqli_query($conn, $query_funciones);
+        if (!$query_mysqli) {
+          die("Error en la consulta: " . mysqli_error($conn));
+        } else {
+        ?>
 
-        $Arreglo_De_Funciones_Disponibles = [];
-
-        if (in_array('Superiores', $permisos)) {
-          // echo "<br> Entrando al query de nivel Superior";
-          $query_superior = "SELECT * FROM funciones 
-                     WHERE (Area = '$Area_Del_Personal' OR Area = 'General') 
-                     AND Permisos = 'Superiores'";
-          $result = mysqli_query($conn, $query_superior);
-          while ($row = mysqli_fetch_assoc($result)) {
-            $Arreglo_De_Funciones_Disponibles[] = $row;
-          }
-        }
-
-        if (in_array('Basicos', $permisos)) {
-          // echo "<br> Entrando al query de nivel Básico";
-          $query_basico = "SELECT * FROM funciones 
-                   WHERE (Area = '$Area_Del_Personal' OR Area = 'General') 
-                   AND Permisos = 'Basicos'";
-          $result = mysqli_query($conn, $query_basico);
-          while ($row = mysqli_fetch_assoc($result)) {
-            $Arreglo_De_Funciones_Disponibles[] = $row;
-          }
+          <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <?php while ($row = mysqli_fetch_assoc($query_mysqli)): ?>
+              <div class="col">
+                <a href="<?= $row['Ruta'] ?>" class="text-decoration-none">
+                  <div class="card h-100 shadow-sm hover-shadow border-0 bg-light">
+                    <div class="card-body d-flex align-items-center">
+                      <i class="bi bi-box-arrow-up-right fs-3 text-primary me-3"></i>
+                      <div>
+                        <h6 class="card-title mb-1 text-dark"><?= htmlspecialchars($row['Nombre']) ?></h6>
+                        <small class="text-muted"><?= $row['Departamento'] ?></small>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            <?php endwhile; ?>
+          </div>
+        <?php
         }
         ?>
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-          <?php foreach ($Arreglo_De_Funciones_Disponibles as $funcion): ?>
-            <div class="col">
-              <div class="card h-100 border-0 shadow-sm p-3">
-                <h5 class="card-title text-primary"><?php echo htmlspecialchars($funcion['Nombre']); ?></h5>
-                <p class="text-muted">Permiso: <?php echo htmlspecialchars($funcion['Permisos']); ?></p>
-                <a href="<?php echo htmlspecialchars($funcion['Ruta']); ?>" class="btn btn-primary btn-block">Ir a <?php echo htmlspecialchars($funcion['Nombre']); ?></a>
-              </div>
-            </div>
-          <?php endforeach; ?>
-        </div>
+
+
+
       </div>
     </div>
   </div>
+
   <hr>
   <br>
   <?php include "footer.php"; ?>

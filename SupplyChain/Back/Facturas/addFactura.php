@@ -47,7 +47,7 @@ $Responsable = $_SESSION['Name'];
 
 if ($Parametro == 'Base') {
     /// Actualizar registros de la tabla entrega_factura_refactor
-    $sql = "UPDATE entregas SET Id_Factura = '$FolioFactura', Archivo = '$factura' WHERE Id_Salida = '$id_salida'";
+    $sql = "UPDATE entregas SET Id_Factura = '$FolioFactura', Archivo = '$factura' WHERE Id_Salida = '$id_salida' AND Id_Entrega = '$Folio_Entrega'";
     $query = mysqli_query($conn, $sql);
     if ($query) {
         echo "<br>Se actualizó correctamente la tabla entrega_factura_refactor";
@@ -78,7 +78,7 @@ if ($Parametro == 'Base') {
         if ($query) {
             echo "<br>Se registró correctamente en la tabla de bitácora";
             // Regresar al Listado 
-            header("Location: ../../Front/detalles.php?id=" . $id_salida);
+            //header("Location: ../../Front/detalles.php?id=" . $id_salida);
         } else {
             echo "<br>No se registró correctamente en la tabla de bitácora";
         }
@@ -102,7 +102,7 @@ if ($Parametro == 'Base') {
         if ($query) {
             echo "<br>Se registró correctamente en la tabla de bitácora";
             // Regresar al Listado 
-            header("Location: ../../Front/detalles.php?id=" . $id_salida);
+            //header("Location: ../../Front/detalles.php?id=" . $id_salida);
         } else {
             echo "<br>No se registró correctamente en la tabla de bitácora";
         }
@@ -112,4 +112,4 @@ if ($Parametro == 'Base') {
 }
 
 
-header("Location: ../../Front/detalles.php?id=".$id_salida);
+//header("Location: ../../Front/detalles.php?id=".$id_salida);

@@ -61,7 +61,7 @@ require '../../../vendor/phpmailer/phpmailer/src/Exception.php';
 
 
 $mail = new PHPMailer(true);
-
+require  'config_mail.php';
 try {
 
     //Server settings
@@ -69,26 +69,23 @@ try {
     $mail->isSMTP(); //Send using SMTP
     $mail->Host = 'smtp.office365.com'; //Set the SMTP server to send through
     $mail->SMTPAuth = true; //Enable SMTP authentication  
-    $mail->Username = 'alenapp@alenintelligent.com'; //SMTP username
-    $mail->Password = 'A1enM4IL.'; //SMTP password
+    $mail->Username = 'alenapp2@alenintelligent.com'; //SMTP username
+    $encrypted_pass = 'aWFNL3l0ZEMyR0Jma3FYdFFCa3gyZ3FkbEpHcGF1RDFwalord1JmUFlaaz0==';
+    $mail->Password = decryptPassword($encrypted_pass);
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; //Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
 
     $mail->Port = 587; //TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
     // Configurar el correo para el gerente
-    $mail->setFrom('alenapp@alenintelligent.com', 'Solicitud de Vacaciones Aprobada');
+    $mail->setFrom('alenapp2@alenintelligent.com', 'Solicitud de Vacaciones Aprobada');
 
     // Enviar correos en CC a los gerentes de las áreas
     $mail->addAddress($Correo_Solicitante, $Usuario);
-    $mail->addAddress($Correo_Jerarquia, $Jerarquia_Solicitante);
 
     $mail->isHTML(true);
     $mail->CharSet = 'UTF-8';
 
     $mail->Subject = '✨ Solicitud de Vacaciones ';
-    /* Añade las chicas de RH
-        foreach ($correosRH as $correo) {
-            $mail->addCC($correo);
-        }*/
+
 
     $mail->Body  = '
 <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
@@ -119,8 +116,7 @@ try {
                 </tr>
             </table>
 
-            <p>Saludos cordiales,</p>
-            <p><strong>Equipo de Recursos Humanos 👩‍💼👨‍💼</strong></p>
+            <p>Saludos cordiales</p>
         </div>
     </div>
 </div>';

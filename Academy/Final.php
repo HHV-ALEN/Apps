@@ -5,6 +5,46 @@ $conn = connectMySQLi();
 
 $id_curso = $_GET['id_curso'];
 $Nombre = $_SESSION['Name'];
+/// Si ya tiene completado el curso que mande a certificado
+/*
+
+De la tabla academy_test_responses
+Tomar el ultimo en Intentoy verificar que las respuestas donde Nombre y Curso sean mayores al 80%
+
+*/
+/* 1)  ¿Quedan capítulos sin completar?  */
+$sql = "
+  SELECT COUNT(*) AS pendientes
+  FROM (
+      SELECT r.Capitulo,
+             SUM(r.Estado = 'Correcto')  AS correctas,
+             COUNT(*)                    AS total
+      FROM   academy_test_responses r
+      INNER  JOIN (
+        SELECT Capitulo, MAX(Intento) AS intento
+        FROM   academy_test_responses
+        WHERE  Curso  = ?
+          AND  Nombre = ?
+        GROUP  BY Capitulo
+      ) t  ON t.Capitulo = r.Capitulo
+          AND t.intento  = r.Intento
+          AND r.Curso    = ?
+          AND r.Nombre   = ?
+      GROUP BY r.Capitulo
+      HAVING  (correctas / total) < 0.80
+  ) AS fallos
+";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('isis', $id_curso, $Nombre, $id_curso, $Nombre);
+$stmt->execute();
+$stmt->bind_result($pendientes);
+$stmt->fetch();
+$stmt->close();
+
+/* ----------- Si no hay capítulos pendientes → certificado ------- */
+
+
 // Obtener nombre del curso
 $nombre_curso = "Desconocido";
 $query_curso = $conn->prepare("SELECT Titulo FROM academy_cursos WHERE Id_Curso = ?");
@@ -126,7 +166,7 @@ if ($row_total['inicio'] && $row_total['fin']) {
                 <p class="text-muted mb-0">Has completado el curso</p>
                 <h4 class="fw-bold text-dark mt-2"><?php echo htmlspecialchars($nombre_curso); ?></h4>
             </div>
-            
+
             <hr>
 
 
@@ -168,7 +208,33 @@ if ($row_total['inicio'] && $row_total['fin']) {
 
             <div class="d-grid gap-2 mt-4">
                 <a href="index.php?id_curso=<?php echo $id_curso; ?>" class="btn btn-dark">Volver al Listado</a>
-                <a href="evaluacion.php?id_curso=<?php echo $id_curso; ?>" class="btn btn-outline-dark">Comenzar Evaluación</a>
+
+                <?php
+                $Completado = 0;
+                /// Verificar si el usuario ya ha completado el examen final 
+                // Query pa consultar la tabla academy_completado 
+                $query_completado = "SELECT * FROM academy_completado WHERE Usuario = ? AND Curso = ?";
+                $stmt_completado = $conn->prepare($query_completado);
+                $stmt_completado->bind_param("si", $Nombre, $id_curso);
+                $stmt_completado->execute();
+                $result_completado = $stmt_completado->get_result();
+
+                if ($result_completado->num_rows > 0) {
+                    $row = $result_completado->fetch_assoc();
+                    $Completado = $row['Completado'];
+                    //echo "Completado: " . $Completado;
+                }
+
+                if ($Completado == 1) {
+                ?>
+                    <a href="Back/Examen/descargarCertificado.php?id_curso=<?php echo $id_curso; ?>" class="btn btn-outline-dark">Descargar Certificado</a>
+                <?php
+                } else {
+                ?>
+                    <a href="evaluacion.php?id_curso=<?php echo $id_curso; ?>" class="btn btn-outline-dark">Comenzar Evaluación</a>
+                <?php
+                }
+                ?>
             </div>
         </div>
     </div>

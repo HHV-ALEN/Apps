@@ -18,7 +18,7 @@ $choferActual = $rowActual ? $rowActual['Chofer'] : 'No asignado';
 $ClienteActual = $rowActual ? $rowActual['Cliente'] : 'No asignado';
 
 // Obtener todos los choferes disponibles
-$queryChoferes = "SELECT Id, Nombre FROM usuarios WHERE Departamento = 'Chofer' ORDER BY Nombre";
+$queryChoferes = "SELECT Id, Nombre FROM usuarios WHERE Puesto LIKE '%Chofer%' ORDER BY Nombre";
 $resultChoferes = mysqli_query($conn, $queryChoferes);
 
 $choferes = [];

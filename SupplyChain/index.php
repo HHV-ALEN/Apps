@@ -9,7 +9,10 @@ if (isset($_SESSION['alerta_estado'])) {
   unset($_SESSION['alerta_estado']); // Limpiar mensaje para que no se repita
 }
 
-$isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 ||  $_SESSION['User_Id'] == 29  || $_SESSION['User_Id'] == 7);
+$isGerente = ($_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 1 ||  
+$_SESSION['User_Id'] == 29  || $_SESSION['User_Id'] == 7 || $_SESSION['User_Id'] == 117
+|| $_SESSION['User_Id'] == 58
+);
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -50,13 +53,24 @@ ORDER BY s.Id DESC
 LIMIT $offset, $records_per_page";
 
 $result_salida = mysqli_query($conn, $query_salida);
+
+$canAddSalidas = ($_SESSION['User_Id'] == 118 || 
+$_SESSION['User_Id'] == 113 || $_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 117 ||
+$_SESSION['User_Id'] == 58 || $_SESSION['User_Id'] ==  83 || $_SESSION['User_Id'] == 843);
+
+$CanFacture = ($_SESSION['User_Id'] == 118 || 
+$_SESSION['User_Id'] == 113 || $_SESSION['User_Id'] == 34 || $_SESSION['User_Id'] == 117 ||
+$_SESSION['User_Id'] == 58 );
+
 ?>
 
 <script>
   const currentUserDept = "<?php echo $_SESSION['Departamento']; ?>";
   const currentUserId = "<?php echo $_SESSION['User_Id']; ?>";
-  console.log("User Department:", currentUserDept);
-  console.log("User ID:", currentUserId);
+  const puedenPasarAEmpaque = <?php echo json_encode($canAddSalidas); ?>;
+  const puedenFacturar = <?php echo json_encode($CanFacture); ?>;
+  //console.log("User Department:", currentUserDept);
+  //console.log("User ID:", currentUserId);
 </script>
 
 
@@ -132,7 +146,7 @@ $result_salida = mysqli_query($conn, $query_salida);
   <?php endif; ?>
 
   <?php
-  if ($_SESSION['Departamento'] == 'Chofer') {
+  if ($_SESSION['Puesto'] == 'Chofer B' || $_SESSION['Puesto'] == 'Chofer A' || $_SESSION['Puesto'] == 'Chofer Administrativo') {
   ?>
     <div class="container mt-5 text-center">
       <div class="card shadow-lg border-0">
@@ -327,17 +341,14 @@ ORDER BY p.Id DESC ";
             //echo "<h5>Bienvenido " . $_SESSION['User_Id'] . "</h5>";
             // Permitil que el usuario 'Raquel Cabrales' con User_Id = 34 PUEDA acceder a los botones de todos los procesosl sin importar que no tenga el mismo 'Departamento'
 
-
-            if ($_SESSION['Departamento'] == 'Entrega y Surtido' || $_SESSION['User_Id'] == 34) {
+            if ($_SESSION['Departamento'] == 'Entrega y Surtido' || $_SESSION['Departamento'] == 'Almacen' || $canAddSalidas ) {
               // Mostrar botón para agregar nueva etiqueta de salida
             ?>
               <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#agregarModal">
                 <i class="bi bi-plus-lg"></i> Agregar Nueva Etiqueta de Salida
               </button>
             <?php
-
             }
-
             ?>
           </div>
 
@@ -457,8 +468,8 @@ ORDER BY p.Id DESC ";
                       </button>
                     <?php endif; ?>
                     <?php
-                    // Empaque puede recibir cuando el estado es 'Entrega'
-                    if (($isGerente || $_SESSION['Departamento'] == 'Empaque') && $fila['Estado'] == 'Entrega') {
+                    // Empaque puede recibir cuando el estado es 'Entrega' <--- AQUI SE RECIBE LA ENTREGA PARA PASAR A EMPAQUE
+                    if ((($isGerente || $_SESSION['Departamento'] == 'Empaque') && $fila['Estado'] == 'Entrega')|| ( $canAddSalidas && $fila['Estado'] == 'Entrega' )){
                       echo "<a href='Back/changeState.php?id=" . $fila['Id'] . "&estado=Empaque' class='btn btn-warning btn-sm'>
                         <i class='bi bi-box-seam me-sm-2'></i> 
                         <span class='d-none d-sm-inline'>Recibir Entrega (<strong>Empaque</strong>)</span>
@@ -469,7 +480,7 @@ ORDER BY p.Id DESC ";
                     /// Permitir a Raquel Cabrales recibir de Empaque a Facturación, pero que se muestre solo cuando el estado esta en Empaque, pero no en otros estados
                     /// Para recibir de estado Empaque a Facturación:
 
-                    if (($isGerente || $_SESSION['Departamento'] == 'Facturación') && $fila['Estado'] == 'Empaque') {
+                    if (($isGerente || $_SESSION['Departamento'] == 'Facturación') && $fila['Estado'] == 'Empaque' || $CanFacture && $fila['Estado'] == 'Empaque') {
 
                       // Consultar si hay imágenes asociadas al folio
                       $id_salida = $fila['Id'];
@@ -955,6 +966,8 @@ ORDER BY p.Id DESC ";
         const selectChoferes = document.getElementById('nuevoChofer');
         selectChoferes.innerHTML = '<option value="">Cargando...</option>';
 
+        console.log("iD DE LA SALIDA :" , salidaId);
+
         // Fetch al backend
         fetch('Back/obtener_choferes.php', {
             method: 'POST',
@@ -1010,7 +1023,7 @@ ORDER BY p.Id DESC ";
         let Id_Factura = $("#buscar_factura").val();
         //console.log("Cliente seleccionad", cliente);
         //console.log("Entrega seleccionada", Id_Entrega);
-        console.log("Salida seleccionada", numero_salida);
+        //console.log("Salida seleccionada", numero_salida);
 
         $.ajax({
           url: "Back/buscar_salidas.php",
@@ -1032,7 +1045,7 @@ ORDER BY p.Id DESC ";
 
             if (response.length > 0) {
               response.forEach(function(item) {
-                console.log(item);
+                //console.log(item);
                 // Determine button HTML based on conditions (similar to your PHP logic)
                 let buttonsHtml = `
                 <div class="d-flex flex-wrap gap-2 justify-content-center">
@@ -1042,7 +1055,7 @@ ORDER BY p.Id DESC ";
 
                 // Entrega button
                 if (item.Estado == 'Entrega') {
-                  if (currentUserDept == 'Empaque' || currentUserId == 34 || currentUserId == 1) {
+                  if (currentUserDept == 'Empaque' || puedenPasarAEmpaque) {
                     buttonsHtml += `
                         <a href='Back/changeState.php?id=${item.Id}&estado=Empaque' class='btn btn-warning btn-sm'>
                             <i class='bi bi-box-seam me-sm-2'></i> 
@@ -1051,9 +1064,9 @@ ORDER BY p.Id DESC ";
                   }
                 }
 
-                // Empaque button logic - js
+                // Empaque button logic - js para pasar a Facturación
                 if (item.Estado == 'Empaque') {
-                  if (currentUserDept == 'Facturación' || currentUserId == 34 || currentUserId == 1) {
+                  if (currentUserDept == 'Facturación' || puedenFacturar) {
                     if (item.Imagenes_Registradas > 0) {
                       buttonsHtml += `
         <a href='Back/changeState.php?id=${item.Id}&estado=Facturación' class='btn btn-warning'>
@@ -1155,7 +1168,7 @@ ORDER BY p.Id DESC ";
 
       $("#buscar_salida").on("keyup", function(e) {
         if (e.key === "Enter") {
-          console.log("Enter key pressed");
+          console.log("Ingrese una tecla");
           buscarSalidas();
         }
       });
@@ -1202,7 +1215,8 @@ ORDER BY p.Id DESC ";
     document.addEventListener("DOMContentLoaded", function() {
       document.getElementById("Tipo_Doc").addEventListener("change", function() {
         let tipo = this.value;
-        console.log(tipo);
+        console.log("Se Selecciono:", tipo);
+
         const extraFields = document.getElementById("extraFields");
 
         // Limpiar contenido previo
@@ -1309,40 +1323,44 @@ ORDER BY p.Id DESC ";
 
     `;
 
-        let choferField = `
-        <div class="col-md-12">
-                            <div class="form-floating mb-3">
-                                <select class='form-control' name='Chofer_Asignado' id='Chofer_Asignado' required>
-                                    <option value="">Selecciona un chofer</option>
-                                    <option value="Manuel Lopez Romero">Manuel Lopez Romero</option>
-                                    <option value="Jose de Jesus Torres Aguilar">Jose de Jesus Torres Aguilar</option>
-                                    <option value="Brandon Alexis Hernandez Robles">Brandon Alexis Hernandez Robles</option>
-                                    <option value="Daniel Soto Mayor">Daniel Soto Mayor</option>
-                                    <option value="Jonathan Islas Hernandez">Jonathan Islas Hernandez</option>
-                                    <option value="Rene Canche Couoh">Rene Canche Couoh</option>
-                                    <option value="Leonardo Daniel Urzua Pulido">Leonardo Daniel Urzua Pulido</option>
-                                    <option value="">---------------------------</option>
-                                    <option value="Cliente Pasa">Cliente Pasa</option>
-                                    <option value="Entregado por Vendedor">Entregado por Vendedor</option>
-                                    <option value="Proveedor Recolecta">Proveedor Recolecta</option>
-                                </select>
-                                <label for="Chofer">Chofer:</label>
+            let choferField = `
+            <div class="col-md-12">
+                                <div class="form-floating mb-3">
+                                    <select class='form-control' name='Chofer_Asignado' id='Chofer_Asignado' required>
+                                        <option value="">Selecciona un chofer</option>
+                                        <option value="Manuel Lopez Romero">Manuel Lopez Romero</option>
+                                        <option value="Jose de Jesus Torres Aguilar">Jose de Jesus Torres Aguilar</option>
+                                        <option value="Brandon Alexis Hernandez Robles">Brandon Alexis Hernandez Robles</option>
+                                        <option value="Daniel Soto Mayor">Daniel Soto Mayor</option>
+                                        <option value="Jonathan Islas Hernandez">Jonathan Islas Hernandez</option>
+                                        <option value="Rene Canche Couoh">Rene Canche Couoh</option>
+                                        <option value="Leonardo Daniel Urzua Pulido">Leonardo Daniel Urzua Pulido</option>
+                                        <option value="">---------------------------</option>
+                                        <option value="Cliente Pasa">Cliente Pasa</option>
+                                        <option value="Entregado por Vendedor">Entregado por Vendedor</option>
+                                        <option value="Proveedor Recolecta">Proveedor Recolecta</option>
+                                    </select>
+                                    <label for="Chofer">Chofer:</label>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-12">
-                        <label for="FechaEntregado">Fecha Entregado:</label>
-                        <input type="date" class="form-control" name="fecha_entregado" id='fecha_entregado' required>
-                        </div>
-                        <br>
-    `;
+                            <div class="col-md-12">
+                            <label for="FechaEntregado">Fecha Entregado:</label>
+                            <input type="date" class="form-control" name="fecha_entregado" id='fecha_entregado' required>
+                            </div>
+                            <br>
+        `;
 
         // Agregar los campos según la selección
-        if (tipo == "Directo" || tipo == "Reembarque") {
+        console.log("Tipo de Documento Seleccionado: ", tipo);
+        if (tipo == "Directo") {
           extraFields.innerHTML += commonFields;
-        } else if (tipo === "Reembarque") {
-          extraFields.innerHTML += `<div class="row">${clienteIntermedioField}</div>`;
-        } else if (tipo === "Ruta") {
-          extraFields.innerHTML += choferField;
+        }
+        if (tipo == "Reembarque") {
+          console.log("Si esta entrando a que es tipo Reembarque");
+          extraFields.innerHTML = commonFields + `<div class="row">${clienteIntermedioField}</div>`;
+        }
+        if (tipo == "Ruta") {
+          extraFields.innerHTML = choferField;
         }
 
         if (!extraFields) {
@@ -1403,7 +1421,7 @@ ORDER BY p.Id DESC ";
                 item.type = "button";
                 item.className = "dropdown-item";
                 item.textContent = cliente.nombre;
-                item.dataset.id = cliente.id;
+                item.dataset.id = cliente.Id_Original;
                 listaClientes.appendChild(item);
               });
             } else {

@@ -126,55 +126,131 @@ $Nombre = explode(" ", $Nombre)[0];
                 justify-content: center;
             }
         }
+
+        .dropdown-menu {
+            min-width: 250px;
+        }
+
+        .dropdown-menu-dark {
+            background-color: #343a40;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-menu-dark .dropdown-item {
+            color: rgba(255, 255, 255, 0.75);
+            padding: 0.5rem 1.5rem;
+        }
+
+        .dropdown-menu-dark .dropdown-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .dropdown-header {
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-logout {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background-color: rgba(220, 53, 69, 0.4);
+        }
     </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="/Front/dashboard.php">
                 <img src="/Front/Img/logo.png" alt="Alen Apps" style="height: 40px;">
             </a>
+
             <!-- User Greeting - Hidden on mobile -->
             <span class="navbar-text ms-3 d-none d-lg-flex">
                 <span class="user-greeting">
                     <i class="bi bi-person-circle me-2"></i>
                     <span class="">Bienvenido,&nbsp;</span>
-                    <span class="fw-semibold text-white"> <?php echo htmlspecialchars($Nombre); ?></span>
+                    <span class="fw-semibold text-white"><?php echo htmlspecialchars($Nombre); ?></span>
                 </span>
             </span>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- Home Button -->
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="/Front/dashboard.php">
                             <i class="bi bi-house-heart-fill"></i> Inicio
                         </a>
                     </li>
-                    <?php
-                    if ($_SESSION['Area'] == 'Cadena De Suministros' || $_SESSION['Area'] == 'Cadena de Suministros') {
-                    ?>
+
+                    <!-- New Funciones Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="funcionesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-collection"></i> Funciones
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="funcionesDropdown">
+                            <!-- Supply Chain Section -->
+                            <li>
+                                <h6 class="dropdown-header text-uppercase small fw-bold text-warning">Supply Chain</h6>
+                            </li>
+                            <li><a class="dropdown-item" href="/SupplyChain/index.php">
+                                    <i class="bi bi-list-task me-2"></i>Listado General
+                                </a></li>
+
+                            <!-- Compras Section -->
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <h6 class="dropdown-header text-uppercase small fw-bold text-warning">Compras</h6>
+                            </li>
+                            <li><a class="dropdown-item" href="/Compras/compras.php">
+                                    <i class="bi bi-cart4 me-2"></i> Menu
+                                </a></li>
+                            <li><a class="dropdown-item" href="/Compras/listado.php">
+                                    <i class="bi bi-upload me-2"></i>Listado - Compras
+                                </a></li>
+                            <li><a class="dropdown-item" href="/Compras/listadoVentas.php">
+                                    <i class="bi bi-upload me-2"></i>Listado - Ventas
+                                </a></li>
+
+                            <!-- Additional Sections can be added here -->
+                            <?php if ($_SESSION['Departamento'] == 'Recursos Humanos'): ?>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <h6 class="dropdown-header text-uppercase small fw-bold text-warning">Recursos Humanos</h6>
+                                </li>
+                                <li><a class="dropdown-item" href="/Front/Users/Users.php">
+                                        <i class="bi bi-people me-2"></i>Listado de Usuarios
+                                    </a></li>
+                                <li><a class="dropdown-item" href="/Vacaciones/index.php">
+                                        <i class="bi bi-calendar-heart me-2"></i>Listado de Vacaciones
+                                    </a></li>
+                            <?php endif; ?>
+                        </ul>
+                    </li>
+
+                    <!-- Conditional Items -->
+                    <?php if ($_SESSION['Area'] == 'Cadena De Suministros' || $_SESSION['Area'] == 'Cadena de Suministros'): ?>
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="/SupplyChain/index.php">
+                            <a class="nav-link" href="/SupplyChain/index.php">
                                 <i class="bi bi-list-task"></i> Listado General
                             </a>
                         </li>
-                    <?php }
-                    if ($_SESSION['Departamento'] == 'Recursos Humanos') { ?>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-list-ul"></i> Listados Generales
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item" href="/Front/Users/Users.php"><i class="bi bi-people"></i> Listado de Usuarios</a></li>
-                                <li><a class="dropdown-item" href="/Vacaciones/index.php"><i class="bi bi-calendar-heart"></i> Listado de Vacaciones</a></li>
-                            </ul>
-                        </li>
-                    <?php } ?>
+                    <?php endif; ?>
                 </ul>
+
+                <!-- Logout Button -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link btn btn-logout" href="/Back/Session/logout.php">
@@ -185,6 +261,9 @@ $Nombre = explode(" ", $Nombre)[0];
             </div>
         </div>
     </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 
 </html>

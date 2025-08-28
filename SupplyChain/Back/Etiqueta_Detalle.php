@@ -35,7 +35,7 @@ echo "<br><strong>Sucursal:</strong> $Sucursal";
 */
 /// Obtener Información de la tablal clientes
 /// Calle, Colonia, Ciudad, Estado, Cp, Telefono 
-$sql = "SELECT * FROM clientes WHERE Id = $Id_Cliente";
+$sql = "SELECT * FROM clientes WHERE Id_Original = $Id_Cliente";
 $result = mysqli_query($conn, $sql);
 if ($result) {
     $row = mysqli_fetch_assoc($result);
